@@ -34,7 +34,7 @@ jobs:
       - run: npm test
       - run: npm run validate:optics
       - run: npm run build
-      - run: cargo check --locked --manifest-path src-tauri/Cargo.toml
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
       - name: Check release version
         if: startsWith(github.ref, 'refs/tags/')
         run: node -e "if('v'+JSON.parse(require('fs').readFileSync('package.json','utf8')).version!==process.env.GITHUB_REF_NAME) process.exit(1)"
@@ -45,6 +45,7 @@ jobs:
       - run: node scripts/run_python.mjs scripts/stage_release.py
       - run: node scripts/run_python.mjs scripts/validate_workspace_release.py
       - run: node scripts/run_python.mjs scripts/package_release.py
+      - run: node scripts/run_python.mjs scripts/validate_portable_release.py
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ runner.os }}
@@ -76,5 +77,6 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release already exists; preserving its verified assets."
           else
-            gh release create "$TAG" release-assets/* --verify-tag --title "TFC $TAG" --notes-file "$NOTES"
+            python scripts/release_notes.py "$TAG" > "$RUNNER_TEMP/release-notes.md"
+            gh release create "$TAG" release-assets/* --verify-tag --title "TFC $TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
           fi

@@ -385,7 +385,7 @@ export default function App() {
           </div>
           <button className="help-link" onClick={() => setModal("about")}>
             <CircleHelp size={16} />
-            使用说明<span>v0.1.3</span>
+            使用说明<span>v0.1.4</span>
           </button>
         </div>
       </aside>
@@ -402,9 +402,12 @@ export default function App() {
               onClick={() => setModal("workspace")}
             >
               <FolderOpen size={14} />
+              {workspace?.location_mode === "project-relative"
+                ? "项目内 · "
+                : ""}
               {workspace?.name || "选择工作区"}
             </button>
-            <span className="version-badge">V0.1.3 · 离线工作区</span>
+            <span className="version-badge">V0.1.4 · 离线工作区</span>
             <span className="top-divider" />
             <span className="platform">离线优先 · 本地工作台</span>
           </div>
@@ -441,7 +444,10 @@ export default function App() {
                 onClick={() => void save()}
               >
                 <Save size={16} />
-                保存项目<span className="shortcut">{navigator.platform.includes("Mac") ? "⌘ S" : "Ctrl S"}</span>
+                保存项目
+                <span className="shortcut">
+                  {navigator.platform.includes("Mac") ? "⌘ S" : "Ctrl S"}
+                </span>
               </button>
             </div>
           </div>
@@ -573,7 +579,7 @@ export default function App() {
           </span>
           <span>
             无吸收相干膜层 · 无基底背面<span className="dot-separator">·</span>
-            v0.1.3
+            v0.1.4
           </span>
         </div>
       </div>
@@ -672,7 +678,7 @@ export default function App() {
                   <Waves size={32} />
                 </div>
                 <h3>
-                  TFC <span>0.1.3</span>
+                  TFC <span>0.1.4</span>
                 </h3>
                 <p>
                   物理厚度 d、光学厚度 n·d 和 QWOT

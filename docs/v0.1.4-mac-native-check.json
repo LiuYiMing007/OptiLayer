@@ -1,0 +1,12 @@
+{
+  "version": "0.1.4",
+  "platform": "Darwin arm64",
+  "native_default_project_workspace": true,
+  "native_copy_migration_projects": 3,
+  "native_save_spectrum": true,
+  "native_restart_after_project_move": true,
+  "saved_relative_location": "Workspaces/import-1793486932508669000",
+  "source_unchanged": true,
+  "old_machine_preference_not_used": true,
+  "limits": "Native Mac directory move; no physical drive reassignment or Windows GUI assertion."
+}

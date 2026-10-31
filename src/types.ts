@@ -120,6 +120,9 @@ export interface SavedProject {
 }
 
 export interface WorkspaceInfo {
+  project_root?: string;
+  relative_path?: string;
+  location_mode?: "project-relative";
   id: string;
   name: string;
   root: string;

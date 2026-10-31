@@ -94,3 +94,44 @@ class WorkspaceTests(unittest.TestCase):
         try:self.assertEqual(len(engine.dispatch({'action':'calculate','project':fixture()})['wavelength_nm']),301)
         finally:
             if before is not None:os.environ['TFC_WORKSPACE_ROOT']=before
+
+class WorkspaceCopyTests(unittest.TestCase):
+    def test_copy_preserves_source_and_saved_spectrum(self):
+        import hashlib
+        from workspace import copy_workspace
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder); source=Workspace(base/'旧电脑数据',create=True)
+            p=fixture(); result=engine.calculate(p)
+            storage_action(source,{'action':'save','project':p})
+            artifact=storage_action(source,{'action':'spectrum_save','project_id':p['id'],'project':p,'spectrum':result})
+            def hashes(root):return {f.relative_to(root).as_posix():hashlib.sha256(f.read_bytes()).hexdigest() for f in root.rglob('*') if f.is_file()}
+            before=hashes(source.root)
+            target=base/'U盘项目'/'Workspace'; copied=copy_workspace(source.root,target)
+            self.assertTrue(copied['source_preserved']);self.assertEqual(before,hashes(source.root))
+            loaded=storage_action(Workspace(target),{'action':'load','id':p['id']})['project']
+            self.assertEqual(engine.calculate(loaded),result)
+            self.assertEqual(json.loads((target/artifact['relative_path']).read_text(encoding='utf-8'))['result'],result)
+            self.assertEqual(copied['workspace']['id'],source.manifest['id'])
+
+    def test_copy_refuses_existing_nested_or_future_targets(self):
+        from workspace import copy_workspace
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder);source=Workspace(base/'old',create=True)
+            storage_action(source,{'action':'save','project':fixture()})
+            existing=base/'existing';existing.mkdir();(existing/'keep.txt').write_text('keep')
+            for target in [existing,source.root/'nested']:
+                with self.subTest(target=target),self.assertRaises(ValueError):copy_workspace(source.root,target)
+            self.assertEqual((existing/'keep.txt').read_text(),'keep')
+            c=sqlite3.connect(source.directory('database')/'workspace.sqlite3');c.execute('PRAGMA user_version=100');c.close()
+            with self.assertRaises(ValueError):copy_workspace(source.root,base/'future')
+            self.assertFalse((base/'future').exists())
+            self.assertFalse(list(base.glob('.tfc-import-*')))
+
+    def test_copy_does_not_turn_recovery_files_into_empty_database(self):
+        from workspace import copy_workspace
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder);source=Workspace(base/'old',create=True)
+            storage_action(source,{'action':'save','project':fixture()})
+            (source.directory('database')/'workspace.sqlite3').unlink()
+            with self.assertRaises(ValueError):copy_workspace(source.root,base/'new')
+            self.assertFalse((base/'new').exists())

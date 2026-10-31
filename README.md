@@ -1,12 +1,12 @@
-# TFC · v0.1.3
+# TFC · v0.1.4
 
 GitHub：**[私有源码仓库](https://github.com/LiuYiMing007/tfc-workbench)** · [版本下载与更新内容](https://github.com/LiuYiMing007/tfc-workbench/releases) · [逐次更新记录](https://github.com/LiuYiMing007/tfc-workbench/commits/main)
 
-跨平台、离线优先的光学薄膜工作台。Windows 0.1.3 的测试、数值验证和 F: exFAT 固态 U 盘上的打包引擎工作区验收已通过；完整结果见 [Windows 验收记录](docs/V0.1.3-Windows验收.md)，操作见 [Windows 使用教程](docs/Windows使用教程.md)。
+0.1.4：默认数据位于程序所属项目文件夹的 `Workspace/`，工作区选择以相对路径保存在项目内 `.tfc/`。把整个项目文件夹放到固态 U 盘，Mac/Windows 的程序会寻找同一份数据，不再默认使用各台电脑的旧位置。
 
-Windows 便携目录目标为 `release/Windows/TFC`。本版已合并回 Mac，并在 Apple Silicon 重新构建 `release/TFC.app`；29 项 Python、4 项 TypeScript 及 25 项数值检查通过。Windows 回传的 3 个项目已用 Mac 打包引擎保存、搬迁、复算，并与 Windows 归档光谱对比，最大差异约 1.14e-13 个百分点。详见 [Mac 合并与往返验收](docs/V0.1.3-Mac合并与往返验收.md)。Mac 应用未做 Developer ID 签名及公证。
+便携使用见 [0.1.4 更新报告](docs/更新报告/0.1.4更新报告.md)。历史验收：[Windows 0.1.3](docs/V0.1.3-Windows验收.md)、[Mac 0.1.3 回传](docs/V0.1.3-Mac合并与往返验收.md)。当前版本的 Windows 包以 GitHub Actions 实际构建和测试结果为准。
 
-更新说明：[0.1.2](docs/更新报告/0.1.2更新报告.md) · [0.1.3](docs/更新报告/0.1.3更新报告.md)。当前文件位置见 [目录清理说明](docs/项目目录与清理说明.md)。
+更新说明：[0.1.2](docs/更新报告/0.1.2更新报告.md) · [0.1.3](docs/更新报告/0.1.3更新报告.md) · [0.1.4](docs/更新报告/0.1.4更新报告.md)。
 
 版本保存与后续上传见 [GitHub 版本管理](docs/GitHub版本管理.md)。
 
@@ -29,7 +29,7 @@ Optical Core 不依赖数据库、文件系统、UI、TFCalc 解析器或 AI。P
 
 ## Workspace
 
-点击顶部工作区按钮，新建空目录或打开已有 `workspace.json` 的目录。首次升级将旧数据库复制到默认工作区，旧数据库保留。已记住的外置盘未挂载时提示重新选择，不创建替代空工作区。
+默认在项目文件夹内使用 Workspace。可以新建或打开项目内其它工作区，或用“迁入旧工作区（复制）”把外部旧数据复制进项目；原件保留。选中的目录缺失时明确报错，不改用本机默认磁盘。
 
 ```text
 workspace.json       格式、版本、标识和相对目录
@@ -40,7 +40,7 @@ database/           workspace.sqlite3（项目和共享材料权威存储）
 imports/ exports/ config/    数据目录；部分用途预留
 ```
 
-项目保存时写入 SQLite 和 JSON 副本；若有对应当前输入的有效光谱，同时归档结果。重新打开项目重新计算。Workspace 内不保存电脑绝对路径；最近选择的根目录仅在本机偏好中保存。关闭应用后复制整个工作区到 SSD，在另一台电脑重新选择目录。当前不支持多台电脑同时写入或同步冲突合并。格式、迁移和恢复规则见 [Workspace 数据规范](docs/Workspace数据规范.md)。
+项目保存时写入 SQLite 和 JSON 副本；若有对应当前输入的有效光谱，同时归档结果。重新打开项目重新计算。Workspace 内不保存电脑绝对路径；最近选择以相对路径保存在项目 `.tfc/workspace-selection.json` 中。关闭应用后复制整个便携项目到 SSD，另一台电脑按相对位置继续打开。当前不支持多台电脑同时写入或同步冲突合并。格式、迁移和恢复规则见 [Workspace 数据规范](docs/Workspace数据规范.md)。
 
 ## 第一条业务链路
 
@@ -74,12 +74,15 @@ npm run desktop
 ```sh
 npm test
 npm run validate:optics
+cargo test --locked --manifest-path src-tauri/Cargo.toml
 npm run desktop:build
+node scripts/run_python.mjs scripts/package_release.py
+node scripts/run_python.mjs scripts/validate_portable_release.py
 ```
 
-自动测试含 29 项 Python 和 4 项 TypeScript 测试；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
+自动测试含 32 项 Python、4 项 TypeScript 与 Mac 7 项 Rust 路径测试（Windows 为 6 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
 
-各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 默认只构建便携目录，要求目标电脑已有 WebView2；离线安装器配置另行保留，尚未验收。Windows 实测与未完成项见本版验收记录。CI 文件已准备但尚未在线运行。
+各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 默认只构建便携目录，要求目标电脑已有 WebView2；离线安装器配置另行保留，尚未验收。Windows 实测与未完成项见本版验收记录。GitHub Actions 已接入，在线构建结果以 Actions 页面为准。
 
 ## 目录
 

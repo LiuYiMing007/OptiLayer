@@ -33,14 +33,15 @@ try {
   run("git", ["add", "--all"]);
   const files = git("diff", "--cached", "--name-only", "--diff-filter=ACM", "-z").split("\0").filter(Boolean);
   for (const name of files) {
-    if (/(^|\/)(\.env(?:\..*)?|Workspace|workspaces|backups|acceptance)(\/|$)|\.(sqlite3?|db|pem|key|p12|pfx)$/.test(name)) throw new Error(`Private file must be removed from the staging area: ${name}`);
+    if (/(^|\/)(\.env(?:\..*)?|Workspace|Workspaces|workspaces|\.tfc|backups|acceptance)(\/|$)|\.(sqlite3?|db|pem|key|p12|pfx)$/.test(name)) throw new Error(`Private file must be removed from the staging area: ${name}`);
     const content = run("git", ["show", `:${name}`], true);
     if (/(?:github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)/.test(content)) throw new Error(`Possible credential in ${name}`);
   }
   if (git("status", "--porcelain")) run("git", ["commit", "-m", process.argv.slice(3).join(" ") || (mode === "release" ? `release: ${tag}` : "chore: update project")]);
   if (mode === "release") {
     run("git", ["tag", "-a", tag, "-F", notes]);
-    run("git", ["push", "--atomic", "origin", "HEAD", `refs/tags/${tag}`]);
+    run("git", ["push", "origin", "HEAD"]);
+    run("git", ["push", "origin", `refs/tags/${tag}`]);
   } else run("git", ["push", "origin", "HEAD"]);
   console.log(mode === "release" ? `${tag} pushed; check GitHub Actions and Releases for build results.` : "Changes pushed to GitHub.");
 } catch (error) { console.error(error.message); process.exit(1); }

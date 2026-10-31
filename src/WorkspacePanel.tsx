@@ -16,13 +16,13 @@ export default function WorkspacePanel({
 }) {
   const [busy, setBusy] = useState(false),
     [failure, setFailure] = useState(error);
-  async function pick(create: boolean) {
+  async function pick(create: boolean, copy = false) {
     if (!(await beforeChange())) return;
     setBusy(true);
     setFailure("");
     try {
       const result = await request<{ workspace: WorkspaceInfo } | null>({
-        action: "workspace_pick",
+        action: copy ? "workspace_copy" : "workspace_pick",
         create,
       });
       if (result) onChanged(result.workspace);
@@ -48,8 +48,8 @@ export default function WorkspacePanel({
   return (
     <div className="workspace-panel">
       <p>
-        项目、材料、已保存光谱和配置集中在一个可迁移的目录中。将整个目录搬到移动
-        SSD 后，在另一台电脑选择「打开工作区」即可继续使用同一套数据。
+        默认工作区位于程序所属的项目文件夹内。Mac 和 Windows 使用同一个
+        Workspace；搬走整个项目文件夹后，程序会按相对位置自动找到数据。
       </p>
       {(failure || error) && (
         <div className="inline-error" role="alert">
@@ -59,7 +59,13 @@ export default function WorkspacePanel({
       {workspace && (
         <div className="workspace-location">
           <strong>{workspace.name}</strong>
+          {workspace.project_root && (
+            <small>项目文件夹：{workspace.project_root}</small>
+          )}
           <code>{workspace.root}</code>
+          {workspace.relative_path && (
+            <small>项目内相对位置：{workspace.relative_path}</small>
+          )}
           <small>
             Workspace v{workspace.schema_version} · UTF-8 / JSON / SQLite
           </small>
@@ -72,7 +78,7 @@ export default function WorkspacePanel({
           onClick={() => void pick(false)}
         >
           <FolderOpen size={15} />
-          打开工作区
+          打开项目内工作区
         </button>
         <button
           className="button secondary"
@@ -80,7 +86,7 @@ export default function WorkspacePanel({
           onClick={() => void pick(true)}
         >
           <Plus size={15} />
-          新建工作区
+          新建项目内工作区
         </button>
         <button
           className="button secondary"
@@ -89,6 +95,14 @@ export default function WorkspacePanel({
         >
           <RefreshCw size={14} />
           重新连接
+        </button>
+        <button
+          className="button secondary"
+          disabled={busy || !isTauri()}
+          onClick={() => void pick(false, true)}
+        >
+          <FolderOpen size={14} />
+          迁入旧工作区（复制）
         </button>
       </div>
       {!isTauri() && (
@@ -110,7 +124,8 @@ export default function WorkspacePanel({
         exports。
       </p>
       <p className="small-label">
-        跨电脑使用前关闭应用并安全弹出磁盘；当前没有多电脑同步或冲突合并功能。不要通过两台电脑同时写入同一数据库。首次升级会将旧数据库复制到默认工作区，旧数据仍保留。
+        跨电脑使用前关闭应用并安全弹出磁盘；当前没有多电脑同步或冲突合并功能。不要通过两台电脑同时写入同一数据库。0.1.3
+        的本机旧数据可通过“迁入旧工作区”复制进项目，原件保留；不再自动使用其它电脑的旧位置。
       </p>
     </div>
   );

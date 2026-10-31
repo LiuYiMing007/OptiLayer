@@ -41,3 +41,10 @@ docs/330-450AR*
 docs/2026-10-31-项目清理记录.json
 # Generated host-specific Tauri schemas
 src-tauri/gen/
+
+# Portable project selection and user data stay with the drive, never in Git
+.tfc/
+Workspaces/
+
+# Ready-to-carry local project includes private user Workspace
+便携项目/

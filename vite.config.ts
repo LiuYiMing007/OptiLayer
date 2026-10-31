@@ -91,6 +91,12 @@ export default defineConfig({
     watch: {
       ignored: [
         "**/.dev-workspace/**",
+        "**/Workspace/**",
+        "**/Workspaces/**",
+        "**/.tfc/**",
+        "**/backups/**",
+        "**/acceptance/**",
+        "**/release/**",
         "**/.local-workspaces/**",
         "**/engine/build/**",
         "**/engine/dist/**",

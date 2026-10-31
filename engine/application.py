@@ -4,7 +4,7 @@ from optics import calculate_spectrum, calculate_rt
 from analysis import analyze_spectrum
 from importers.tfd import parse_tfd
 from repository import storage_action, import_legacy_database
-from workspace import configured_workspace
+from workspace import configured_workspace, copy_workspace
 
 
 def calculate(project):
@@ -23,6 +23,11 @@ def dispatch(request, workspace=None):
     if action=='validate':return {'project':validate(request['project'])}
     if action=='import_tfd':
         return {'project':parse_tfd(request['text'],request['template']),'warning':'仅读取 ENVIRON / LAYERS / LAYER；材料常数来自项目快照，未导入完整 TFCalc 设置。'}
+    if action=='workspace_copy':
+        import os
+        target=os.environ.get('TFC_WORKSPACE_ROOT')
+        if not target:raise ValueError('迁入操作需要宿主指定目标目录')
+        return copy_workspace(request['source'], target)
     workspace=workspace or configured_workspace()
     if action=='workspace_info':return {'workspace':workspace.info()}
     if action=='workspace_import_legacy':

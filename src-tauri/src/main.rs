@@ -5,6 +5,7 @@ use std::{
     process::{Command, Stdio},
     sync::Mutex,
 };
+mod portable;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 
@@ -83,29 +84,36 @@ fn run_engine(
             String::from_utf8_lossy(&output.stderr)
         ));
     }
-    let value: serde_json::Value =
+    let mut value: serde_json::Value =
         serde_json::from_slice(&output.stdout).map_err(|e| format!("本地响应格式错误：{e}"))?;
     if let Some(error) = value.get("error").and_then(|v| v.as_str()) {
         return Err(error.to_owned());
     }
+    if let Some(workspace) = value.get_mut("workspace").and_then(|v| v.as_object_mut()) {
+        let project = project_folder()?;
+        workspace.insert("project_root".into(), serde_json::json!(project));
+        workspace.insert(
+            "location_mode".into(),
+            serde_json::json!("project-relative"),
+        );
+        if let Some(root) = root {
+            workspace.insert(
+                "relative_path".into(),
+                serde_json::json!(portable::relative(&project, root)?),
+            );
+        }
+    }
     Ok(value)
 }
 
-fn preference_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    Ok(app
-        .path()
-        .app_config_dir()
-        .map_err(|e| e.to_string())?
-        .join("workspace-selection.json"))
-}
-fn remember_workspace(app: &tauri::AppHandle, root: &Path) -> Result<(), String> {
-    let file = preference_path(app)?;
-    let parent = file.parent().ok_or("配置目录无效")?;
-    std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    // Only this local preference contains a machine path, never the portable manifest.
-    let content = serde_json::to_vec_pretty(&serde_json::json!({"workspace_root":root}))
-        .map_err(|e| e.to_string())?;
-    std::fs::write(file, content).map_err(|e| e.to_string())
+fn project_folder() -> Result<PathBuf, String> {
+    let executable = std::env::current_exe().map_err(|e| e.to_string())?;
+    let development = if cfg!(debug_assertions) {
+        Path::new(env!("CARGO_MANIFEST_DIR")).parent()
+    } else {
+        None
+    };
+    portable::project_root(&executable, development)
 }
 fn current_workspace(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let state = app.state::<WorkspaceSelection>();
@@ -113,48 +121,11 @@ fn current_workspace(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     if let Some(root) = selection.as_ref() {
         return Ok(root.clone());
     }
-    let pref = preference_path(app)?;
-    let remembered = if pref.exists() {
-        let text = std::fs::read_to_string(&pref).map_err(|e| e.to_string())?;
-        let value: serde_json::Value =
-            serde_json::from_str(&text).map_err(|e| format!("工作区配置无效：{e}"))?;
-        Some(PathBuf::from(
-            value["workspace_root"]
-                .as_str()
-                .ok_or("工作区配置缺少目录")?,
-        ))
-    } else {
-        None
-    };
-    let is_new = remembered.is_none();
-    let root = remembered.unwrap_or(
-        app.path()
-            .app_data_dir()
-            .map_err(|e| e.to_string())?
-            .join("workspaces/default"),
-    );
-    run_engine(
-        app,
-        Some(&root),
-        is_new,
-        serde_json::json!({"action":"workspace_info"}),
-    )
-    .map_err(|e| format!("工作区不可用，请重新选择目录：{e}"))?;
-    // First upgrade copies the old database into a NEW default workspace. Source stays intact.
-    let legacy = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| e.to_string())?
-        .join("projects.sqlite3");
-    if is_new && legacy.exists() && !root.join("database/workspace.sqlite3").exists() {
-        run_engine(
-            app,
-            Some(&root),
-            false,
-            serde_json::json!({"action":"workspace_import_legacy"}),
-        )?;
-    }
-    remember_workspace(app, &root)?;
+    let project = project_folder()?;
+    let (root, create) = portable::selected(&project)?;
+    run_engine(app, Some(&root), create, serde_json::json!({"action":"workspace_info"}))
+        .map_err(|e| format!("项目内工作区不可用：{e}。请确认整个项目文件夹可写且数据目录仍在原位；不会改用本机磁盘。"))?;
+    portable::remember(&project, &root)?;
     *selection = Some(root.clone());
     Ok(root)
 }
@@ -166,6 +137,9 @@ async fn engine_request(
 ) -> Result<serde_json::Value, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let action = request["action"].as_str().unwrap_or("");
+        if action == "workspace_copy" {
+            return Err("请使用工作区面板的迁入操作".into());
+        }
         let pure = matches!(
             action,
             "calculate" | "calculate_rt" | "analyze" | "validate" | "import_tfd"
@@ -191,27 +165,71 @@ async fn workspace_pick(
         } else {
             "选择包含 workspace.json 的工作区"
         };
+        let project = project_folder()?;
         let picked = app
             .dialog()
             .file()
             .set_title(title)
+            .set_directory(&project)
             .set_can_create_directories(true)
             .blocking_pick_folder();
         let Some(folder) = picked else {
             return Ok(None);
         };
         let root = folder.into_path().map_err(|e| e.to_string())?;
+        portable::relative(&project, &root)?;
         let result = run_engine(
             &app,
             Some(&root),
             create,
             serde_json::json!({"action":"workspace_info"}),
         )?;
-        remember_workspace(&app, &root)?;
+        portable::remember(&project, &root)?;
         *app.state::<WorkspaceSelection>()
             .0
             .lock()
             .map_err(|_| "工作区状态不可用")? = Some(root);
+        Ok(Some(result))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn workspace_copy(app: tauri::AppHandle) -> Result<Option<serde_json::Value>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let project = project_folder()?;
+        let initial = app
+            .path()
+            .app_data_dir()
+            .map_err(|e| e.to_string())?
+            .join("workspaces/default");
+        let mut dialog = app
+            .dialog()
+            .file()
+            .set_title("选择已有工作区，复制迁入当前项目");
+        if initial.is_dir() {
+            dialog = dialog.set_directory(initial);
+        }
+        let Some(picked) = dialog.blocking_pick_folder() else {
+            return Ok(None);
+        };
+        let source = picked.into_path().map_err(|e| e.to_string())?;
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|e| e.to_string())?
+            .as_nanos();
+        let target = portable::resolve(&project, &format!("Workspaces/import-{nonce}"))?;
+        let result = run_engine(
+            &app,
+            Some(&target),
+            false,
+            serde_json::json!({"action":"workspace_copy","source":source}),
+        )?;
+        portable::remember(&project, &target)?;
+        *app.state::<WorkspaceSelection>()
+            .0
+            .lock()
+            .map_err(|_| "工作区状态不可用")? = Some(target);
         Ok(Some(result))
     })
     .await
@@ -245,12 +263,31 @@ async fn export_file(app: tauri::AppHandle, name: String, content: String) -> Re
     .map_err(|e| e.to_string())?
 }
 fn main() {
+    // Read-only entry-point check used by cross-platform portable package validation.
+    if std::env::args_os().any(|arg| arg == "--workspace-location") {
+        let result = (|| -> Result<serde_json::Value, String> {
+            let project = project_folder()?;
+            let (workspace, create) = portable::selected(&project)?;
+            Ok(
+                serde_json::json!({"project_root":project,"workspace_root":workspace,"creation_allowed":create}),
+            )
+        })();
+        match result {
+            Ok(value) => println!("{value}"),
+            Err(error) => {
+                eprintln!("{error}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     tauri::Builder::default()
         .manage(WorkspaceSelection::default())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             engine_request,
             workspace_pick,
+            workspace_copy,
             export_file
         ])
         .run(tauri::generate_context!())
