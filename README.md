@@ -4,7 +4,7 @@ GitHub：**[私有源码仓库](https://github.com/LiuYiMing007/tfc-workbench)**
 
 0.1.4：默认数据位于程序所属项目文件夹的 `Workspace/`，工作区选择以相对路径保存在项目内 `.tfc/`。把整个项目文件夹放到固态 U 盘，Mac/Windows 的程序会寻找同一份数据，不再默认使用各台电脑的旧位置。
 
-便携使用见 [0.1.4 更新报告](docs/更新报告/0.1.4更新报告.md)。历史验收：[Windows 0.1.3](docs/V0.1.3-Windows验收.md)、[Mac 0.1.3 回传](docs/V0.1.3-Mac合并与往返验收.md)。当前版本的 Windows 包以 GitHub Actions 实际构建和测试结果为准。
+便携使用见 [0.1.4 更新报告](docs/更新报告/0.1.4更新报告.md)。历史验收：[Windows 0.1.3](docs/V0.1.3-Windows验收.md)、[Mac 0.1.3 回传](docs/V0.1.3-Mac合并与往返验收.md)。0.1.4 双平台构建与实际客户端定位/搬迁检查已[通过](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41251215959)，详见[本版验收](docs/V0.1.4-便携工作区验收.md)。
 
 更新说明：[0.1.2](docs/更新报告/0.1.2更新报告.md) · [0.1.3](docs/更新报告/0.1.3更新报告.md) · [0.1.4](docs/更新报告/0.1.4更新报告.md)。
 

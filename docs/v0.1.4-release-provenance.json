@@ -1,0 +1,24 @@
+{
+  "version": "0.1.4",
+  "tag": "v0.1.4",
+  "tag_commit": "4e8c5328adfff8dde8f3519c3cdea13333466ac1",
+  "build_commit": "4f5ce2fe143ff1e53c04a546f057648c36960262",
+  "ci_run_url": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41251215959",
+  "macOS_and_Windows_jobs": "success",
+  "tag_preserved": true,
+  "difference_from_tag": [
+    "scripts/validate_portable_release.py"
+  ],
+  "production_sources_identical_to_tag": true,
+  "reason": "Windows canonical-path string assertion replaced with filesystem identity checks in the validation harness only. Release assets come from the successful full rerun.",
+  "assets": [
+    {
+      "file": "TFC-0.1.4-macOS-arm64.zip",
+      "sha256": "259cc21fc40f929c6d6c8ffe43e075bc3765ec7d38808573dad9d4ded11759ef"
+    },
+    {
+      "file": "TFC-0.1.4-Windows-x64-portable.zip",
+      "sha256": "0eea4ada5e1fedff1b50400b1e23ce755d18e2ef8c99d26aa22e18464ec28f0d"
+    }
+  ]
+}
