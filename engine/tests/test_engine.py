@@ -15,11 +15,11 @@ spec.loader.exec_module(engine)
 
 
 def fixture():
-    settings = json.loads((ROOT/'fixtures/reference/reference_settings.json').read_text())
+    settings = json.loads((ROOT/'fixtures/reference/reference_settings.json').read_text(encoding='utf-8'))
     template = {'schema_version':1, 'id':'reference', 'name':'参考膜系', 'layer_order':'substrate_to_air',
                 'settings': {'incident_n':1, 'substrate_n':1.52},
                 'materials':[{'name':k, **v} for k,v in settings['materials'].items()], 'layers':[]}
-    return engine.parse_tfd((ROOT/'fixtures/reference/reference_4layer_550nm.tfd').read_text(), template)
+    return engine.parse_tfd((ROOT/'fixtures/reference/reference_4layer_550nm.tfd').read_text(encoding='utf-8'), template)
 
 
 class EngineTests(unittest.TestCase):
@@ -50,7 +50,7 @@ class EngineTests(unittest.TestCase):
         with self.assertRaises(ValueError): engine.calculate(p)
 
     def test_tfd_bad_count_and_unknown_material(self):
-        text=(ROOT/'fixtures/reference/reference_4layer_550nm.tfd').read_text()
+        text=(ROOT/'fixtures/reference/reference_4layer_550nm.tfd').read_text(encoding='utf-8')
         for bad in [text.replace('LAYERS*4*','LAYERS*3*'),text.replace('TA2O5_REF','UNKNOWN')]:
             with self.assertRaises(ValueError): engine.parse_tfd(bad, fixture())
 

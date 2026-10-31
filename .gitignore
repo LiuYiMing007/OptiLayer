@@ -16,3 +16,28 @@ release/
 
 .dev-workspace/
 .local-workspaces/
+
+acceptance/
+
+backups/
+
+# Machine configuration, secrets and user Workspace data
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+Workspace/
+workspaces/
+# User experiment originals stay local; anonymized fixtures remain versioned.
+docs/330-450AR*
+docs/2026-10-31-项目清理记录.json
+# Generated host-specific Tauri schemas
+src-tauri/gen/

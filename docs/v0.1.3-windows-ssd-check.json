@@ -1,0 +1,38 @@
+{
+  "platform": "Windows x64",
+  "version": "0.1.3",
+  "original_sha256": {
+    "database\\workspace.sqlite3": "41d514662d7e4cecf53ee8727a17a21852051976370140b75f833ad977a50175",
+    "projects\\604ff7a7-6420-42ec-99e3-c648d8500f70.tfc.json": "adcce3769500a95e4c7db4a76e8379b87269c6bdd69eecfb2d1692d293330322",
+    "projects\\ba92f0e3-cd70-42e6-a210-992de1e6a64d.tfc.json": "107187af2e22fea7f989c0be3a7b17189dc413c4fab4e32a5ffbf48c3d45cc4a",
+    "projects\\e307215b-f0eb-47be-b4f3-28ea2f423f98.tfc.json": "3abf628a3e1bd935cb1691ba70e60c96931525724c5abface4c80646c2cebdec",
+    "workspace.json": "770a4e1fc0c6dabf18161b6cbe4d0b3d4468426f6b23b213229ef9d973be8d90"
+  },
+  "original_unchanged": true,
+  "projects": [
+    {
+      "id": "604ff7a7-6420-42ec-99e3-c648d8500f70",
+      "name": "330-450AR",
+      "updated_at": "2026-10-30T09:22:28.970Z"
+    },
+    {
+      "id": "ba92f0e3-cd70-42e6-a210-992de1e6a64d",
+      "name": "550 nm · 四层参考膜系",
+      "updated_at": "2026-10-30T01:39:12.331Z"
+    },
+    {
+      "id": "e307215b-f0eb-47be-b4f3-28ea2f423f98",
+      "name": "验收示例 · 第一层 72 nm",
+      "updated_at": "2026-10-30T00:53:33.108Z"
+    }
+  ],
+  "saved_spectra": [
+    "spectra/604ff7a7-6420-42ec-99e3-c648d8500f70/5c3e6dc9-fbd5-40df-b985-e550cf5aea0a.spectrum.json",
+    "spectra/ba92f0e3-cd70-42e6-a210-992de1e6a64d/375ef482-a230-4f78-808f-013492c6ea57.spectrum.json",
+    "spectra/e307215b-f0eb-47be-b4f3-28ea2f423f98/0dbcf254-0789-4d1b-9fd9-a0cb2234d1d8.spectrum.json"
+  ],
+  "relocated_workspace": "F:\\TFC-Windows-0.1.3-验收-20261031\\数据验收\\搬迁 SSD 模拟\\Workspace",
+  "exact_reproduction": true,
+  "runtime_without_python_on_path": true,
+  "limits": "Directory relocation on E:; physical SSD, drive-letter change, GUI and Mac return are separate checks."
+}

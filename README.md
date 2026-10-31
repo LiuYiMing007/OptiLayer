@@ -1,8 +1,12 @@
-# TFC · v0.1.2
+# TFC · v0.1.3
 
-跨平台、离线优先的光学薄膜工作台。当前已验证 Apple Silicon macOS 构建；Windows 构建路径和检查流程已准备，尚未在 Windows 实机验收。
+跨平台、离线优先的光学薄膜工作台。Windows 0.1.3 的测试、数值验证和 F: exFAT 固态 U 盘上的打包引擎工作区验收已通过；完整结果见 [Windows 验收记录](docs/V0.1.3-Windows验收.md)，操作见 [Windows 使用教程](docs/Windows使用教程.md)。
 
-本地试用应用：`release/TFC.app`。尚未进行 Developer ID 签名和公证。之前的 `release/TFC for Mac.app` 保留。
+Windows 便携目录目标为 `release/Windows/TFC`。本版已合并回 Mac，并在 Apple Silicon 重新构建 `release/TFC.app`；29 项 Python、4 项 TypeScript 及 25 项数值检查通过。Windows 回传的 3 个项目已用 Mac 打包引擎保存、搬迁、复算，并与 Windows 归档光谱对比，最大差异约 1.14e-13 个百分点。详见 [Mac 合并与往返验收](docs/V0.1.3-Mac合并与往返验收.md)。Mac 应用未做 Developer ID 签名及公证。
+
+更新说明：[0.1.2](docs/更新报告/0.1.2更新报告.md) · [0.1.3](docs/更新报告/0.1.3更新报告.md)。当前文件位置见 [目录清理说明](docs/项目目录与清理说明.md)。
+
+版本保存与后续上传见 [GitHub 版本管理](docs/GitHub版本管理.md)。
 
 ## 技术路线
 
@@ -71,9 +75,9 @@ npm run validate:optics
 npm run desktop:build
 ```
 
-自动测试含 28 项 Python 和 4 项 TypeScript 测试；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
+自动测试含 29 项 Python 和 4 项 TypeScript 测试；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
 
-各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 安装器配置离线 WebView2；便携目录仍要求目标电脑已有 WebView2。本机仅验证 macOS。CI 文件已准备但尚未在线运行。
+各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 默认只构建便携目录，要求目标电脑已有 WebView2；离线安装器配置另行保留，尚未验收。Windows 实测与未完成项见本版验收记录。CI 文件已准备但尚未在线运行。
 
 ## 目录
 

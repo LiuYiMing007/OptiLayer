@@ -27,7 +27,7 @@ class OpticalValidationTests(unittest.TestCase):
         self.assertAlmostEqual(r['T_percent'],100-expected,places=11)
 
     def test_user_380nm_case_against_independent_engine(self):
-        p=json.loads((ROOT/'fixtures/user-feedback/380nm-project.json').read_text())
+        p=json.loads((ROOT/'fixtures/user-feedback/380nm-project.json').read_text(encoding='utf-8'))
         r=engine.calculate(p)
         for i,w in enumerate(r['wavelength_nm']):
             reference=independent(p,w,'s')

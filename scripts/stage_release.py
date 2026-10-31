@@ -2,7 +2,21 @@
 from pathlib import Path
 import platform
 import shutil
-import tempfile
+import uuid
+from contextlib import contextmanager
+
+@contextmanager
+def staging_directory(parent):
+    # Python 3.13 TemporaryDirectory uses a private Windows ACL. A release
+    # moved out of it would remain unreadable by the actual desktop user.
+    folder = parent / (".tfc-stage-" + uuid.uuid4().hex)
+    folder.mkdir()
+    try:
+        yield folder
+    finally:
+        if folder.exists():
+            assert folder.resolve().parent == parent.resolve()
+            shutil.rmtree(folder)
 root=Path(__file__).resolve().parents[1]
 platform_name=platform.system()
 if platform_name=='Darwin':
@@ -15,7 +29,7 @@ else:raise SystemExit('Desktop release staging is currently supported on macOS a
 target.parent.mkdir(parents=True,exist_ok=True)
 previous=target.parent/'.previous'/target.name
 previous.parent.mkdir(exist_ok=True)
-with tempfile.TemporaryDirectory(prefix='.tfc-stage-',dir=target.parent) as folder:
+with staging_directory(target.parent) as folder:
     staged=Path(folder)/target.name
     if platform_name=='Darwin':
         if not source.is_dir():raise SystemExit('Build the Mac app first')

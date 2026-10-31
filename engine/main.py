@@ -12,6 +12,10 @@ from repository import connect_db
 
 
 def cli():
+    # Rust and browser hosts exchange UTF-8 bytes on every platform.
+    sys.stdin.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     parser=argparse.ArgumentParser()
     parser.add_argument('--workspace',help='Workspace root (UTF-8 manifest and relative references)')
     parser.add_argument('--create-workspace',action='store_true')

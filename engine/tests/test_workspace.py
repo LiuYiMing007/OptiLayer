@@ -87,7 +87,7 @@ class WorkspaceTests(unittest.TestCase):
 
     def test_core_has_no_storage_imports_and_needs_no_workspace(self):
         for file in ['optics.py','analysis.py','models.py']:
-            tree=ast.parse((ROOT/'engine'/file).read_text())
+            tree=ast.parse((ROOT/'engine'/file).read_text(encoding='utf-8'))
             imports=[n.module for n in ast.walk(tree) if isinstance(n,ast.ImportFrom)]
             self.assertFalse(set(imports)&{'workspace','repository','application','main','importers.tfd'})
         before=os.environ.pop('TFC_WORKSPACE_ROOT',None)
