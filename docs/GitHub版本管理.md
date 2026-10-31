@@ -1,6 +1,8 @@
 # GitHub 版本管理
 
-建立日期：2026-11-01。仓库默认私有，账号以实际授权为准。
+建立日期：2026-11-01。已创建私有仓库：[LiuYiMing007/tfc-workbench](https://github.com/LiuYiMing007/tfc-workbench)。
+
+已上传源码标签 `v0.1.2`、`v0.1.3`；两个版本的报告和已验收程序通过 [Releases](https://github.com/LiuYiMing007/tfc-workbench/releases) 保存。在线构建状态请查看 [Actions](https://github.com/LiuYiMing007/tfc-workbench/actions)，不能把本地验收等同于远程 CI 成功。
 
 ## 保存方式
 

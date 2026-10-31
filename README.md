@@ -1,5 +1,7 @@
 # TFC · v0.1.3
 
+GitHub：**[私有源码仓库](https://github.com/LiuYiMing007/tfc-workbench)** · [版本下载与更新内容](https://github.com/LiuYiMing007/tfc-workbench/releases) · [逐次更新记录](https://github.com/LiuYiMing007/tfc-workbench/commits/main)
+
 跨平台、离线优先的光学薄膜工作台。Windows 0.1.3 的测试、数值验证和 F: exFAT 固态 U 盘上的打包引擎工作区验收已通过；完整结果见 [Windows 验收记录](docs/V0.1.3-Windows验收.md)，操作见 [Windows 使用教程](docs/Windows使用教程.md)。
 
 Windows 便携目录目标为 `release/Windows/TFC`。本版已合并回 Mac，并在 Apple Silicon 重新构建 `release/TFC.app`；29 项 Python、4 项 TypeScript 及 25 项数值检查通过。Windows 回传的 3 个项目已用 Mac 打包引擎保存、搬迁、复算，并与 Windows 归档光谱对比，最大差异约 1.14e-13 个百分点。详见 [Mac 合并与往返验收](docs/V0.1.3-Mac合并与往返验收.md)。Mac 应用未做 Developer ID 签名及公证。
