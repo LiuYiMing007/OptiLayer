@@ -1,7 +1,7 @@
 {
   "version": "0.1.4",
   "tag": "v0.1.4",
-  "tag_commit": "4e8c5328adfff8dde8f3519c3cdea13333466ac1",
+  "tag_commit": "915f623ee67da80245f519f10993ee06f6ebb0c2",
   "build_commit": "4f5ce2fe143ff1e53c04a546f057648c36960262",
   "ci_run_url": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41251215959",
   "macOS_and_Windows_jobs": "success",
@@ -20,5 +20,6 @@
       "file": "TFC-0.1.4-Windows-x64-portable.zip",
       "sha256": "0eea4ada5e1fedff1b50400b1e23ce755d18e2ef8c99d26aa22e18464ec28f0d"
     }
-  ]
+  ],
+  "tag_object": "4e8c5328adfff8dde8f3519c3cdea13333466ac1"
 }
