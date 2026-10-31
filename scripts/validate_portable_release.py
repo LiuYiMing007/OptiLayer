@@ -36,8 +36,10 @@ with tempfile.TemporaryDirectory(prefix='tfc-portable-package-') as temporary:
         response=subprocess.run(args,input=json.dumps(payload,ensure_ascii=False),cwd=base,env=env,capture_output=True,encoding='utf-8',check=True)
         result=json.loads(response.stdout);assert 'error' not in result,result;return result
     initial=location()
-    assert Path(initial['project_root']).resolve()==project.resolve()
-    assert Path(initial['workspace_root']).resolve()==(project/'Workspace').resolve()
+    # Compare actual directory identity: Windows canonical paths may use a \\?\ prefix.
+    assert Path(initial['project_root']).samefile(project)
+    assert Path(initial['workspace_root']).name=='Workspace'
+    assert Path(initial['workspace_root']).parent.samefile(project)
     assert initial['creation_allowed']
     call({'action':'workspace_info'},True)
     p=json.loads((root/'docs/user-380nm-recovery.tfc.json').read_text(encoding='utf-8'))
@@ -47,8 +49,8 @@ with tempfile.TemporaryDirectory(prefix='tfc-portable-package-') as temporary:
     (project/'.tfc/workspace-selection.json').write_text(json.dumps({'schema_version':1,'workspace_relative':'Workspace'}),encoding='utf-8')
     moved=base/'新磁盘位置 中文 空格'/'TFC';moved.parent.mkdir();shutil.move(project,moved);project=moved
     reopened=location()
-    assert Path(reopened['project_root']).resolve()==project.resolve()
-    assert Path(reopened['workspace_root']).resolve()==(project/'Workspace').resolve()
+    assert Path(reopened['project_root']).samefile(project)
+    assert Path(reopened['workspace_root']).samefile(project/'Workspace')
     assert not reopened['creation_allowed']
     loaded=call({'action':'load','id':p['id']})['project']
     assert call({'action':'calculate','project':loaded})==result
