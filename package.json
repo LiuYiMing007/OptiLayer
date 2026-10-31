@@ -1,0 +1,37 @@
+{
+  "name": "tfc-for-mac",
+  "version": "0.1.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "tauri": "tauri",
+    "desktop": "tauri dev",
+    "engine:test": "node scripts/run_python.mjs -m unittest discover -s engine/tests -v",
+    "engine:bundle": "node scripts/run_python.mjs scripts/bundle_engine.py",
+    "desktop:build": "npm run engine:bundle && tauri build --config src-tauri/tauri.release.conf.json && node scripts/run_python.mjs scripts/stage_release.py",
+    "test": "npm run engine:test && node --experimental-strip-types --test tests/*.test.ts",
+    "validate:optics": "node scripts/run_python.mjs scripts/validate_engine.py"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0",
+    "lucide-react": "^0.468.0",
+    "plotly.js-basic-dist-min": "^3.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@tauri-apps/cli": "^2.0.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "prettier": "^3.9.10",
+    "tailwindcss": "^4.0.0",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.0"
+  }
+}

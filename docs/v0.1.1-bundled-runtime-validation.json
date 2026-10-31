@@ -1,0 +1,24 @@
+[
+  {
+    "angle_deg": 0,
+    "seconds": 1.9494760408997536,
+    "reference_point": {
+      "wavelength_nm": 380.0,
+      "R_percent": 0.060575747746204056,
+      "T_percent": 99.93942425225381,
+      "A_percent": -2.220446049250313e-14,
+      "energy_error": 2.220446049250313e-16
+    }
+  },
+  {
+    "angle_deg": 45,
+    "seconds": 0.7167183333076537,
+    "reference_point": {
+      "wavelength_nm": 380.0,
+      "R_percent": 0.6353246062294001,
+      "T_percent": 99.36467539377063,
+      "A_percent": -3.3306690738754696e-14,
+      "energy_error": 3.3306690738754696e-16
+    }
+  }
+]

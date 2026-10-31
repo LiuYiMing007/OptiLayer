@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "0a6c295a-d623-4d71-af8f-f6817b082097",
+  "name": "使用反馈 · 380 nm 四层膜系",
+  "layer_order": "substrate_to_air",
+  "settings": {
+    "incident_n": 1.0,
+    "substrate_n": 1.52,
+    "start_nm": 330,
+    "end_nm": 450,
+    "step_nm": 1.0,
+    "reference_nm": 380,
+    "angle_deg": 0.0
+  },
+  "materials": [
+    {
+      "name": "TA2O5_REF",
+      "n": 2.1,
+      "k": 0.0
+    },
+    {
+      "name": "SIO2_REF",
+      "n": 1.46,
+      "k": 0.0
+    }
+  ],
+  "layers": [
+    {
+      "id": "de7fcaad-0c44-410c-aa8c-8056eee82fc8",
+      "material": "TA2O5_REF",
+      "thickness_nm": 9.54
+    },
+    {
+      "id": "fb7189a6-2fa8-4d57-9a28-6c3e56ae3a4b",
+      "material": "SIO2_REF",
+      "thickness_nm": 17.14
+    },
+    {
+      "id": "d453b36f-a0df-4809-9992-3831ce078014",
+      "material": "TA2O5_REF",
+      "thickness_nm": 66.6
+    },
+    {
+      "id": "b5e0384c-a49b-4602-a8bd-5adc848dd081",
+      "material": "SIO2_REF",
+      "thickness_nm": 59.01
+    }
+  ]
+}

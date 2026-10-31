@@ -1,0 +1,33 @@
+"""Host-independent application tools. Optical Core never imports storage or IO."""
+from models import validate
+from optics import calculate_spectrum, calculate_rt
+from analysis import analyze_spectrum
+from importers.tfd import parse_tfd
+from repository import storage_action, import_legacy_database
+from workspace import configured_workspace
+
+
+def calculate(project):
+    result=calculate_spectrum(project)
+    result['analysis']=analyze_spectrum(result,project.get('analysis_bands'))
+    result['analysis_bands']=project.get('analysis_bands',{})
+    result['reference_point']=calculate_rt(project,project['settings']['reference_nm'])
+    return result
+
+
+def dispatch(request, workspace=None):
+    action=request['action']
+    if action=='calculate':return calculate(request['project'])
+    if action=='calculate_rt':return calculate_rt(request['project'],request['wavelength_nm'],request.get('polarization'))
+    if action=='analyze':return analyze_spectrum(request['spectrum'],request.get('bands'))
+    if action=='validate':return {'project':validate(request['project'])}
+    if action=='import_tfd':
+        return {'project':parse_tfd(request['text'],request['template']),'warning':'仅读取 ENVIRON / LAYERS / LAYER；材料常数来自项目快照，未导入完整 TFCalc 设置。'}
+    workspace=workspace or configured_workspace()
+    if action=='workspace_info':return {'workspace':workspace.info()}
+    if action=='workspace_import_legacy':
+        import os
+        source=os.environ.get('TFC_LEGACY_DATABASE')
+        if not source:raise ValueError('此运行环境没有指定旧版数据库；可使用 JSON 导入')
+        return import_legacy_database(workspace,source)
+    return storage_action(workspace,request)

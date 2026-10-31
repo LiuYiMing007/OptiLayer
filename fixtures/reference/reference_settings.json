@@ -1,0 +1,36 @@
+{
+  "wavelength": {
+    "start_nm": 400,
+    "end_nm": 700,
+    "step_nm": 1,
+    "reference_nm": 550
+  },
+  "incidence_angle_deg": 0,
+  "incident_medium": {
+    "name": "AIR",
+    "n": 1.0,
+    "k": 0.0
+  },
+  "substrate": {
+    "name": "GLASS",
+    "n": 1.52,
+    "k": 0.0
+  },
+  "materials": {
+    "TA2O5_REF": {
+      "n": 2.1,
+      "k": 0.0
+    },
+    "SIO2_REF": {
+      "n": 1.46,
+      "k": 0.0
+    }
+  },
+  "dispersion_model": "constant n,k for this synthetic reference fixture",
+  "tfd_layer_order": "substrate_to_air",
+  "incident_traversal_order": "reverse TFD layer list",
+  "substrate_back_surface": "excluded",
+  "coherence": "coherent coating layers",
+  "method": "2x2 characteristic matrix, normal incidence",
+  "note": "Synthetic golden fixture for software testing; not TFCalc built-in material data."
+}

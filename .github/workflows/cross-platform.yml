@@ -1,0 +1,32 @@
+name: Cross-platform foundation
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: dtolnay/rust-toolchain@stable
+      - run: python -m venv .venv
+      - run: node scripts/run_python.mjs -m pip install -r engine/requirements-dev.txt
+      - run: npm ci
+      - run: npm test
+      - run: npm run validate:optics
+      - run: npm run build
+      - run: cargo check --manifest-path src-tauri/Cargo.toml
+      - run: npm run engine:bundle
+      - run: npm run tauri -- build --config src-tauri/tauri.release.conf.json --no-bundle
+      - if: runner.os == 'macOS'
+        run: npm run tauri -- bundle --config src-tauri/tauri.release.conf.json --bundles app
+      - if: runner.os == 'Windows'
+        run: node scripts/run_python.mjs scripts/stage_release.py

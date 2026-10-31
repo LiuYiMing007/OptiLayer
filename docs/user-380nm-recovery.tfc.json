@@ -1,0 +1,51 @@
+{
+  "id": "ba92f0e3-cd70-42e6-a210-992de1e6a64d",
+  "layer_order": "substrate_to_air",
+  "layers": [
+    {
+      "id": "c971884d-3846-4543-9f93-9926cbafed81",
+      "material": "TA2O5_REF",
+      "thickness_nm": 9.54
+    },
+    {
+      "id": "971a98e1-9911-415d-a25b-26fdf808cec6",
+      "material": "SIO2_REF",
+      "thickness_nm": 17.14
+    },
+    {
+      "id": "51daafee-50b0-4f5a-9595-3cce9ffd4ed1",
+      "material": "TA2O5_REF",
+      "thickness_nm": 66.6
+    },
+    {
+      "id": "16f420de-a229-449a-bb3d-dbd4fecbf383",
+      "material": "SIO2_REF",
+      "thickness_nm": 59.01
+    }
+  ],
+  "materials": [
+    {
+      "color": "#16a18f",
+      "k": 0,
+      "n": 2.1,
+      "name": "TA2O5_REF"
+    },
+    {
+      "color": "#829cdd",
+      "k": 0,
+      "n": 1.46,
+      "name": "SIO2_REF"
+    }
+  ],
+  "name": "550 nm · 四层参考膜系",
+  "schema_version": 1,
+  "settings": {
+    "angle_deg": 0,
+    "end_nm": 450,
+    "incident_n": 1,
+    "reference_nm": 380,
+    "start_nm": 330,
+    "step_nm": 1,
+    "substrate_n": 1.52
+  }
+}
