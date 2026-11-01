@@ -122,9 +122,8 @@ pub fn dispatch(app: &tauri::AppHandle, id: &str) {
         return;
     }
     if let Some(main) = app.get_webview_window("main") {
-        let _ = main.unminimize();
-        let _ = main.show();
-        let _ = main.set_focus();
+        // Route commands without stealing focus from the current tool window.
+        // The coordinator brings main forward only for dialogs or explicit focus.
         let _ = main.emit("menu-command", id);
     }
 }
