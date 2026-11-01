@@ -6,7 +6,7 @@
   "windows_ci": "success",
   "windows_package_sha256": "af50e0dff3fc35040f02c99b87fde94c53b17e677181a82bf4eba4c73bd2a5e8",
   "windows_executable_sha256": "601e6cb8543ef3426005d3d22a9d7ead1d45c4f45e264b68c2f2f8872c712239",
-  "macos_executable_sha256": "c550236971e4617c7f52933bf87b34f686ee489cdf14b95cc6c760c215fdd888",
+  "macos_executable_sha256": "ff8aae42dc063b9737d93ec63207004ba38b70a001c50572e31e2040306b2fb4",
   "tests_each_platform": {
     "python": 32,
     "typescript": 17,
@@ -19,5 +19,8 @@
   "personal_workspace_included": false,
   "engine_and_fixtures_unchanged": true,
   "windows_visual_manual_review": false,
-  "macos_ui_acceptance": true
+  "macos_ui_acceptance": true,
+  "macos_linker_signed_executable_sha256": "c550236971e4617c7f52933bf87b34f686ee489cdf14b95cc6c760c215fdd888",
+  "macos_local_ad_hoc_bundle_seal_verified": true,
+  "apple_developer_id_notarization": false
 }
