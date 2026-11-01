@@ -122,6 +122,14 @@ test("nonfinite thickness, absorbing material and structural patch proposals rej
       }),
     ),
   );
+  assert.throws(() =>
+    applyPatches(
+      p,
+      edits(p, (p) => {
+        p.analysis_bands = { passband: { start_nm: NaN, end_nm: 700 } };
+      }),
+    ),
+  );
   assert.throws(
     () =>
       edits(p, (p) => {

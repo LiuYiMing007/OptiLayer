@@ -4,7 +4,7 @@ import LayerEditor from "../LayerEditor";
 import CalculationSettings from "../CalculationSettings";
 import MaterialLibrary from "../MaterialLibrary";
 import SpectrumPanel from "../SpectrumPanel";
-import { patchesBetween, type ToolSnapshot } from "./state";
+import { hasNonFinite, patchesBetween, type ToolSnapshot } from "./state";
 import type { ToolIntent } from "./useToolHost";
 import type { Project } from "../types";
 
@@ -36,16 +36,7 @@ export default function ToolView({
     const next = structuredClone(s.project);
     mutator(next);
     const patches = patchesBetween(s.project, next);
-    if (
-      patches.some(
-        (p) =>
-          ("value" in p &&
-            typeof p.value === "number" &&
-            !Number.isFinite(p.value)) ||
-          (p.kind === "material" && !Number.isFinite(p.value.n)),
-      )
-    )
-      return;
+    if (patches.some((p) => hasNonFinite(p.value))) return;
     if (patches.length) void send({ kind: "patch", patches });
   }
   const command = (id: string) => {

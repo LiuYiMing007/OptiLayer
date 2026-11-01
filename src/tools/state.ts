@@ -179,6 +179,12 @@ export function patchesBetween(before: Project, after: Project): Patch[] {
       });
   return patches;
 }
+export function hasNonFinite(value: unknown): boolean {
+  if (typeof value === "number") return !Number.isFinite(value);
+  if (value && typeof value === "object")
+    return Object.values(value).some(hasNonFinite);
+  return false;
+}
 export function applyPatches(
   project: Project,
   patches: Patch[],
@@ -186,6 +192,8 @@ export function applyPatches(
 ): Project {
   if (!patches.length || patches.length > 2000)
     throw new Error("编辑命令为空或过大");
+  if (patches.some((p) => hasNonFinite(p.value)))
+    throw new Error("编辑值必须是有效数值");
   const allowedSettings = new Set(Object.keys(project.settings));
   // Check every precondition against the original state before changing anything.
   for (const patch of patches) {
