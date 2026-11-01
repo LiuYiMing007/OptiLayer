@@ -1,0 +1,10 @@
+{
+  "version": "0.1.5-dev.1",
+  "mode": "local development bridge with isolated Workspace",
+  "application_menu_visible": true,
+  "layer_command_updates_main_state": true,
+  "undo_restores_layers_and_valid_spectrum": true,
+  "macOS_shortcut_label_matches_command": true,
+  "native_menu_not_required": true,
+  "screenshot": "v0.1.5-dev.1-browser-menu.png"
+}

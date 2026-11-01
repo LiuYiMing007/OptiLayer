@@ -97,7 +97,10 @@ export default function BrowserMenu({
                         {item.label}
                       </span>
                       <small>
-                        {item.shortcut
+                        {(navigator.platform.includes("Mac")
+                          ? item.macShortcut || item.shortcut
+                          : item.shortcut
+                        )
                           ?.replace(
                             "CmdOrCtrl",
                             navigator.platform.includes("Mac") ? "⌘" : "Ctrl",
