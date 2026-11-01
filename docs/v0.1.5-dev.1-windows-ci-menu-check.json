@@ -1,0 +1,14 @@
+{
+  "auxiliary_cannot_mutate_workspace": true,
+  "command_routed_once_to_main": true,
+  "disabled_command_blocked": true,
+  "native_enabled_and_checked_sync": true,
+  "native_menu": true,
+  "platform": "windows",
+  "windows_auxiliary_close_hide_restore": true,
+  "workspace_untouched": true,
+  "version": "0.1.5-dev.1",
+  "limits": "Native window lifecycle/state/routing checks; visual placement and interactive clicks on Windows need a real-device review.",
+  "ci_run_url": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41262492504",
+  "build_commit": "b0f497d75251f252bf0e02f1b13aa11dd2058fe6"
+}
