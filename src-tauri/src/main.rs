@@ -383,3 +383,23 @@ fn main() {
             }
         });
 }
+
+#[cfg(test)]
+mod transport_tests {
+    #[test]
+    fn scientific_json_keeps_engine_float_bits() {
+        for number in [
+            20.586653548966346_f64,
+            -1.1102230246251565e-14,
+            1.1102230246251565e-16,
+        ] {
+            let json = serde_json::to_string(&number).unwrap();
+            let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+            assert_eq!(
+                parsed.as_f64().unwrap().to_bits(),
+                number.to_bits(),
+                "{json}"
+            );
+        }
+    }
+}
