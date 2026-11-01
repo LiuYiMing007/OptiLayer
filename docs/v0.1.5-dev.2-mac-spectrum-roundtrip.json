@@ -1,0 +1,16 @@
+{
+  "desktop_save_to_workspace": true,
+  "recalculation_exact": true,
+  "channels": [
+    "T",
+    "R",
+    "A",
+    "Ts",
+    "Tp",
+    "Rs",
+    "Rp"
+  ],
+  "samples": 301,
+  "reference_T_percent": 87.1002130179947,
+  "float_transport_roundtrip": true
+}

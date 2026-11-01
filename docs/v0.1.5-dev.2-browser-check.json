@@ -1,0 +1,13 @@
+{
+  "version": "0.1.5-dev.2",
+  "isolated_workspace": true,
+  "spectrum_first_layout": true,
+  "floating_browser_tool": true,
+  "thickness_105_auto_update": true,
+  "reference_T_before": 77.3537,
+  "reference_T_after": 88.9031,
+  "save_project": true,
+  "console_errors": [],
+  "screenshot": "v0.1.5-dev.2-browser-spectrum.png",
+  "limits": "Development bridge uses local Python; standalone browser/WASM product and persistent browser tool layouts are not implemented."
+}

@@ -1,0 +1,50 @@
+{
+  "version": "0.1.5-dev.2",
+  "date": "2026-11-01",
+  "native_code_commit": "3213e99",
+  "isolated_workspace": true,
+  "native_spectrum_first_main": true,
+  "native_tool_windows": [
+    "layers",
+    "materials",
+    "substrate",
+    "settings",
+    "project",
+    "analysis",
+    "targets"
+  ],
+  "thickness_angle_polarization_auto_update": true,
+  "initial_reference_T_percent": 77.3537,
+  "thickness_105_T_percent": 88.9031,
+  "angle_30_s_T_percent": 86.1303,
+  "material_substrate_shared_state": {
+    "film_n": 2.2,
+    "substrate_n": 1.7
+  },
+  "new_project_material_qwot_save_chain": true,
+  "single_layer_qwot_1_thickness_nm": 94.17808219178083,
+  "analysis_band_nm": [
+    450,
+    650
+  ],
+  "analysis_mean_T_percent": 97.15303588334429,
+  "target_csv_points": 3,
+  "targets_analysis_persist_after_reopen": true,
+  "tool_close_hides_without_data_loss": true,
+  "save_as_and_reopen": true,
+  "layout_restore_opt_in": true,
+  "restored_project_list_loaded": true,
+  "unsaved_exit_confirmation": true,
+  "rapid_text_input_saved_intact": true,
+  "engine_and_fixtures_unchanged": true,
+  "desktop_saved_spectrum_exact_reproduction": true,
+  "native_binary_sha256": "c550236971e4617c7f52933bf87b34f686ee489cdf14b95cc6c760c215fdd888",
+  "limits": [
+    "Windows visual placement and manual interaction require a real Windows device.",
+    "Multiple physical monitors and physical drive-letter reassignment were not tested."
+  ],
+  "screenshots": [
+    "v0.1.5-dev.2-mac-spectrum.png",
+    "v0.1.5-dev.2-mac-layers.png"
+  ]
+}

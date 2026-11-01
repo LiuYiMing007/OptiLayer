@@ -1,0 +1,11 @@
+{
+  "version": "0.1.5-dev.2",
+  "platform": "Windows",
+  "actual_host_location_check": true,
+  "default_is_project_workspace": true,
+  "independent_of_cwd_and_machine_preferences": true,
+  "relative_selection_survives_project_move": true,
+  "saved_spectrum_exactly_reproduced": true,
+  "missing_saved_workspace_not_recreated": true,
+  "limits": "Directory move with real native entry point; physical drive-letter reassignment, disconnect and native UI are separate checks."
+}

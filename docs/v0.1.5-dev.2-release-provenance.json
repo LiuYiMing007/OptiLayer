@@ -1,0 +1,23 @@
+{
+  "version": "0.1.5-dev.2",
+  "source_commit": "3213e99dbda7d6acf1a1d5ce9d4593aa70b2cddb",
+  "ci_run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41271255666",
+  "macos_ci": "success",
+  "windows_ci": "success",
+  "windows_package_sha256": "af50e0dff3fc35040f02c99b87fde94c53b17e677181a82bf4eba4c73bd2a5e8",
+  "windows_executable_sha256": "601e6cb8543ef3426005d3d22a9d7ead1d45c4f45e264b68c2f2f8872c712239",
+  "macos_executable_sha256": "c550236971e4617c7f52933bf87b34f686ee489cdf14b95cc6c760c215fdd888",
+  "tests_each_platform": {
+    "python": 32,
+    "typescript": 17,
+    "numerical": 25
+  },
+  "rust_tests": {
+    "macos": 10,
+    "windows": 9
+  },
+  "personal_workspace_included": false,
+  "engine_and_fixtures_unchanged": true,
+  "windows_visual_manual_review": false,
+  "macos_ui_acceptance": true
+}
