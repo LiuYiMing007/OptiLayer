@@ -583,6 +583,28 @@ export default function App() {
       })
       .catch((e) => setWorkspaceError(message(e)));
   }, []);
+  // Restored native tools may open before the frontend's showTool entry point.
+  // Load their shared catalogues once the authoritative Workspace is known.
+  useEffect(() => {
+    setProjects([]);
+    setLibrary([]);
+    if (!workspace) return;
+    let disposed = false;
+    void Promise.allSettled([
+      request<{ projects: SavedProject[] }>({ action: "list" }),
+      request<{ materials: Material[] }>({ action: "library_list" }),
+    ]).then(([saved, materials]) => {
+      if (disposed) return;
+      if (saved.status === "fulfilled") setProjects(saved.value.projects);
+      else setError(message(saved.reason));
+      if (materials.status === "fulfilled")
+        setLibrary(materials.value.materials);
+      else setError(message(materials.reason));
+    });
+    return () => {
+      disposed = true;
+    };
+  }, [workspace?.id]);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (isTauri() && platform === "macos") return;
