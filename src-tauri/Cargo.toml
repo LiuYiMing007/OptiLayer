@@ -1,6 +1,6 @@
 [package]
 name = "tfc-for-mac"
-version = "0.1.4"
+version = "0.1.5-dev.1"
 description = "Optical thin-film workbench"
 edition = "2021"
 

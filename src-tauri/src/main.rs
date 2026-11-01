@@ -5,6 +5,8 @@ use std::{
     process::{Command, Stdio},
     sync::Mutex,
 };
+mod menu_check;
+mod menus;
 mod portable;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
@@ -132,9 +134,11 @@ fn current_workspace(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 
 #[tauri::command]
 async fn engine_request(
+    window: tauri::WebviewWindow,
     app: tauri::AppHandle,
     request: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
+    menus::require_main(&window)?;
     tauri::async_runtime::spawn_blocking(move || {
         let action = request["action"].as_str().unwrap_or("");
         if action == "workspace_copy" {
@@ -156,9 +160,11 @@ async fn engine_request(
 }
 #[tauri::command]
 async fn workspace_pick(
+    window: tauri::WebviewWindow,
     app: tauri::AppHandle,
     create: bool,
 ) -> Result<Option<serde_json::Value>, String> {
+    menus::require_main(&window)?;
     tauri::async_runtime::spawn_blocking(move || {
         let title = if create {
             "选择空文件夹创建工作区"
@@ -195,7 +201,11 @@ async fn workspace_pick(
     .map_err(|e| e.to_string())?
 }
 #[tauri::command]
-async fn workspace_copy(app: tauri::AppHandle) -> Result<Option<serde_json::Value>, String> {
+async fn workspace_copy(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+) -> Result<Option<serde_json::Value>, String> {
+    menus::require_main(&window)?;
     tauri::async_runtime::spawn_blocking(move || {
         let project = project_folder()?;
         let initial = app
@@ -236,10 +246,33 @@ async fn workspace_copy(app: tauri::AppHandle) -> Result<Option<serde_json::Valu
     .map_err(|e| e.to_string())?
 }
 #[tauri::command]
-async fn export_file(app: tauri::AppHandle, name: String, content: String) -> Result<bool, String> {
+async fn import_file(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+) -> Result<Option<serde_json::Value>, String> {
+    menus::require_main(&window)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let picked = app.dialog().file().set_parent(&window).set_title("导入 TFD / JSON 项目")
+            .set_directory(project_folder()?)
+            .add_filter("TFCalc / TFC 项目", &["tfd", "json"]).blocking_pick_file();
+        let Some(file) = picked else { return Ok(None); };
+        let path = file.into_path().map_err(|e| e.to_string())?;
+        if std::fs::metadata(&path).map_err(|e| e.to_string())?.len() > 2_000_000 { return Err("文件不能超过 2 MB".into()); }
+        let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        Ok(Some(serde_json::json!({"name":path.file_name().and_then(|s| s.to_str()).ok_or("文件名称无效")?,"content":content})))
+    }).await.map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn export_file(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    name: String,
+    content: String,
+) -> Result<bool, String> {
     if content.len() > 10_000_000 {
         return Err("导出内容过大".into());
     }
+    menus::require_main(&window)?;
     tauri::async_runtime::spawn_blocking(move || {
         let safe_name = name.replace(['/', ':', '\\'], "_");
         let root = current_workspace(&app)?;
@@ -281,15 +314,52 @@ fn main() {
         }
         return;
     }
+    let menu_check = std::env::args_os().any(|arg| arg == "--menu-self-test");
+    let mut context = tauri::generate_context!();
+    if menu_check {
+        // Never mount the real App or touch user data during the native check.
+        context.config_mut().app.windows[0].url =
+            tauri::WebviewUrl::External("about:blank".parse().unwrap());
+        context.config_mut().app.windows[0].visible = false;
+    }
     tauri::Builder::default()
         .manage(WorkspaceSelection::default())
+        .manage(menus::MenuState::default())
+        .setup(move |app| {
+            menus::setup(app)?;
+            if menu_check {
+                menu_check::start(app.handle().clone());
+            }
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                if let Some(menu) = window.app_handle().get_webview_window("menu") {
+                    let _ = menu.destroy();
+                }
+                window.app_handle().exit(0);
+            }
+        })
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             engine_request,
             workspace_pick,
             workspace_copy,
-            export_file
+            export_file,
+            import_file,
+            menus::menu_platform,
+            menus::menu_sync,
+            menus::menu_snapshot,
+            menus::menu_show
         ])
-        .run(tauri::generate_context!())
-        .expect("无法启动 TFC");
+        .build(context)
+        .expect("无法启动 TFC")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { api, code, .. } = event {
+                if code.is_none() && app.get_webview_window("main").is_some() {
+                    api.prevent_exit();
+                    menus::dispatch(app, "file.quit");
+                }
+            }
+        });
 }

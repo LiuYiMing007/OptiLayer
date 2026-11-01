@@ -25,6 +25,12 @@ import CalculationSettings from "./CalculationSettings";
 import MaterialLibrary from "./MaterialLibrary";
 import SpectrumPanel from "./SpectrumPanel";
 import WorkspacePanel from "./WorkspacePanel";
+import BrowserMenu from "./menus/BrowserMenu";
+import { commandStates, entries, shortcutCommand } from "./menus/commands";
+import { useDesktopMenus } from "./menus/useDesktopMenus";
+import { changeLayer, type LayerCommand } from "./layerCommands";
+import { spectrumCsv } from "./spectrumExport";
+import { version as appVersion } from "../package.json";
 import feedbackFixture from "../fixtures/user-feedback/380nm-project.json";
 import type {
   AnalysisBands,
@@ -35,7 +41,8 @@ import type {
   WorkspaceInfo,
 } from "./types";
 
-type Modal = "projects" | "materials" | "about" | "workspace" | null;
+type Modal =
+  "projects" | "materials" | "about" | "workspace" | "shortcuts" | null;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export default function App() {
   const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
@@ -55,6 +62,29 @@ export default function App() {
   >(null);
   const [past, setPast] = useState<Project[]>([]),
     [future, setFuture] = useState<Project[]>([]);
+  const [panels, setPanels] = useState({
+    sidebar: true,
+    layers: true,
+    settings: true,
+    spectrum: true,
+  });
+  const [focusTarget, setFocusTarget] = useState<{
+    panel: string;
+    label?: string;
+  } | null>(null);
+  useEffect(() => {
+    if (!focusTarget) return;
+    const element = document.querySelector<HTMLElement>(
+      `[data-workbench-panel="${focusTarget.panel}"]`,
+    );
+    element?.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (focusTarget.label)
+      element
+        ?.querySelector<HTMLElement>(`[aria-label="${focusTarget.label}"]`)
+        ?.focus();
+  }, [focusTarget]);
+  const [details, setDetails] = useState(false);
+  const asking = useRef(false);
   const current = useRef(project);
   current.current = project;
   const resultRef = useRef(spectrum);
@@ -64,22 +94,32 @@ export default function App() {
   const dirty = JSON.stringify(project) !== savedKey;
   const stale = !!spectrum && physicalSignature(project) !== resultKey;
   function update(mutator: (p: Project) => void) {
-    const next = clone(current.current);
+    const previous = clone(current.current);
+    const next = clone(previous);
     mutator(next);
-    setPast((p) => [...p.slice(-49), clone(current.current)]);
+    setPast((p) => [...p.slice(-49), previous]);
     setFuture([]);
+    current.current = next;
     setProject(next);
   }
   function undo() {
     if (!past.length || busy) return;
     setFuture((f) => [clone(project), ...f]);
-    setProject(past.at(-1)!);
+    current.current = past.at(-1)!;
+    setProject(current.current);
+    setSelected((i) =>
+      Math.min(i, Math.max(0, current.current.layers.length - 1)),
+    );
     setPast((p) => p.slice(0, -1));
   }
   function redo() {
     if (!future.length || busy) return;
     setPast((p) => [...p, clone(project)]);
-    setProject(future[0]);
+    current.current = future[0];
+    setProject(current.current);
+    setSelected((i) =>
+      Math.min(i, Math.max(0, current.current.layers.length - 1)),
+    );
     setFuture((f) => f.slice(1));
   }
   async function run(task: () => Promise<void>) {
@@ -118,6 +158,7 @@ export default function App() {
         action: "save",
         project: snapshot,
       });
+      current.current = r.project;
       setProject(r.project);
       setSavedKey(JSON.stringify(r.project));
       let spectrumWarning = "";
@@ -142,6 +183,164 @@ export default function App() {
       );
     });
   }
+  async function newProject() {
+    if (!(await canReplace())) return;
+    const p = referenceProject();
+    p.name = "未命名膜系";
+    p.layers = [];
+    replace(p);
+  }
+  function layerCommand(id: LayerCommand, index = selected) {
+    if (working.current || confirmation) return;
+    let nextSelected = index;
+    update((next) => {
+      nextSelected = changeLayer(next, index, id, () => crypto.randomUUID());
+    });
+    setSelected(nextSelected);
+  }
+  function focusPanel(
+    panel: "layers" | "settings" | "spectrum",
+    label?: string,
+  ) {
+    setModal(null);
+    setPanels((p) => ({ ...p, [panel]: true }));
+    setFocusTarget({ panel, label });
+  }
+  const states = commandStates({
+    busy,
+    blocked: !!confirmation || !!modal,
+    workspace: !!workspace && !workspaceError,
+    canUndo: !!past.length,
+    canRedo: !!future.length,
+    hasLayer: !!project.layers[selected],
+    canAdd: project.layers.length < 500,
+    canMoveUp:
+      !!project.layers[selected] && selected < project.layers.length - 1,
+    canMoveDown: !!project.layers[selected] && selected > 0,
+    validSpectrum: !!spectrum && !stale,
+    panels,
+  });
+  async function executeCommand(id: string) {
+    if (!states[id]?.enabled || working.current || asking.current) return;
+    if (
+      id.startsWith("layer.") &&
+      ["add", "copy", "delete", "up", "down"].includes(id.slice(6))
+    ) {
+      layerCommand(id as LayerCommand);
+      return;
+    }
+    if (id.startsWith("view.") && id.slice(5) in panels) {
+      setPanels((p) => ({
+        ...p,
+        [id.slice(5)]: !p[id.slice(5) as keyof typeof p],
+      }));
+      return;
+    }
+    switch (id) {
+      case "file.new":
+        await newProject();
+        break;
+      case "file.open":
+        await openProjects();
+        break;
+      case "file.save":
+        await save();
+        break;
+      case "file.import":
+        if (isTauri()) await importNative();
+        else importRef.current?.click();
+        break;
+      case "file.export":
+        await download(
+          `${current.current.name}.tfc.json`,
+          JSON.stringify(current.current, null, 2),
+        );
+        break;
+      case "file.exportSpectrum":
+        if (resultRef.current)
+          await download(
+            `${current.current.name}-spectrum.csv`,
+            spectrumCsv(resultRef.current),
+            "text/csv;charset=utf-8",
+          );
+        break;
+      case "file.workspace":
+      case "tools.workspace":
+        setModal("workspace");
+        break;
+      case "file.quit":
+        if (isTauri()) await getCurrentWindow().close();
+        break;
+      case "edit.undo":
+        undo();
+        break;
+      case "edit.redo":
+        redo();
+        break;
+      case "layer.manage":
+        focusPanel("layers");
+        break;
+      case "layer.material":
+        focusPanel("layers", `第 ${selected + 1} 层材料`);
+        break;
+      case "settings.wavelength":
+        focusPanel("settings", "起始波长");
+        break;
+      case "settings.angle":
+        focusPanel("settings", "入射角");
+        break;
+      case "settings.polarization":
+        focusPanel("settings", "偏振");
+        break;
+      case "tools.materials":
+      case "tools.library":
+        setModal("materials");
+        break;
+      case "calculate.spectrum":
+        await calculate();
+        break;
+      case "analysis.spectrum":
+        focusPanel("spectrum");
+        break;
+      case "analysis.details":
+        setDetails(true);
+        focusPanel("spectrum");
+        break;
+      case "view.reset":
+        setPanels({
+          sidebar: true,
+          layers: true,
+          settings: true,
+          spectrum: true,
+        });
+        break;
+      case "view.menu":
+        await invoke("menu_show");
+        break;
+      case "help.guide":
+      case "help.about":
+        setModal("about");
+        break;
+      case "help.shortcuts":
+        setModal("shortcuts");
+        break;
+    }
+  }
+  const commandRef = useRef(executeCommand);
+  commandRef.current = executeCommand;
+  const platform = useDesktopMenus(
+    {
+      project: project.name,
+      workspace: workspace?.name || "未选择",
+      dirty,
+      busy,
+      commands: states,
+    },
+    (id) => {
+      void commandRef.current(id).catch((e) => setError(message(e)));
+    },
+    setError,
+  );
   async function download(
     name: string,
     content: string,
@@ -193,9 +392,18 @@ export default function App() {
   }, []);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+      if (isTauri() && platform === "macos") return;
+      const target = e.target as HTMLElement;
+      const editing =
+        target.matches("input, textarea, select") || target.isContentEditable;
+      const id = shortcutCommand(
+        e,
+        navigator.platform.includes("Mac"),
+        editing,
+      );
+      if (id) {
         e.preventDefault();
-        void save();
+        void commandRef.current(id).catch((error) => setError(message(error)));
       }
     };
     const leave = (e: BeforeUnloadEvent) => {
@@ -210,21 +418,21 @@ export default function App() {
       window.removeEventListener("keydown", handler);
       window.removeEventListener("beforeunload", leave);
     };
-  }, [savedKey]);
+  }, [savedKey, platform]);
   useEffect(() => {
     if (!isTauri()) return;
     let disposed = false;
     let unlisten: (() => void) | undefined;
     void getCurrentWindow()
       .onCloseRequested(async (event) => {
+        if (working.current) {
+          event.preventDefault();
+          setNotice("正在处理，请完成后再关闭工作台");
+          return;
+        }
         if (JSON.stringify(current.current) === savedKey) return;
         event.preventDefault();
-        if (
-          await new Promise<boolean>((resolve) =>
-            setConfirmation(() => resolve),
-          )
-        )
-          await getCurrentWindow().destroy();
+        if (await canReplace()) await getCurrentWindow().destroy();
       })
       .then((fn) => {
         if (disposed) fn();
@@ -237,12 +445,19 @@ export default function App() {
     };
   }, [savedKey]);
   async function canReplace() {
-    return (
-      !dirty ||
-      (await new Promise<boolean>((resolve) => setConfirmation(() => resolve)))
-    );
+    if (JSON.stringify(current.current) === savedKey) return true;
+    if (asking.current) return false;
+    asking.current = true;
+    try {
+      return await new Promise<boolean>((resolve) =>
+        setConfirmation(() => resolve),
+      );
+    } finally {
+      asking.current = false;
+    }
   }
   function replace(p: Project, saved = false) {
+    current.current = p;
     setProject(p);
     setSelected(0);
     setPast([]);
@@ -289,6 +504,33 @@ export default function App() {
       );
     });
   }
+  async function loadImportedText(name: string, text: string) {
+    const r = name.toLowerCase().endsWith(".tfd")
+      ? await request<{ project: Project; warning?: string }>({
+          action: "import_tfd",
+          text,
+          template: current.current,
+        })
+      : await request<{ project: Project; warning?: string }>({
+          action: "validate",
+          project: JSON.parse(text),
+        });
+    replace(r.project);
+    acceptResult(
+      await request<Spectrum>({ action: "calculate", project: r.project }),
+      r.project,
+    );
+    if (r.warning) setNotice(r.warning);
+  }
+  async function importNative() {
+    if (!(await canReplace())) return;
+    await run(async () => {
+      const picked = await invoke<{ name: string; content: string } | null>(
+        "import_file",
+      );
+      if (picked) await loadImportedText(picked.name, picked.content);
+    });
+  }
   async function importFile(file: File) {
     if (file.size > 2_000_000) {
       setError("文件不能超过 2 MB");
@@ -296,28 +538,12 @@ export default function App() {
     }
     if (!(await canReplace())) return;
     await run(async () => {
-      const text = await file.text();
-      const r = file.name.toLowerCase().endsWith(".tfd")
-        ? await request<{ project: Project; warning?: string }>({
-            action: "import_tfd",
-            text,
-            template: current.current,
-          })
-        : await request<{ project: Project; warning?: string }>({
-            action: "validate",
-            project: JSON.parse(text),
-          });
-      replace(r.project);
-      acceptResult(
-        await request<Spectrum>({ action: "calculate", project: r.project }),
-        r.project,
-      );
-      if (r.warning) setNotice(r.warning);
+      await loadImportedText(file.name, await file.text());
     });
   }
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <aside className="sidebar" hidden={!panels.sidebar}>
         <div className="brand">
           <div className="brand-mark">
             <Waves size={25} />
@@ -385,17 +611,35 @@ export default function App() {
           </div>
           <button className="help-link" onClick={() => setModal("about")}>
             <CircleHelp size={16} />
-            使用说明<span>v0.1.4</span>
+            使用说明<span>v{appVersion}</span>
           </button>
         </div>
       </aside>
       <div className="workspace">
+        {platform === "browser" && (
+          <BrowserMenu
+            states={states}
+            dispatch={(id) => {
+              void executeCommand(id).catch((e) => setError(message(e)));
+            }}
+          />
+        )}
         <header className="topbar">
           <div className="breadcrumb">
             工作空间<span>/</span>
             <span>膜系设计</span>
           </div>
           <div className="topbar-right">
+            {platform === "windows" && (
+              <button
+                className="workspace-switch"
+                onClick={() =>
+                  void invoke("menu_show").catch((e) => setError(message(e)))
+                }
+              >
+                显示菜单窗口
+              </button>
+            )}
             <button
               className="workspace-switch"
               disabled={busy}
@@ -407,7 +651,7 @@ export default function App() {
                 : ""}
               {workspace?.name || "选择工作区"}
             </button>
-            <span className="version-badge">V0.1.4 · 离线工作区</span>
+            <span className="version-badge">V{appVersion} · 离线工作区</span>
             <span className="top-divider" />
             <span className="platform">离线优先 · 本地工作台</span>
           </div>
@@ -426,14 +670,7 @@ export default function App() {
               <button
                 className="button secondary"
                 disabled={busy}
-                onClick={async () => {
-                  if (await canReplace()) {
-                    const p = referenceProject();
-                    p.name = "未命名膜系";
-                    p.layers = [];
-                    replace(p);
-                  }
-                }}
+                onClick={() => void newProject()}
               >
                 <FilePlus2 size={16} />
                 新建项目
@@ -514,7 +751,10 @@ export default function App() {
               <button
                 className="text-button"
                 disabled={busy}
-                onClick={() => importRef.current?.click()}
+                onClick={() => {
+                  if (isTauri()) void importNative();
+                  else importRef.current?.click();
+                }}
               >
                 <Upload size={15} />
                 导入
@@ -534,36 +774,48 @@ export default function App() {
               </button>
             </div>
           </section>
-          <div className="editor-grid">
-            <LayerEditor
+          <div
+            className={`editor-grid ${!panels.layers || !panels.settings ? "single-editor" : ""}`}
+            hidden={!panels.layers && !panels.settings}
+          >
+            <div data-workbench-panel="layers" hidden={!panels.layers}>
+              <LayerEditor
+                command={layerCommand}
+                project={project}
+                busy={busy}
+                selected={selected}
+                setSelected={setSelected}
+                update={update}
+                undo={undo}
+                redo={redo}
+                canUndo={!!past.length}
+                canRedo={!!future.length}
+              />
+            </div>
+            <div data-workbench-panel="settings" hidden={!panels.settings}>
+              <CalculationSettings
+                project={project}
+                busy={busy}
+                update={update}
+                calculate={() => void calculate()}
+                openMaterials={() => setModal("materials")}
+              />
+            </div>
+          </div>
+          <div data-workbench-panel="spectrum" hidden={!panels.spectrum}>
+            <SpectrumPanel
+              details={details}
+              setDetails={setDetails}
               project={project}
-              busy={busy}
-              selected={selected}
-              setSelected={setSelected}
-              update={update}
-              undo={undo}
-              redo={redo}
-              canUndo={!!past.length}
-              canRedo={!!future.length}
-            />
-            <CalculationSettings
-              project={project}
+              spectrum={spectrum}
+              stale={stale}
               busy={busy}
               update={update}
-              calculate={() => void calculate()}
-              openMaterials={() => setModal("materials")}
+              analyze={(bands) => void analyze(bands)}
+              download={download}
+              onError={setError}
             />
           </div>
-          <SpectrumPanel
-            project={project}
-            spectrum={spectrum}
-            stale={stale}
-            busy={busy}
-            update={update}
-            analyze={(bands) => void analyze(bands)}
-            download={download}
-            onError={setError}
-          />
           <footer className="workspace-footer">
             <span>
               <ShieldCheck size={13} />
@@ -578,8 +830,8 @@ export default function App() {
             {busy ? "计算引擎处理中" : "TFC 工作台就绪"}
           </span>
           <span>
-            无吸收相干膜层 · 无基底背面<span className="dot-separator">·</span>
-            v0.1.4
+            无吸收相干膜层 · 无基底背面<span className="dot-separator">·</span>v
+            {appVersion}
           </span>
         </div>
       </div>
@@ -598,9 +850,11 @@ export default function App() {
                 ? "我的项目"
                 : modal === "materials"
                   ? "材料与基底"
-                  : modal === "workspace"
-                    ? "工作区"
-                    : "使用说明"
+                  : modal === "shortcuts"
+                    ? "快捷键"
+                    : modal === "workspace"
+                      ? "工作区"
+                      : "使用说明"
             }
             className={`modal ${modal === "materials" ? "wide-modal" : ""}`}
             onClick={(e) => e.stopPropagation()}
@@ -611,9 +865,11 @@ export default function App() {
                   ? "我的项目"
                   : modal === "materials"
                     ? "材料与基底"
-                    : modal === "workspace"
-                      ? "工作区"
-                      : "关于 TFC 工作台"}
+                    : modal === "shortcuts"
+                      ? "快捷键"
+                      : modal === "workspace"
+                        ? "工作区"
+                        : "关于 TFC 工作台"}
               </h2>
               <button aria-label="关闭" onClick={() => setModal(null)}>
                 <X size={20} />
@@ -672,13 +928,51 @@ export default function App() {
             {modal === "materials" && (
               <MaterialLibrary project={project} update={update} />
             )}
+            {modal === "shortcuts" && (
+              <div className="shortcut-guide">
+                <p>
+                  文本输入中的标准撤销、复制和粘贴保持系统行为。以下为工作台命令：
+                </p>
+                <table>
+                  <tbody>
+                    {entries
+                      .filter((item) => item.implemented && item.shortcut)
+                      .map((item) => (
+                        <tr key={item.id}>
+                          <td>{item.label}</td>
+                          <td>
+                            <kbd>
+                              {(navigator.platform.includes("Mac")
+                                ? item.macShortcut || item.shortcut
+                                : item.shortcut
+                              )
+                                ?.replace(
+                                  "CmdOrCtrl",
+                                  navigator.platform.includes("Mac")
+                                    ? "⌘"
+                                    : "Ctrl",
+                                )
+                                .replace("Alt", "⌥")
+                                .replaceAll("+", " ")}
+                            </kbd>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                <p>
+                  Mac 使用系统顶部菜单；Windows
+                  从独立菜单窗口调用，关闭后可在主工作台重新显示。
+                </p>
+              </div>
+            )}
             {modal === "about" && (
               <div className="about-content">
                 <div className="about-logo">
                   <Waves size={32} />
                 </div>
                 <h3>
-                  TFC <span>0.1.4</span>
+                  TFC <span>{appVersion}</span>
                 </h3>
                 <p>
                   物理厚度 d、光学厚度 n·d 和 QWOT

@@ -1,0 +1,13 @@
+{
+  "version": "0.1.5-dev.1",
+  "native_system_menu": true,
+  "no_duplicate_workspace_menu": true,
+  "file_menu_save": true,
+  "layer_add_and_undo_shortcut": true,
+  "native_file_import_and_121_point_calculation": true,
+  "panel_hide_preserves_project_and_spectrum": true,
+  "parameter_menu_focus": true,
+  "quit_unsaved_confirmation_and_cancel": true,
+  "saved_quit_closes_development_app": true,
+  "scope": "Separate development project folder and reference fixtures; existing user portable Workspace not used by this test."
+}

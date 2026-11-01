@@ -2,9 +2,12 @@ import { useRef, useState } from "react";
 import { Activity, Download, Upload, X } from "lucide-react";
 import NumericInput from "./NumericInput";
 import SpectrumChart, { type ChartOptions } from "./SpectrumChart";
+import { spectrumCsv } from "./spectrumExport";
 import { parseTargetCsv } from "./model";
 import type { AnalysisBands, BandResult, Project, Spectrum } from "./types";
 interface Props {
+  details: boolean;
+  setDetails: (value: boolean) => void;
   project: Project;
   spectrum: Spectrum | null;
   stale: boolean;
@@ -22,6 +25,8 @@ const bandValue = (r: BandResult | null | undefined) =>
     ? "尚未设置"
     : `${r.mean_percent.toFixed(4)}%`);
 export default function SpectrumPanel({
+  details,
+  setDetails,
   project: p,
   spectrum,
   stale,
@@ -38,7 +43,6 @@ export default function SpectrumPanel({
     sp: false,
     yMode: "auto",
   });
-  const [details, setDetails] = useState(false);
   const targetRef = useRef<HTMLInputElement>(null);
   const result = !stale ? spectrum : null;
   const analysis = result?.analysis;
@@ -50,22 +54,7 @@ export default function SpectrumPanel({
     if (!result) return;
     void download(
       `${p.name}-spectrum.csv`,
-      "\ufeffwavelength_nm,R_percent,T_percent,A_percent,Rs_percent,Rp_percent,Ts_percent,Tp_percent,energy_error\n" +
-        result.wavelength_nm
-          .map((w, i) =>
-            [
-              w,
-              result.R_percent[i],
-              result.T_percent[i],
-              result.A_percent[i],
-              result.Rs_percent[i],
-              result.Rp_percent[i],
-              result.Ts_percent[i],
-              result.Tp_percent[i],
-              result.energy_error[i],
-            ].join(","),
-          )
-          .join("\n"),
+      spectrumCsv(result),
       "text/csv;charset=utf-8",
     );
   };
@@ -241,7 +230,7 @@ export default function SpectrumPanel({
         </div>
         <button
           className="text-button teal"
-          onClick={() => setDetails((v) => !v)}
+          onClick={() => setDetails(!details)}
         >
           {details ? "收起详细分析" : "展开波段、截止边缘与峰谷分析"}{" "}
           {details ? "↑" : "↓"}

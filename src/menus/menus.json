@@ -1,0 +1,278 @@
+[
+  {
+    "title": "文件",
+    "items": [
+      {
+        "id": "file.new",
+        "label": "新建项目",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+N"
+      },
+      {
+        "id": "file.open",
+        "label": "打开项目…",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+O"
+      },
+      {
+        "id": "file.save",
+        "label": "保存项目",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+S"
+      },
+      {
+        "id": "file.saveAs",
+        "label": "另存为（待开发）",
+        "implemented": false
+      },
+      {
+        "separator": true
+      },
+      {
+        "id": "file.import",
+        "label": "导入 TFD / JSON…",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+Shift+I"
+      },
+      {
+        "id": "file.export",
+        "label": "导出项目 JSON…",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+Shift+E"
+      },
+      {
+        "id": "file.exportSpectrum",
+        "label": "导出光谱 CSV…",
+        "implemented": true
+      },
+      {
+        "separator": true
+      },
+      {
+        "id": "file.workspace",
+        "label": "工作区…",
+        "implemented": true
+      },
+      {
+        "id": "file.quit",
+        "label": "退出 TFC",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+Q"
+      }
+    ]
+  },
+  {
+    "title": "编辑",
+    "items": [
+      {
+        "id": "edit.undo",
+        "label": "撤销膜系修改",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+Z",
+        "macShortcut": "CmdOrCtrl+Alt+Z"
+      },
+      {
+        "id": "edit.redo",
+        "label": "重做膜系修改",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+Shift+Z",
+        "macShortcut": "CmdOrCtrl+Shift+Alt+Z"
+      },
+      {
+        "separator": true
+      },
+      {
+        "id": "layer.copy",
+        "label": "复制选中膜层",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+D"
+      },
+      {
+        "id": "layer.delete",
+        "label": "删除选中膜层",
+        "implemented": true
+      },
+      {
+        "id": "edit.batch",
+        "label": "批量编辑（待开发）",
+        "implemented": false
+      }
+    ]
+  },
+  {
+    "title": "膜系",
+    "items": [
+      {
+        "id": "layer.add",
+        "label": "添加膜层",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+L"
+      },
+      {
+        "id": "layer.up",
+        "label": "上移选中膜层",
+        "implemented": true
+      },
+      {
+        "id": "layer.down",
+        "label": "下移选中膜层",
+        "implemented": true
+      },
+      {
+        "separator": true
+      },
+      {
+        "id": "layer.manage",
+        "label": "膜层管理…",
+        "implemented": true
+      },
+      {
+        "id": "layer.material",
+        "label": "替换选中层材料…",
+        "implemented": true
+      }
+    ]
+  },
+  {
+    "title": "参数",
+    "items": [
+      {
+        "id": "settings.wavelength",
+        "label": "波长范围…",
+        "implemented": true
+      },
+      {
+        "id": "settings.angle",
+        "label": "入射角度…",
+        "implemented": true
+      },
+      {
+        "id": "settings.polarization",
+        "label": "偏振…",
+        "implemented": true
+      },
+      {
+        "id": "tools.materials",
+        "label": "材料与基底…",
+        "implemented": true
+      }
+    ]
+  },
+  {
+    "title": "计算",
+    "items": [
+      {
+        "id": "calculate.spectrum",
+        "label": "计算光谱",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+Enter"
+      }
+    ]
+  },
+  {
+    "title": "分析",
+    "items": [
+      {
+        "id": "analysis.spectrum",
+        "label": "查看光谱",
+        "implemented": true
+      },
+      {
+        "id": "analysis.details",
+        "label": "波段、边缘与峰谷分析…",
+        "implemented": true
+      },
+      {
+        "separator": true
+      },
+      {
+        "id": "analysis.optimize",
+        "label": "膜系优化（待开发）",
+        "implemented": false
+      },
+      {
+        "id": "analysis.tolerance",
+        "label": "公差分析（待开发）",
+        "implemented": false
+      }
+    ]
+  },
+  {
+    "title": "视图",
+    "items": [
+      {
+        "id": "view.sidebar",
+        "label": "左侧导航",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.layers",
+        "label": "膜层编辑",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.settings",
+        "label": "计算设置",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.spectrum",
+        "label": "光谱分析",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "separator": true
+      },
+      {
+        "id": "view.reset",
+        "label": "恢复默认布局",
+        "implemented": true
+      },
+      {
+        "id": "view.menu",
+        "label": "显示菜单窗口（Windows）",
+        "implemented": true,
+        "platform": "windows"
+      }
+    ]
+  },
+  {
+    "title": "工具",
+    "items": [
+      {
+        "id": "tools.library",
+        "label": "材料库管理…",
+        "implemented": true
+      },
+      {
+        "id": "tools.workspace",
+        "label": "工作区设置…",
+        "implemented": true
+      }
+    ]
+  },
+  {
+    "title": "帮助",
+    "items": [
+      {
+        "id": "help.guide",
+        "label": "使用说明…",
+        "implemented": true
+      },
+      {
+        "id": "help.shortcuts",
+        "label": "快捷键…",
+        "implemented": true
+      },
+      {
+        "id": "help.about",
+        "label": "关于 TFC Workbench…",
+        "implemented": true
+      }
+    ]
+  }
+]

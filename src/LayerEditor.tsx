@@ -8,10 +8,12 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react";
+import type { LayerCommand } from "./layerCommands";
 import NumericInput from "./NumericInput";
 import { physicalThickness, thicknessValue, type ThicknessUnit } from "./model";
 import type { Project } from "./types";
 interface Props {
+  command: (id: LayerCommand, index?: number) => void;
   project: Project;
   busy: boolean;
   selected: number;
@@ -23,6 +25,7 @@ interface Props {
   canRedo: boolean;
 }
 export default function LayerEditor({
+  command,
   project: p,
   busy,
   selected,
@@ -34,17 +37,6 @@ export default function LayerEditor({
   canRedo,
 }: Props) {
   const total = p.layers.reduce((sum, l) => sum + l.thickness_nm, 0);
-  function move(direction: number) {
-    const target = selected + direction;
-    if (target < 0 || target >= p.layers.length) return;
-    update((next) => {
-      [next.layers[selected], next.layers[target]] = [
-        next.layers[target],
-        next.layers[selected],
-      ];
-    });
-    setSelected(target);
-  }
   const editThickness = (index: number, value: number, unit: ThicknessUnit) =>
     update((next) => {
       const layer = next.layers[index];
@@ -92,7 +84,7 @@ export default function LayerEditor({
             aria-label="上移选中层"
             title="上移选中层"
             disabled={busy || selected >= p.layers.length - 1}
-            onClick={() => move(1)}
+            onClick={() => command("layer.up")}
           >
             <ArrowUp size={16} />
           </button>
@@ -100,7 +92,7 @@ export default function LayerEditor({
             aria-label="下移选中层"
             title="下移选中层"
             disabled={busy || selected <= 0 || !p.layers[selected]}
-            onClick={() => move(-1)}
+            onClick={() => command("layer.down")}
           >
             <ArrowDown size={16} />
           </button>
@@ -195,8 +187,7 @@ export default function LayerEditor({
                       disabled={busy}
                       onClick={(e) => {
                         e.stopPropagation();
-                        update((next) => next.layers.splice(index, 1));
-                        setSelected(Math.max(0, index - 1));
+                        command("layer.delete", index);
                       }}
                     >
                       <Trash2 size={14} />
@@ -225,17 +216,7 @@ export default function LayerEditor({
         <button
           className="text-button teal"
           disabled={busy || p.layers.length >= 500}
-          onClick={() => {
-            const name = names[0]?.name || p.materials[0].name;
-            update((next) =>
-              next.layers.push({
-                id: crypto.randomUUID(),
-                material: name,
-                thickness_nm: 60,
-              }),
-            );
-            setSelected(p.layers.length);
-          }}
+          onClick={() => command("layer.add")}
         >
           <Plus size={16} />
           添加膜层
@@ -243,15 +224,7 @@ export default function LayerEditor({
         <button
           className="text-button"
           disabled={busy || !p.layers[selected] || p.layers.length >= 500}
-          onClick={() => {
-            update((next) =>
-              next.layers.splice(selected + 1, 0, {
-                ...next.layers[selected],
-                id: crypto.randomUUID(),
-              }),
-            );
-            setSelected(selected + 1);
-          }}
+          onClick={() => command("layer.copy")}
         >
           <Copy size={14} />
           复制
