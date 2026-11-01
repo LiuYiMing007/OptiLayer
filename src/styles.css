@@ -2259,3 +2259,17 @@ body,
     display: none;
   }
 }
+
+/* Engineering values must remain legible at tool-window minimum sizes. */
+.tool-content .layer-table input {
+  width: 120px;
+  min-width: 105px;
+  font-variant-numeric: tabular-nums;
+}
+.tool-notice {
+  color: #83919c;
+  font-size: 10px;
+  padding: 0 0 8px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
