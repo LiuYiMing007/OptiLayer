@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import TextInput from "../TextInput";
 import LayerEditor from "../LayerEditor";
 import CalculationSettings from "../CalculationSettings";
 import MaterialLibrary from "../MaterialLibrary";
@@ -107,13 +108,13 @@ export default function ToolView({
         <div className="project-tool">
           <label>
             项目名称
-            <input
+            <TextInput
               aria-label="项目名称"
               value={s.project.name}
               maxLength={200}
-              onChange={(e) =>
+              onChange={(value) =>
                 update((p) => {
-                  p.name = e.target.value;
+                  p.name = value;
                 })
               }
             />

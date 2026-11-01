@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Check, Download, Plus, Save } from "lucide-react";
+import TextInput from "./TextInput";
 import NumericInput from "./NumericInput";
 import { replaceMaterial, synchronizeBoundaries } from "./model";
 import type { Material, MaterialRole, Project } from "./types";
@@ -186,12 +187,12 @@ export default function MaterialLibrary({
                     </label>
                     <label className="source-field">
                       数据来源
-                      <input
+                      <TextInput
                         aria-label={`${m.name} 数据来源`}
                         value={m.source}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           update((p) => {
-                            p.materials[index].source = e.target.value;
+                            p.materials[index].source = value;
                           })
                         }
                       />
