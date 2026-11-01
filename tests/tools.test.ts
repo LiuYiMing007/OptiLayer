@@ -188,3 +188,27 @@ test("project switching invalidates result and errors, auto dedups and manual ca
   await tick();
   assert.equal(h.errors.length, 1);
 });
+
+test("queued material metadata and band edits preserve earlier edits from the same window", () => {
+  const p = project();
+  const n = edits(p, (p) => {
+    p.materials[2].n = 2.2;
+  });
+  const source = edits(p, (p) => {
+    p.materials[2].source = "new provenance";
+  });
+  const result = applyPatches(applyPatches(p, n), source, () => true);
+  assert.equal(result.materials[2].n, 2.2);
+  assert.equal(result.materials[2].source, "new provenance");
+  p.analysis_bands = { passband: { start_nm: 400, end_nm: 700 } };
+  const start = edits(p, (p) => {
+    p.analysis_bands!.passband!.start_nm = 450;
+  });
+  const end = edits(p, (p) => {
+    p.analysis_bands!.passband!.end_nm = 650;
+  });
+  assert.deepEqual(
+    applyPatches(applyPatches(p, start), end, () => true).analysis_bands,
+    { passband: { start_nm: 450, end_nm: 650 } },
+  );
+});

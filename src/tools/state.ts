@@ -89,6 +89,39 @@ const canonical = (v: unknown): unknown =>
       : v;
 const equal = (a: unknown, b: unknown) =>
   JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+// Apply only the fields actually edited in a queued object proposal. A rapid
+// edit of material.source must not restore the old n included in its snapshot.
+function mergeIntent(
+  actual: unknown,
+  expected: unknown,
+  value: unknown,
+): unknown {
+  if (
+    value &&
+    expected &&
+    actual &&
+    typeof value === "object" &&
+    typeof expected === "object" &&
+    typeof actual === "object" &&
+    !Array.isArray(value) &&
+    !Array.isArray(expected) &&
+    !Array.isArray(actual)
+  ) {
+    const result = structuredClone(actual) as Record<string, unknown>;
+    const previous = expected as Record<string, unknown>,
+      next = value as Record<string, unknown>;
+    for (const key of new Set([
+      ...Object.keys(previous),
+      ...Object.keys(next),
+    ])) {
+      if (equal(previous[key], next[key])) continue;
+      if (!(key in next)) delete result[key];
+      else result[key] = mergeIntent(result[key], previous[key], next[key]);
+    }
+    return result;
+  }
+  return structuredClone(value);
+}
 export const patchKey = (p: Patch) =>
   p.kind === "layer"
     ? `layer:${p.id}:${p.field}`
@@ -212,11 +245,23 @@ export function applyPatches(
     else if (patch.kind === "material") {
       const index = next.materials.findIndex((m) => m.name === patch.name);
       if (index < 0) next.materials.push(structuredClone(patch.value));
-      else next.materials[index] = structuredClone(patch.value);
+      else
+        next.materials[index] = mergeIntent(
+          next.materials[index],
+          patch.expected,
+          patch.value,
+        ) as Material;
     } else if (patch.kind === "setting")
       Object.assign(next.settings, { [patch.field]: patch.value });
     else if (patch.value === null) delete next[patch.field];
-    else Object.assign(next, { [patch.field]: patch.value });
+    else
+      Object.assign(next, {
+        [patch.field]: mergeIntent(
+          next[patch.field],
+          patch.expected,
+          patch.value,
+        ),
+      });
   }
   synchronizeBoundaries(next);
   return next;
