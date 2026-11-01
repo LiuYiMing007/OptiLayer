@@ -19,10 +19,14 @@ export default function ToolView({
 }) {
   const root = useRef<HTMLFieldSetElement>(null);
   useEffect(() => {
-    if (s.focus?.id === id && s.focus.label)
-      root.current
-        ?.querySelector<HTMLElement>(`[aria-label="${s.focus.label}"]`)
-        ?.focus();
+    if (s.focus?.id === id && s.focus.label) {
+      const target = root.current?.querySelector<HTMLElement>(
+        `[aria-label="${s.focus.label}"]`,
+      );
+      // Grid focus also establishes its keyboard selection, as a pointer click does.
+      if (id === "layers") target?.click();
+      target?.focus();
+    }
   }, [s.focus?.token, id]);
   const [copyName, setCopyName] = useState(""),
     [error, setError] = useState("");

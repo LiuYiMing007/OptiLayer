@@ -1,9 +1,58 @@
 [
-  {"id":"layers","title":"膜层结构","width":980,"height":650,"minWidth":780,"minHeight":360},
-  {"id":"materials","title":"材料","width":820,"height":700,"minWidth":650,"minHeight":400},
-  {"id":"substrate","title":"基底","width":420,"height":420,"minWidth":360,"minHeight":320},
-  {"id":"settings","title":"计算参数","width":420,"height":640,"minWidth":360,"minHeight":420},
-  {"id":"project","title":"项目","width":620,"height":650,"minWidth":460,"minHeight":400},
-  {"id":"analysis","title":"光谱分析","width":860,"height":740,"minWidth":650,"minHeight":420},
-  {"id":"targets","title":"目标曲线","width":560,"height":400,"minWidth":420,"minHeight":300}
+  {
+    "id": "layers",
+    "title": "膜层结构",
+    "width": 980,
+    "height": 650,
+    "minWidth": 780,
+    "minHeight": 360
+  },
+  {
+    "id": "materials",
+    "title": "材料",
+    "width": 820,
+    "height": 700,
+    "minWidth": 650,
+    "minHeight": 400
+  },
+  {
+    "id": "substrate",
+    "title": "基底",
+    "width": 420,
+    "height": 420,
+    "minWidth": 360,
+    "minHeight": 320
+  },
+  {
+    "id": "settings",
+    "title": "计算参数",
+    "width": 420,
+    "height": 560,
+    "minWidth": 360,
+    "minHeight": 420
+  },
+  {
+    "id": "project",
+    "title": "项目",
+    "width": 620,
+    "height": 650,
+    "minWidth": 460,
+    "minHeight": 400
+  },
+  {
+    "id": "analysis",
+    "title": "光谱分析",
+    "width": 860,
+    "height": 740,
+    "minWidth": 650,
+    "minHeight": 420
+  },
+  {
+    "id": "targets",
+    "title": "目标曲线",
+    "width": 560,
+    "height": 400,
+    "minWidth": 420,
+    "minHeight": 300
+  }
 ]

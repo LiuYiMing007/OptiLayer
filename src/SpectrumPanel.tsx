@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Activity, Download, Upload, X } from "lucide-react";
+import { Download, Upload, X } from "lucide-react";
+import { curveStyle } from "./design/chartTheme";
 import NumericInput from "./NumericInput";
 import SpectrumChart, { type ChartOptions } from "./SpectrumChart";
 import { spectrumCsv } from "./spectrumExport";
@@ -69,16 +70,8 @@ export default function SpectrumPanel({
       {mode === "main" && (
         <>
           <div className="panel-heading chart-heading">
-            <div>
-              <Activity size={18} />
-              <h2>光谱分析</h2>
-              {spectrum && (
-                <span className={`result-badge ${stale ? "stale" : ""}`}>
-                  {stale ? "参数已修改 · 结果已过期" : "当前计算结果"}
-                </span>
-              )}
-            </div>
             <div className="chart-controls">
+              <span className="chart-toolbar-label">光谱</span>
               {(["T", "R", "A"] as const).map((channel) => (
                 <button
                   key={channel}
@@ -89,7 +82,8 @@ export default function SpectrumPanel({
                   }
                 >
                   <span
-                    className={`line-key ${channel === "T" ? "teal-key" : channel === "R" ? "purple-key" : "amber-key"}`}
+                    className="line-key"
+                    style={{ background: curveStyle(channel).color }}
                   />
                   {channel === "A" ? "A 残差" : channel}
                 </button>
@@ -114,6 +108,8 @@ export default function SpectrumPanel({
               >
                 S/P
               </button>
+              <button onClick={openAnalysis}>分析…</button>
+              <button onClick={openTargets}>目标…</button>
               <button
                 aria-label="导出光谱"
                 disabled={!result || busy}
@@ -122,13 +118,6 @@ export default function SpectrumPanel({
                 <Download size={16} />
               </button>
             </div>
-          </div>
-          <div className="chart-context">
-            <span>
-              {spectrum?.model || "等待计算"}
-              {stale ? " · 图中保留上次结果" : ""}
-            </span>
-            <span>拖拽框选缩放 · 滚轮缩放 · 双击复位</span>
           </div>
           <div className={`spectrum-canvas ${stale ? "chart-stale" : ""}`}>
             <SpectrumChart
@@ -192,7 +181,7 @@ export default function SpectrumPanel({
           </div>
         </>
       )}
-      <div className="analysis-toolbar">
+      <div className="analysis-toolbar" hidden={mode === "main"}>
         {mode === "targets" && (
           <div>
             <input

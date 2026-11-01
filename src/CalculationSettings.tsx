@@ -1,4 +1,4 @@
-import { FlaskConical, LoaderCircle, Play, Settings2 } from "lucide-react";
+import CommitNumber from "./CommitNumber";
 import NumericInput from "./NumericInput";
 import { synchronizeBoundaries } from "./model";
 import type { Polarization, Project, Settings } from "./types";
@@ -83,117 +83,95 @@ export default function CalculationSettings({
       </section>
     );
   return (
-    <section className="panel settings-panel">
-      <div className="panel-heading">
-        <div>
-          <Settings2 size={17} />
-          <h2>计算设置</h2>
-        </div>
-        <span className="small-label">TMM · S/P</span>
-      </div>
-      <fieldset className="settings-fields" disabled={busy}>
-        <div className="field-pair">
-          {(["start_nm", "end_nm"] as const).map((key, i) => (
-            <label key={key}>
-              {i ? "终止波长" : "起始波长"}
-              <div className="input-unit">
-                <NumericInput
-                  label={i ? "终止波长" : "起始波长"}
-                  value={p.settings[key]}
-                  min={1}
-                  onChange={(v) => set(key, v)}
-                />
-                <span>nm</span>
-              </div>
-            </label>
-          ))}
-        </div>
-        <div className="field-pair">
-          {(["step_nm", "reference_nm"] as const).map((key, i) => (
-            <label key={key}>
-              {i ? "参考波长 λ₀" : "采样步长"}
-              <div className="input-unit">
-                <NumericInput
-                  label={i ? "参考波长" : "采样步长"}
-                  value={p.settings[key]}
-                  min={0.001}
-                  onChange={(v) => set(key, v)}
-                />
-                <span>nm</span>
-              </div>
-            </label>
-          ))}
-        </div>
-        <div className="field-pair">
-          <label>
-            入射角
-            <div className="input-unit">
-              <NumericInput
-                label="入射角"
-                value={p.settings.angle_deg}
-                min={0}
-                max={89.9}
-                onChange={(v) => set("angle_deg", v)}
-              />
-              <span>°</span>
-            </div>
-          </label>
-          <label>
-            偏振
-            <select
-              aria-label="偏振"
-              value={p.settings.polarization}
-              onChange={(e) =>
-                update((next) => {
-                  next.settings.polarization = e.target.value as Polarization;
-                })
-              }
-            >
-              <option value="unpolarized">非偏振（S/P平均）</option>
-              <option value="s">S 偏振</option>
-              <option value="p">P 偏振</option>
-            </select>
-          </label>
-        </div>
-        {(["incident"] as const).map((kind) => (
-          <label className="boundary-field" key={kind}>
-            {kind === "incident" ? "入射介质" : "基底材料"}
-            <div>
-              <select
-                aria-label={kind === "incident" ? "入射介质材料" : "基底材料"}
-                value={p.settings[`${kind}_material`]}
-                onChange={(e) =>
-                  update((next) => {
-                    next.settings[`${kind}_material`] = e.target.value;
-                    synchronizeBoundaries(next);
-                  })
-                }
-              >
-                {media(kind).map((m) => (
-                  <option key={m.name}>{m.name}</option>
-                ))}
-              </select>
-              <span>n={p.settings[`${kind}_n`]}</span>
-            </div>
+    <section className="engineering-parameters">
+      <fieldset disabled={busy}>
+        <legend>波长采样</legend>
+        {(
+          [
+            ["start_nm", "起始波长", "nm", 1],
+            ["end_nm", "终止波长", "nm", 1],
+            ["step_nm", "采样步长", "nm", 0.001],
+            ["reference_nm", "参考波长 λ₀", "nm", 1],
+          ] as const
+        ).map(([key, label, unit, min]) => (
+          <label className="property-row" key={key}>
+            <span>{label}</span>
+            <CommitNumber
+              label={label}
+              value={p.settings[key]}
+              min={min}
+              onChange={(v) => set(key, v)}
+            />
+            <span className="property-unit">{unit}</span>
           </label>
         ))}
-        <button
-          className="text-button teal manage-materials"
-          onClick={openMaterials}
-        >
-          <FlaskConical size={13} />
-          管理材料 / 添加基底
-        </button>
-        <button className="button primary calculate-button" onClick={calculate}>
-          {busy ? (
-            <LoaderCircle size={16} className="spin" />
-          ) : (
-            <Play size={15} fill="currentColor" />
-          )}
-          {busy ? "正在处理…" : "计算光谱"}
-          <span>→</span>
-        </button>
       </fieldset>
+      <fieldset disabled={busy}>
+        <legend>入射条件</legend>
+        <label className="property-row">
+          <span>入射角度</span>
+          <CommitNumber
+            label="入射角"
+            value={p.settings.angle_deg}
+            min={0}
+            max={89.9}
+            onChange={(v) => set("angle_deg", v)}
+          />
+          <span className="property-unit">°</span>
+        </label>
+        <label className="property-row">
+          <span>偏振模式</span>
+          <select
+            aria-label="偏振"
+            value={p.settings.polarization}
+            onChange={(e) =>
+              update((next) => {
+                next.settings.polarization = e.target.value as Polarization;
+              })
+            }
+          >
+            <option value="unpolarized">非偏振（S/P 平均）</option>
+            <option value="s">S 偏振</option>
+            <option value="p">P 偏振</option>
+          </select>
+          <span />
+        </label>
+        <label className="property-row">
+          <span>入射介质</span>
+          <select
+            aria-label="入射介质材料"
+            value={p.settings.incident_material}
+            onChange={(e) =>
+              update((next) => {
+                next.settings.incident_material = e.target.value;
+                synchronizeBoundaries(next);
+              })
+            }
+          >
+            {media("incident").map((m) => (
+              <option key={m.name}>{m.name}</option>
+            ))}
+          </select>
+          <span />
+        </label>
+        <div className="property-row property-readonly">
+          <span>折射率 n</span>
+          <output>{p.settings.incident_n}</output>
+          <span />
+        </div>
+      </fieldset>
+      <p className="engineering-help">
+        Enter / Tab 提交，Esc
+        取消。有效参数提交后自动更新光谱。修改参考波长保持物理膜厚。
+      </p>
+      <footer className="engineering-parameter-actions">
+        <button disabled={busy} onClick={openMaterials}>
+          材料管理…
+        </button>
+        <button disabled={busy} onClick={calculate}>
+          计算光谱
+        </button>
+      </footer>
     </section>
   );
 }

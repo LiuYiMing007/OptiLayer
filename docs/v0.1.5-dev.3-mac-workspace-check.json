@@ -1,0 +1,7 @@
+{
+  "version": "0.1.5-dev.3",
+  "packaged_engine": "release/0.1.5-dev.3-preview/TFC/macOS/TFC.app/Contents/Resources/engine/tfc-engine",
+  "workspace_relocation": true,
+  "spectrum_exact_reproduction": true,
+  "samples": 121
+}

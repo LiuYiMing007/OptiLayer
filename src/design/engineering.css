@@ -1,0 +1,453 @@
+/* Representative windows only; other tools retain their existing design. */
+.spectral-workstation,
+.tool-layers,
+.tool-settings {
+  --eng-bg: #f3f3f3;
+  --eng-surface: #ffffff;
+  --eng-line: #d8d8d8;
+  --eng-text: #242424;
+  --eng-muted: #666666;
+  --eng-accent: #3978b8;
+  --eng-selected: #dceaf8;
+  color: var(--eng-text);
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.spectral-workstation {
+  background: var(--eng-bg);
+}
+.spectral-workstation .spectrum-topbar {
+  min-height: 36px;
+  height: 36px;
+  padding: 3px 10px;
+  gap: 16px;
+  border-color: var(--eng-line);
+}
+.spectral-workstation .spectrum-project {
+  min-width: 120px;
+  max-width: 270px;
+  flex: 1;
+}
+.spectral-workstation .spectrum-project > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.spectral-workstation .spectrum-project strong {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--eng-muted);
+}
+.spectral-workstation .spectrum-project small {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.spectral-workstation .compact-tools {
+  margin-left: auto;
+}
+.spectral-workstation .compact-tools button,
+.spectral-workstation .spectrum-actions button {
+  height: 27px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 400;
+  background: transparent;
+  color: var(--eng-text);
+  box-shadow: none;
+}
+.spectral-workstation .compact-tools button[aria-pressed="true"] {
+  background: var(--eng-selected);
+  color: var(--eng-text);
+  border-color: #bbcfe1;
+}
+.spectral-workstation .spectrum-actions .primary {
+  background: #eef3f8;
+  color: #275f93;
+  border-color: #c7d5e3;
+}
+.spectral-workstation .main-spectrum {
+  padding: 0;
+}
+.spectral-workstation .spectrum-main {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--eng-surface);
+}
+.spectral-workstation .spectrum-main .chart-heading {
+  padding: 2px 12px;
+  height: 32px;
+  min-height: 32px;
+  border-bottom: 1px solid #e6e8eb;
+}
+.spectral-workstation .chart-controls {
+  width: 100%;
+  gap: 5px;
+}
+.spectral-workstation .chart-controls button,
+.spectral-workstation .chart-controls select {
+  height: 26px;
+  min-height: 26px;
+  padding: 0 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: var(--eng-text);
+  box-shadow: none;
+}
+.spectral-workstation .chart-controls button {
+  background: transparent;
+  border: 1px solid transparent;
+}
+.spectral-workstation .chart-controls button[aria-pressed="true"] {
+  background: #f0f3f6;
+  border-color: #dee3e8;
+}
+.spectral-workstation .chart-controls .muted {
+  opacity: 0.48;
+}
+.chart-toolbar-label {
+  font-size: 12px;
+  color: #666;
+  margin-right: 6px;
+}
+.spectral-workstation .line-key {
+  width: 16px;
+  height: 2px;
+  border-radius: 0;
+}
+.spectral-workstation .spectrum-canvas {
+  background: #fff;
+}
+.spectral-workstation .spectrum-summary {
+  display: flex;
+  justify-content: space-between;
+  height: 29px;
+  min-height: 29px;
+  overflow: hidden;
+  padding: 0 12px;
+  background: #fafbfc;
+  align-items: center;
+  border-top: 1px solid var(--eng-line);
+  gap: 12px;
+}
+.spectral-workstation .spectrum-summary > div {
+  flex-wrap: nowrap;
+  gap: 5px;
+  white-space: nowrap;
+}
+.spectral-workstation .spectrum-summary strong,
+.spectral-workstation .spectrum-summary small,
+.spectral-workstation .spectrum-summary span {
+  font-size: 11px;
+  color: var(--eng-muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.spectral-workstation .spectrum-summary strong {
+  color: var(--eng-text);
+}
+.spectral-workstation .analysis-toolbar[hidden] {
+  display: none;
+}
+.spectral-workstation .spectral-status {
+  height: 23px;
+  min-height: 23px;
+  padding: 0 10px;
+  border-top: 1px solid var(--eng-line);
+  color: var(--eng-muted);
+  font-size: 11px;
+}
+.tool-layers.tool-shell,
+.tool-settings.tool-shell {
+  background: var(--eng-surface);
+}
+.tool-layers .tool-context,
+.tool-settings .tool-context {
+  height: 30px;
+  padding: 0 10px;
+  gap: 10px;
+  background: #f7f8fa;
+  border-color: var(--eng-line);
+}
+.tool-layers .tool-context strong,
+.tool-settings .tool-context strong {
+  display: none;
+}
+.tool-layers .tool-context span,
+.tool-settings .tool-context span,
+.tool-layers .tool-context small,
+.tool-settings .tool-context small {
+  font-size: 11px;
+  color: var(--eng-muted);
+}
+.tool-layers .tool-content,
+.tool-settings .tool-content {
+  padding: 0;
+}
+.tool-layers .tool-notice,
+.tool-settings .tool-notice {
+  display: none;
+}
+.engineering-layers {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--eng-surface);
+}
+.engineering-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  min-height: 36px;
+  border-bottom: 1px solid var(--eng-line);
+}
+.engineering-toolbar button,
+.engineering-parameter-actions button {
+  font-size: 12px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #d5dbe1;
+  border-radius: 3px;
+  background: #fafbfc;
+  color: var(--eng-text);
+  box-shadow: none;
+}
+.engineering-toolbar button:hover,
+.engineering-parameter-actions button:hover {
+  background: #edf3f9;
+}
+.toolbar-separator {
+  height: 16px;
+  border-left: 1px solid var(--eng-line);
+  margin: 0 4px;
+}
+.toolbar-meta {
+  margin-left: auto;
+  color: var(--eng-muted);
+  font-size: 12px;
+}
+.engineering-boundary {
+  display: flex;
+  gap: 16px;
+  padding: 7px 12px;
+  color: var(--eng-text);
+  font-size: 12px;
+  background: #f8f9fb;
+  border-bottom: 1px solid #e2e5e9;
+}
+.engineering-boundary span {
+  color: var(--eng-muted);
+}
+.engineering-grid-wrap {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+.engineering-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: 13px;
+}
+.engineering-grid thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f3f5f7;
+}
+.engineering-grid th,
+.engineering-grid td {
+  height: 29px;
+  padding: 0 10px;
+  border-right: 1px solid #e4e7ea;
+  border-bottom: 1px solid #e4e7ea;
+  text-align: left;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.engineering-grid th {
+  color: #555f69;
+  font-size: 12px;
+}
+.engineering-grid th:first-child {
+  width: 55px;
+  text-align: right;
+}
+.engineering-grid th:nth-child(2) {
+  width: 24%;
+}
+.engineering-grid th span {
+  font-size: 11px;
+  color: #7d8791;
+  margin-left: 5px;
+}
+.engineering-grid .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.engineering-grid tr.selected td {
+  background: #f1f6fb;
+}
+.engineering-grid td[aria-selected="true"] {
+  background: var(--eng-selected);
+}
+.engineering-grid td.active-cell {
+  box-shadow: inset 0 0 0 1px var(--eng-accent);
+}
+.engineering-grid td:focus {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--eng-accent);
+}
+.engineering-grid td:has(input) {
+  padding: 0;
+}
+.tool-layers .engineering-grid input {
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  height: 28px;
+  width: 100%;
+  min-width: 0;
+  padding: 0 10px;
+  font-size: 13px;
+  color: var(--eng-text);
+  box-shadow: inset 0 0 0 2px var(--eng-accent);
+  outline: 0;
+  text-align: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.engineering-grid-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  font-size: 11px;
+  color: var(--eng-muted);
+  background: #f8f9fb;
+  border-top: 1px solid var(--eng-line);
+}
+.engineering-empty,
+.grid-error {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.grid-error {
+  color: #a13830;
+  background: #fff4f1;
+}
+.engineering-parameters {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.engineering-parameters fieldset {
+  padding: 12px 0 14px;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid #e2e5e9;
+}
+.engineering-parameters legend {
+  padding: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5966;
+}
+.property-row {
+  display: grid;
+  grid-template-columns: 106px minmax(110px, 1fr) 24px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.property-row:last-child {
+  margin-bottom: 0;
+}
+.tool-settings .property-row input,
+.tool-settings .property-row select {
+  width: 100%;
+  height: 28px;
+  min-height: 28px;
+  border: 1px solid #c8cfd7;
+  border-radius: 3px;
+  padding: 0 8px;
+  color: var(--eng-text);
+  background: #fff;
+  font-size: 13px;
+  box-shadow: none;
+}
+.tool-settings .property-row input {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tool-settings .property-row input:focus,
+.tool-settings .property-row select:focus {
+  outline: 2px solid #3978b8;
+  outline-offset: -1px;
+}
+.tool-settings .property-row input[aria-invalid="true"] {
+  border-color: #b04d43;
+  background: #fff6f4;
+}
+.property-unit,
+.property-readonly {
+  color: var(--eng-muted);
+  font-size: 12px;
+}
+.property-readonly output {
+  text-align: right;
+  padding: 0 8px;
+}
+.engineering-help {
+  font-size: 11px;
+  color: var(--eng-muted);
+  line-height: 1.7;
+  margin: 12px 0;
+}
+.engineering-parameter-actions {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #e2e5e9;
+  padding-top: 10px;
+}
+@media (max-width: 1050px) {
+  .spectral-workstation .spectrum-summary > div:last-child {
+    display: none;
+  }
+  .spectral-workstation .spectrum-project small {
+    display: none;
+  }
+}
+.spectral-workstation .chart-controls .muted {
+  text-decoration: none;
+}
+.grid-context-menu {
+  position: fixed;
+  z-index: 50;
+  min-width: 122px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #c8cfd7;
+  border-radius: 3px;
+  box-shadow: 0 2px 8px #00000012;
+}
+.grid-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 10px;
+  font-size: 12px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: #242424;
+}
+.grid-context-menu button:hover {
+  background: #dceaf8;
+}

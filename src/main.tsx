@@ -6,6 +6,7 @@ import MenuWindow from "./menus/MenuWindow";
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./styles.css";
+import "./design/engineering.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {isTauri() && getCurrentWindow().label === "menu" ? (

@@ -1,17 +1,8 @@
-import {
-  ArrowDown,
-  ArrowUp,
-  Copy,
-  Layers3,
-  Plus,
-  Redo2,
-  Trash2,
-  Undo2,
-} from "lucide-react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { LayerCommand } from "./layerCommands";
-import NumericInput from "./NumericInput";
-import { physicalThickness, thicknessValue, type ThicknessUnit } from "./model";
+import { gridValue, moveCell, pasteGrid, type GridCell } from "./layerGrid";
 import type { Project } from "./types";
+let restoreGridFocus: GridCell | null = null;
 interface Props {
   command: (id: LayerCommand, index?: number) => void;
   project: Project;
@@ -25,219 +16,445 @@ interface Props {
   canRedo: boolean;
 }
 export default function LayerEditor({
-  command,
   project: p,
   busy,
   selected,
   setSelected,
   update,
+  command,
   undo,
   redo,
   canUndo,
   canRedo,
 }: Props) {
-  const total = p.layers.reduce((sum, l) => sum + l.thickness_nm, 0);
-  const editThickness = (index: number, value: number, unit: ThicknessUnit) =>
-    update((next) => {
-      const layer = next.layers[index];
-      const material = next.materials.find((m) => m.name === layer.material)!;
-      layer.thickness_nm = physicalThickness(
-        value,
-        material.n,
-        next.settings.reference_nm,
-        unit,
-      );
-    });
-  const names = p.materials.filter(
-    (m) =>
-      m.role === "film" ||
-      m.role === "all" ||
-      p.layers.some((l) => l.material === m.name),
+  const [active, setActive] = useState<GridCell>(
+    restoreGridFocus ?? {
+      row: Math.max(0, p.layers.length - 1 - selected),
+      col: 1,
+    },
   );
+  const [anchor, setAnchor] = useState<GridCell>(active);
+  const [editing, setEditing] = useState(false),
+    [draft, setDraft] = useState(""),
+    [error, setError] = useState("");
+  const [context, setContext] = useState<{
+    x: number;
+    y: number;
+    layerId: string;
+  } | null>(null);
+  const editingRef = useRef(false);
+  const originalDraft = useRef("");
+  const selectDraft = useRef(true);
+  const root = useRef<HTMLDivElement>(null);
+  const rows = p.layers.length;
+  const structure = p.layers.map((l) => l.id).join("|");
+  const previousStructure = useRef(structure);
+  useLayoutEffect(() => {
+    if (previousStructure.current === structure) return;
+    previousStructure.current = structure;
+    const cell = { row: Math.max(0, rows - 1 - selected), col: active.col };
+    const hadFocus = root.current?.contains(document.activeElement);
+    editingRef.current = false;
+    setEditing(false);
+    setActive(cell);
+    setAnchor(cell);
+    setContext(null);
+    if (hadFocus)
+      root.current
+        ?.querySelector<HTMLElement>(
+          `[data-row="${cell.row}"][data-col="${cell.col}"]`,
+        )
+        ?.focus();
+  }, [structure, rows, selected, active.col]);
+
+  useLayoutEffect(() => {
+    if (restoreGridFocus) {
+      const cell = {
+        row: Math.min(restoreGridFocus.row, Math.max(0, rows - 1)),
+        col: restoreGridFocus.col,
+      };
+      restoreGridFocus = null;
+      setActive(cell);
+      setAnchor(cell);
+      root.current
+        ?.querySelector<HTMLElement>(
+          `[data-row="${cell.row}"][data-col="${cell.col}"]`,
+        )
+        ?.focus();
+    }
+    return () => {
+      const focused = document.activeElement as HTMLElement | null;
+      const cell = focused?.closest<HTMLElement>("[data-row][data-col]");
+      if (cell && root.current?.contains(cell))
+        restoreGridFocus = {
+          row: Number(cell.dataset.row),
+          col: Number(cell.dataset.col),
+        };
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const row = Math.max(0, Math.min(rows - 1, active.row));
+    if (row !== active.row) {
+      setActive({ ...active, row });
+      setAnchor({ ...active, row });
+    }
+  }, [rows, active.row]);
+
+  function select(cell: GridCell, extend = false) {
+    setActive(cell);
+    if (!extend) setAnchor(cell);
+    setSelected(rows - 1 - cell.row);
+    root.current
+      ?.querySelector<HTMLElement>(
+        `[data-row="${cell.row}"][data-col="${cell.col}"]`,
+      )
+      ?.focus();
+  }
+  function begin(cell = active, initial?: string) {
+    if (busy || !rows) return;
+    setActive(cell);
+    setAnchor(cell);
+    setError("");
+    originalDraft.current = gridValue(p, cell);
+    selectDraft.current = initial === undefined;
+    setDraft(initial ?? originalDraft.current);
+    editingRef.current = true;
+    setEditing(true);
+  }
+  function apply(text: string, cell = active) {
+    try {
+      const next = pasteGrid(p, cell, text);
+      update((project) => {
+        project.layers = next.layers;
+      });
+      setError("");
+      return true;
+    } catch (e) {
+      setError(String(e instanceof Error ? e.message : e));
+      return false;
+    }
+  }
+  function finish(commit: boolean) {
+    if (!editingRef.current) return true;
+    // Opening a cell without editing must not round-trip its stored thickness.
+    if (commit && draft !== originalDraft.current && !apply(draft))
+      return false;
+    editingRef.current = false;
+    setEditing(false);
+    return true;
+  }
+  function copyText() {
+    const result = [];
+    for (
+      let r = Math.min(active.row, anchor.row);
+      r <= Math.max(active.row, anchor.row);
+      r++
+    ) {
+      const line = [];
+      for (
+        let c = Math.min(active.col, anchor.col);
+        c <= Math.max(active.col, anchor.col);
+        c++
+      )
+        line.push(gridValue(p, { row: r, col: c }));
+      result.push(line.join("\t"));
+    }
+    return result.join("\n");
+  }
   return (
-    <section className="panel layers-panel">
-      <div className="panel-heading">
-        <div>
-          <Layers3 size={17} />
-          <h2>膜层结构</h2>
-          <span className="pill">{p.layers.length} 层</span>
+    <section
+      className="engineering-layers"
+      onPointerDown={(e) => {
+        if (!(e.target as HTMLElement).closest(".grid-context-menu"))
+          setContext(null);
+      }}
+    >
+      {context && (
+        <div
+          className="grid-context-menu"
+          role="menu"
+          aria-label="膜层操作"
+          style={{ left: context.x, top: context.y }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setContext(null);
+          }}
+        >
+          {(
+            [
+              ["layer.copy", "复制层"],
+              ["layer.up", "上移"],
+              ["layer.down", "下移"],
+              ["layer.delete", "删除层"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              role="menuitem"
+              key={id}
+              disabled={
+                busy ||
+                !rows ||
+                (id === "layer.up" && selected >= rows - 1) ||
+                (id === "layer.down" && selected <= 0) ||
+                (id === "layer.copy" && rows >= 500)
+              }
+              onClick={() => {
+                const index = p.layers.findIndex(
+                  (l) => l.id === context.layerId,
+                );
+                if (index >= 0) command(id, index);
+                setContext(null);
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-        <div className="icon-actions">
-          <button
-            aria-label="撤销"
-            title="撤销"
-            disabled={!canUndo || busy}
-            onClick={undo}
-          >
-            <Undo2 size={16} />
-          </button>
-          <button
-            aria-label="重做"
-            title="重做"
-            disabled={!canRedo || busy}
-            onClick={redo}
-          >
-            <Redo2 size={16} />
-          </button>
-          <span className="thin-divider" />
-          <button
-            aria-label="上移选中层"
-            title="上移选中层"
-            disabled={busy || selected >= p.layers.length - 1}
-            onClick={() => command("layer.up")}
-          >
-            <ArrowUp size={16} />
-          </button>
-          <button
-            aria-label="下移选中层"
-            title="下移选中层"
-            disabled={busy || selected <= 0 || !p.layers[selected]}
-            onClick={() => command("layer.down")}
-          >
-            <ArrowDown size={16} />
-          </button>
+      )}
+      <div className="engineering-toolbar">
+        <button
+          disabled={busy || rows >= 500}
+          onClick={() => command("layer.add")}
+        >
+          添加
+        </button>
+        <button disabled={busy || !rows} onClick={() => command("layer.copy")}>
+          复制层
+        </button>
+        <button
+          disabled={busy || !rows}
+          onClick={() => command("layer.delete")}
+        >
+          删除层
+        </button>
+        <span className="toolbar-separator" />
+        <button
+          disabled={busy || selected >= rows - 1}
+          onClick={() => command("layer.up")}
+        >
+          上移
+        </button>
+        <button
+          disabled={busy || selected <= 0}
+          onClick={() => command("layer.down")}
+        >
+          下移
+        </button>
+        <span className="toolbar-separator" />
+        <button disabled={busy || !canUndo} onClick={undo}>
+          撤销
+        </button>
+        <button disabled={busy || !canRedo} onClick={redo}>
+          重做
+        </button>
+        <span className="toolbar-meta">{rows} 层</span>
+      </div>
+      <div className="engineering-boundary">
+        入射：{p.settings.incident_material}{" "}
+        <span>n = {p.settings.incident_n}　↓ 光入射方向</span>
+      </div>
+      {error && (
+        <div role="alert" className="grid-error">
+          {error}
         </div>
-      </div>
-      <div className="medium-label">
-        <span className="medium-dot" />
-        入射介质{" "}
-        <strong>
-          {p.settings.incident_material} · n={p.settings.incident_n}
-        </strong>
-        <span>光从此侧入射 ↓</span>
-      </div>
-      <div className="layer-table-wrap">
-        <table className="layer-table">
+      )}
+      <div
+        className="engineering-grid-wrap"
+        ref={root}
+        onContextMenu={(e) => {
+          const target = (e.target as HTMLElement).closest<HTMLElement>(
+            "[data-row][data-col]",
+          );
+          if (!target || editing || busy) return;
+          e.preventDefault();
+          select({
+            row: Number(target.dataset.row),
+            col: Number(target.dataset.col),
+          });
+          setContext({
+            layerId: p.layers[rows - 1 - Number(target.dataset.row)].id,
+            x: Math.max(0, Math.min(e.clientX, window.innerWidth - 130)),
+            y: Math.max(0, Math.min(e.clientY, window.innerHeight - 140)),
+          });
+        }}
+        onCopy={(e) => {
+          if (!editing) {
+            e.preventDefault();
+            e.clipboardData.setData("text/plain", copyText());
+          }
+        }}
+        onPaste={(e) => {
+          if (!editing && !busy) {
+            e.preventDefault();
+            apply(e.clipboardData.getData("text/plain"));
+          }
+        }}
+        onKeyDown={(e) => {
+          if (editing || busy) return;
+          if (
+            (e.ctrlKey || e.metaKey) &&
+            ["z", "y"].includes(e.key.toLowerCase())
+          ) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.key.toLowerCase() === "y" || e.shiftKey) {
+              if (canRedo) redo();
+            } else if (canUndo) undo();
+          } else if (
+            [
+              "ArrowUp",
+              "ArrowDown",
+              "ArrowLeft",
+              "ArrowRight",
+              "Tab",
+              "Enter",
+            ].includes(e.key)
+          ) {
+            e.preventDefault();
+            e.stopPropagation();
+            select(
+              moveCell(active, e.key, rows, e.shiftKey),
+              e.shiftKey && e.key.startsWith("Arrow"),
+            );
+          } else if (e.key === "F2") {
+            e.preventDefault();
+            begin();
+          } else if (
+            !e.ctrlKey &&
+            !e.metaKey &&
+            !e.altKey &&
+            e.key.length === 1
+          ) {
+            e.preventDefault();
+            begin(active, e.key);
+          }
+        }}
+      >
+        <table
+          className="engineering-grid"
+          role="grid"
+          aria-label="膜层结构表格"
+          aria-rowcount={rows + 1}
+          aria-colcount={5}
+        >
           <thead>
             <tr>
               <th>层号</th>
               <th>材料</th>
               <th>
-                物理厚度 d<span>nm</span>
+                物理厚度 d <span>nm</span>
               </th>
               <th>
-                光学厚度 n·d<span>nm</span>
+                光学厚度 n·d <span>nm</span>
               </th>
               <th>
-                QWOT<span>λ₀/4</span>
+                QWOT <span>λ₀/4</span>
               </th>
-              <th />
             </tr>
           </thead>
           <tbody>
-            {[...p.layers].reverse().map((l, display) => {
-              const index = p.layers.length - 1 - display;
-              const n =
-                p.materials.find((m) => m.name === l.material)?.n || NaN;
-              return (
-                <tr
-                  key={l.id}
-                  className={selected === index ? "selected" : ""}
-                  onClick={() => setSelected(index)}
-                >
-                  <td>
-                    <span className="layer-index">{index + 1}</span>
-                  </td>
-                  <td>
-                    <div className="material-cell">
-                      <span
-                        className="material-dot"
-                        style={{
-                          background: p.materials.find(
-                            (m) => m.name === l.material,
-                          )?.color,
-                        }}
-                      />
-                      <select
-                        aria-label={`第 ${index + 1} 层材料`}
-                        disabled={busy}
-                        value={l.material}
-                        onChange={(e) =>
-                          update((next) => {
-                            next.layers[index].material = e.target.value;
-                          })
-                        }
-                      >
-                        {names.map((m) => (
-                          <option key={m.name}>{m.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </td>
-                  {(["physical", "optical", "qwot"] as const).map((unit, i) => (
-                    <td key={unit}>
-                      <NumericInput
-                        label={`第 ${index + 1} 层${["物理厚度", "光学厚度", "QWOT"][i]}`}
-                        value={thicknessValue(
-                          l.thickness_nm,
-                          n,
-                          p.settings.reference_nm,
-                          unit,
-                        )}
-                        min={0}
-                        disabled={busy}
-                        onChange={(v) => editThickness(index, v, unit)}
-                      />
-                    </td>
-                  ))}
-                  <td>
-                    <button
-                      className="row-delete"
-                      aria-label={`删除第 ${index + 1} 层`}
-                      disabled={busy}
+            {[...p.layers].reverse().map((layer, r) => (
+              <tr
+                key={layer.id}
+                className={selected === rows - 1 - r ? "selected" : ""}
+              >
+                <th scope="row">{rows - r}</th>
+                {[0, 1, 2, 3].map((c) => {
+                  const cell = { row: r, col: c },
+                    isActive = active.row === r && active.col === c;
+                  const inRange =
+                    r >= Math.min(active.row, anchor.row) &&
+                    r <= Math.max(active.row, anchor.row) &&
+                    c >= Math.min(active.col, anchor.col) &&
+                    c <= Math.max(active.col, anchor.col);
+                  const raw = gridValue(p, cell);
+                  return (
+                    <td
+                      key={c}
+                      role="gridcell"
+                      data-row={r}
+                      data-col={c}
+                      tabIndex={isActive ? 0 : -1}
+                      aria-label={`第 ${rows - r} 层${["材料", "物理厚度", "光学厚度", "QWOT"][c]}`}
+                      aria-selected={inRange}
+                      className={`${c ? "numeric" : ""} ${isActive ? "active-cell" : ""}`}
                       onClick={(e) => {
-                        e.stopPropagation();
-                        command("layer.delete", index);
+                        if (!editingRef.current) select(cell, e.shiftKey);
                       }}
+                      onDoubleClick={() => begin(cell)}
                     >
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                      {editing && isActive ? (
+                        <input
+                          autoFocus
+                          list={c === 0 ? "film-materials" : undefined}
+                          aria-label={`编辑第 ${rows - r} 层${["材料", "物理厚度", "光学厚度", "QWOT"][c]}`}
+                          value={draft}
+                          onFocus={(e) => {
+                            if (selectDraft.current) e.currentTarget.select();
+                          }}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onBlur={() => {
+                            if (!finish(true)) {
+                              editingRef.current = false;
+                              setEditing(false);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              finish(false);
+                              select(active);
+                            }
+                            if (e.key === "Enter" || e.key === "Tab") {
+                              e.preventDefault();
+                              if (finish(true))
+                                select(
+                                  moveCell(active, e.key, rows, e.shiftKey),
+                                );
+                            }
+                          }}
+                        />
+                      ) : c ? (
+                        String(Number(Number(raw).toFixed(6)))
+                      ) : (
+                        raw
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
           </tbody>
         </table>
-        {!p.layers.length && (
-          <div className="empty-layers">
-            尚无膜层。添加膜层后选择材料，也可先查看裸基底反射。
-          </div>
+        {!rows && (
+          <p className="engineering-empty">尚无膜层，点击“添加”开始编辑。</p>
         )}
+        <datalist id="film-materials">
+          {p.materials
+            .filter(
+              (m) =>
+                m.role === "film" ||
+                m.role === "all" ||
+                p.layers.some((l) => l.material === m.name),
+            )
+            .map((m) => (
+              <option key={m.name} value={m.name} />
+            ))}
+        </datalist>
       </div>
-      <div className="medium-label substrate">
-        <span className="substrate-mark" />
-        基底{" "}
-        <strong>
-          {p.settings.substrate_material} · n={p.settings.substrate_n}
-        </strong>
-        <span>不含基底背面反射</span>
+      <div className="engineering-boundary">
+        基底：{p.settings.substrate_material}
+        <span>n = {p.settings.substrate_n}　不含背面反射</span>
       </div>
-      <div className="layer-footer">
-        <button
-          className="text-button teal"
-          disabled={busy || p.layers.length >= 500}
-          onClick={() => command("layer.add")}
-        >
-          <Plus size={16} />
-          添加膜层
-        </button>
-        <button
-          className="text-button"
-          disabled={busy || !p.layers[selected] || p.layers.length >= 500}
-          onClick={() => command("layer.copy")}
-        >
-          <Copy size={14} />
-          复制
-        </button>
+      <footer className="engineering-grid-status">
         <span>
           总厚度{" "}
-          <strong>{Number.isFinite(total) ? total.toFixed(2) : "—"}</strong> nm
+          {Number(p.layers.reduce((s, l) => s + l.thickness_nm, 0).toFixed(6))}{" "}
+          nm　·　λ₀ {p.settings.reference_nm} nm
         </span>
-      </div>
-      <div className="thickness-note">
-        三列均可编辑 · QWOT = 4n·d/λ₀，λ₀={p.settings.reference_nm} nm。修改 n
-        或 λ₀ 时保持物理厚度 d；修改 n·d / QWOT 时反算 d。
-      </div>
+        <span>F2 编辑 · Enter / Tab 提交 · Shift + 方向键选区</span>
+      </footer>
     </section>
   );
 }

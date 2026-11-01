@@ -3324,7 +3324,7 @@ dependencies = [
 
 [[package]]
 name = "tfc-for-mac"
-version = "0.1.5-dev.2"
+version = "0.1.5-dev.3"
 dependencies = [
  "serde_json",
  "tauri",

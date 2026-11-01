@@ -4,8 +4,8 @@ import {
   BookOpen,
   FileText,
   FolderOpen,
-  Waves,
   X,
+  Waves,
 } from "lucide-react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -764,7 +764,6 @@ export default function App() {
       )}
       <header className="spectrum-topbar">
         <div className="spectrum-project">
-          <Waves size={21} />
           <div>
             <strong title={project.name}>{project.name}</strong>
             <small>
@@ -775,16 +774,7 @@ export default function App() {
         </div>
         <nav className="compact-tools" aria-label="打开工具窗口">
           {toolDefinitions
-            .filter((d) =>
-              [
-                "layers",
-                "settings",
-                "materials",
-                "substrate",
-                "project",
-                "analysis",
-              ].includes(d.id),
-            )
+            .filter((d) => ["layers", "settings", "project"].includes(d.id))
             .map((d) => (
               <button
                 key={d.id}

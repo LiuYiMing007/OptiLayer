@@ -1,0 +1,40 @@
+{
+  "version": "0.1.5-dev.3",
+  "scope": [
+    "spectrum",
+    "layers",
+    "settings"
+  ],
+  "manual_mac_checks": [
+    "F2 edit",
+    "Enter commit and next row",
+    "Ctrl+Z undo retains grid focus",
+    "Ctrl+Y redo retains grid focus",
+    "Cmd+Z selection undo",
+    "multirow paste one undo step",
+    "angle 30 commit updates spectrum",
+    "Escape cancels parameter draft",
+    "tool close hides without deleting project",
+    "24 layer browsing"
+  ],
+  "browser_checks": [
+    "direct typing preserves first digit",
+    "double click + Tab moves right",
+    "rectangular copy retains raw precision",
+    "invalid multirow paste rejects entire batch",
+    "new layer selection follows authoritative selection"
+  ],
+  "browser_viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "browser_chart_canvas": {
+    "width": 1280,
+    "height": 557.5
+  },
+  "limitations": [
+    "Windows manual visual and keyboard checks pending",
+    "No multi-monitor physical SSD roundtrip for this preview",
+    "Only three representative windows; other tools retain previous design"
+  ]
+}

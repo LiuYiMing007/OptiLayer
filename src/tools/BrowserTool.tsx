@@ -26,7 +26,7 @@ export default function BrowserTool({
     <section
       role="dialog"
       aria-label={title}
-      className={`browser-tool ${minimized ? "minimized" : ""}`}
+      className={`browser-tool tool-${id} ${minimized ? "minimized" : ""}`}
       style={{ left: position.x, top: position.y }}
     >
       <header
