@@ -1,6 +1,6 @@
-# TFC · v0.1.5-dev.1
+# TFC · v0.1.5-dev.2
 
-0.1.5 开发中：第一项为 [跨平台菜单](docs/0.1.5-跨平台菜单设计.md)，Mac 使用系统菜单，Windows 使用独立菜单窗口。正式版本仍为 0.1.4，完整界面及光谱调整尚未完成；[0.1.5 开发记录](docs/更新报告/0.1.5更新报告.md)。
+0.1.5 开发中：第二项已加入 [光谱主窗口与独立工具窗口](docs/0.1.5-多窗口工作台设计.md)，共享一个项目状态并自动重算。第一项为 [跨平台菜单](docs/0.1.5-跨平台菜单设计.md)，Mac 使用系统菜单，Windows 使用独立菜单窗口。正式版本仍为 0.1.4，完整界面及光谱调整尚未完成；[0.1.5 开发记录](docs/更新报告/0.1.5更新报告.md)。
 
 GitHub：**[私有源码仓库](https://github.com/LiuYiMing007/tfc-workbench)** · [版本下载与更新内容](https://github.com/LiuYiMing007/tfc-workbench/releases) · [逐次更新记录](https://github.com/LiuYiMing007/tfc-workbench/commits/main)
 

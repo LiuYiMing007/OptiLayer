@@ -22,8 +22,8 @@
       },
       {
         "id": "file.saveAs",
-        "label": "另存为（待开发）",
-        "implemented": false
+        "label": "另存为…",
+        "implemented": true
       },
       {
         "separator": true
@@ -155,6 +155,11 @@
         "id": "tools.materials",
         "label": "材料与基底…",
         "implemented": true
+      },
+      {
+        "id": "settings.substrate",
+        "label": "基底窗口…",
+        "implemented": true
       }
     ]
   },
@@ -198,29 +203,47 @@
     ]
   },
   {
-    "title": "视图",
+    "title": "窗口",
     "items": [
       {
-        "id": "view.sidebar",
-        "label": "左侧导航",
+        "id": "view.layers",
+        "label": "膜层结构",
         "implemented": true,
         "check": true
       },
       {
-        "id": "view.layers",
-        "label": "膜层编辑",
+        "id": "view.materials",
+        "label": "材料",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.substrate",
+        "label": "基底",
         "implemented": true,
         "check": true
       },
       {
         "id": "view.settings",
-        "label": "计算设置",
+        "label": "计算参数",
         "implemented": true,
         "check": true
       },
       {
-        "id": "view.spectrum",
+        "id": "view.project",
+        "label": "项目",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.analysis",
         "label": "光谱分析",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.targets",
+        "label": "目标曲线",
         "implemented": true,
         "check": true
       },
@@ -228,9 +251,21 @@
         "separator": true
       },
       {
-        "id": "view.reset",
-        "label": "恢复默认布局",
+        "id": "view.spectrum",
+        "label": "主光谱窗口",
         "implemented": true
+      },
+      {
+        "id": "view.reset",
+        "label": "收起所有工具窗口",
+        "implemented": true
+      },
+      {
+        "id": "view.remember",
+        "label": "下次恢复工具窗口布局",
+        "check": true,
+        "implemented": true,
+        "platform": "desktop"
       },
       {
         "id": "view.menu",
@@ -251,6 +286,19 @@
       {
         "id": "tools.workspace",
         "label": "工作区设置…",
+        "implemented": true
+      },
+      {
+        "separator": true
+      },
+      {
+        "id": "project.reference",
+        "label": "打开参考膜系示例",
+        "implemented": true
+      },
+      {
+        "id": "project.feedback",
+        "label": "打开光谱复核示例",
         "implemented": true
       }
     ]

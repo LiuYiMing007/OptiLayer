@@ -28,6 +28,8 @@ pub fn start(app: tauri::AppHandle) {
         let result = (|| -> Result<Value, String> {
             let count = Arc::new(AtomicUsize::new(0));
             let received = count.clone();
+            let tool_count = Arc::new(AtomicUsize::new(0));
+            let tool_received = tool_count.clone();
             ui(&app, move |app| {
                 let main = app.get_webview_window("main").ok_or("main missing")?;
                 main.listen("menu-command", move |_| {
@@ -50,7 +52,7 @@ pub fn start(app: tauri::AppHandle) {
                     return Err("macOS must not create menu window".into());
                 }
                 crate::menus::menu_sync(
-                    main,
+                    main.clone(),
                     app.clone(),
                     json!({"project":"菜单验收","commands":{"file.save":{"enabled":false},"layer.add":{"enabled":true},"view.layers":{"enabled":true,"checked":false}}}),
                 )?;
@@ -67,6 +69,64 @@ pub fn start(app: tauri::AppHandle) {
                     }
                     menu.close().map_err(|e| e.to_string())?;
                 }
+                main.listen("tool-action", move |event| {
+                    if let Ok(value) = serde_json::from_str::<Value>(event.payload()) {
+                        if value["source"] == "tool-layers"
+                            && value["action"]["requestId"] == "native-check"
+                        {
+                            tool_received.fetch_add(1, Ordering::SeqCst);
+                        }
+                    }
+                });
+                crate::tools::open(&app, "layers")?;
+                crate::tools::open(&app, "settings")?;
+                let layers = app
+                    .get_webview_window("tool-layers")
+                    .ok_or("layer window missing")?;
+                let settings = app
+                    .get_webview_window("tool-settings")
+                    .ok_or("settings window missing")?;
+                let main = app.get_webview_window("main").ok_or("main missing")?;
+                if !layers.is_visible().map_err(|e| e.to_string())?
+                    || !settings.is_visible().map_err(|e| e.to_string())?
+                {
+                    return Err("tools not independently visible".into());
+                }
+                if crate::menus::require_main(&layers).is_ok()
+                    || crate::tools::tool_publish(
+                        layers.clone(),
+                        app.clone(),
+                        json!({"sequence":99}),
+                    )
+                    .is_ok()
+                {
+                    return Err("tool can mutate authoritative state".into());
+                }
+                crate::tools::tool_publish(
+                    main.clone(),
+                    app.clone(),
+                    json!({"sequence":10,"project":{"id":"test"},"spectrum":[1],"library":[2]}),
+                )?;
+                crate::tools::tool_publish(
+                    main.clone(),
+                    app.clone(),
+                    json!({"sequence":9,"project":{"id":"obsolete"}}),
+                )?;
+                let snapshot = crate::tools::tool_snapshot(layers.clone(), app.clone())?
+                    .ok_or("projection missing")?;
+                if snapshot["project"]["id"] != "test"
+                    || !snapshot["spectrum"].is_null()
+                    || !snapshot["library"].is_null()
+                {
+                    return Err("outdated or excessive tool projection".into());
+                }
+                let action =
+                    json!({"requestId":"native-check","kind":"select","layerId":"stable-id"});
+                crate::tools::tool_submit(layers.clone(), app.clone(), action.clone())?;
+                if crate::tools::tool_submit(layers.clone(), app.clone(), action).is_ok() {
+                    return Err("duplicate tool command accepted".into());
+                }
+                layers.close().map_err(|e| e.to_string())?;
                 Ok(json!(true))
             })?;
             // Let the native event loop process CloseRequested before inspecting it.
@@ -84,8 +144,29 @@ pub fn start(app: tauri::AppHandle) {
                     }
                     crate::menus::menu_show(main, app.clone())?;
                 }
+                let layers = app
+                    .get_webview_window("tool-layers")
+                    .ok_or("tool destroyed on close")?;
+                if layers.is_visible().map_err(|e| e.to_string())? {
+                    return Err("tool close did not hide".into());
+                }
+                if !app
+                    .get_webview_window("tool-settings")
+                    .ok_or("other tool missing")?
+                    .is_visible()
+                    .map_err(|e| e.to_string())?
+                {
+                    return Err("closing one tool affected another".into());
+                }
+                crate::tools::open(&app, "layers")?;
+                if !layers.is_visible().map_err(|e| e.to_string())? {
+                    return Err("tool did not reopen".into());
+                }
                 Ok(json!(true))
             })?;
+            if tool_count.load(Ordering::SeqCst) != 1 {
+                return Err("tool action routing failed".into());
+            }
             if count.load(Ordering::SeqCst) != 1 {
                 return Err("enabled-command routing or disabled guard failed".into());
             }
@@ -98,7 +179,7 @@ pub fn start(app: tauri::AppHandle) {
                 Ok(json!(true))
             })?;
             Ok(
-                json!({"platform":crate::menus::menu_platform(),"native_menu":true,"command_routed_once_to_main":true,"disabled_command_blocked":true,"native_enabled_and_checked_sync":true,"windows_auxiliary_close_hide_restore":cfg!(windows),"auxiliary_cannot_mutate_workspace":cfg!(windows),"workspace_untouched":true}),
+                json!({"platform":crate::menus::menu_platform(),"native_tool_windows":true,"tool_close_hide_restore":true,"tool_projection_ordered":true,"tool_command_routed_once":true,"tool_cannot_mutate_workspace":true,"native_menu":true,"command_routed_once_to_main":true,"disabled_command_blocked":true,"native_enabled_and_checked_sync":true,"windows_auxiliary_close_hide_restore":cfg!(windows),"auxiliary_cannot_mutate_workspace":cfg!(windows),"workspace_untouched":true}),
             )
         })();
         match &result {

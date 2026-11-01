@@ -1,0 +1,1 @@
+{"identifier":"tool-windows","windows":["tool-*"],"permissions":["core:event:allow-listen","core:event:allow-unlisten"]}

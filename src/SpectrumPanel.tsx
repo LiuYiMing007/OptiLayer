@@ -6,6 +6,9 @@ import { spectrumCsv } from "./spectrumExport";
 import { parseTargetCsv } from "./model";
 import type { AnalysisBands, BandResult, Project, Spectrum } from "./types";
 interface Props {
+  mode?: "main" | "analysis" | "targets";
+  openAnalysis: () => void;
+  openTargets: () => void;
   details: boolean;
   setDetails: (value: boolean) => void;
   project: Project;
@@ -25,6 +28,9 @@ const bandValue = (r: BandResult | null | undefined) =>
     ? "尚未设置"
     : `${r.mean_percent.toFixed(4)}%`);
 export default function SpectrumPanel({
+  mode = "main",
+  openAnalysis,
+  openTargets,
   details,
   setDetails,
   project: p,
@@ -38,7 +44,7 @@ export default function SpectrumPanel({
 }: Props) {
   const [options, setOptions] = useState<ChartOptions>({
     T: true,
-    R: false,
+    R: true,
     A: false,
     sp: false,
     yMode: "auto",
@@ -59,184 +65,208 @@ export default function SpectrumPanel({
     );
   };
   return (
-    <section className="panel chart-panel">
-      <div className="panel-heading chart-heading">
-        <div>
-          <Activity size={18} />
-          <h2>光谱分析</h2>
-          {spectrum && (
-            <span className={`result-badge ${stale ? "stale" : ""}`}>
-              {stale ? "参数已修改 · 结果已过期" : "当前计算结果"}
+    <section className={`panel chart-panel spectrum-${mode}`}>
+      {mode === "main" && (
+        <>
+          <div className="panel-heading chart-heading">
+            <div>
+              <Activity size={18} />
+              <h2>光谱分析</h2>
+              {spectrum && (
+                <span className={`result-badge ${stale ? "stale" : ""}`}>
+                  {stale ? "参数已修改 · 结果已过期" : "当前计算结果"}
+                </span>
+              )}
+            </div>
+            <div className="chart-controls">
+              {(["T", "R", "A"] as const).map((channel) => (
+                <button
+                  key={channel}
+                  aria-pressed={options[channel]}
+                  className={!options[channel] ? "muted" : ""}
+                  onClick={() =>
+                    setOptions((o) => ({ ...o, [channel]: !o[channel] }))
+                  }
+                >
+                  <span
+                    className={`line-key ${channel === "T" ? "teal-key" : channel === "R" ? "purple-key" : "amber-key"}`}
+                  />
+                  {channel === "A" ? "A 残差" : channel}
+                </button>
+              ))}
+              <select
+                aria-label="纵轴范围"
+                value={options.yMode}
+                onChange={(e) =>
+                  setOptions((o) => ({
+                    ...o,
+                    yMode: e.target.value as ChartOptions["yMode"],
+                  }))
+                }
+              >
+                <option value="auto">自动纵轴</option>
+                <option value="full">0–100%</option>
+              </select>
+              <button
+                className={!options.sp ? "muted" : ""}
+                aria-pressed={options.sp}
+                onClick={() => setOptions((o) => ({ ...o, sp: !o.sp }))}
+              >
+                S/P
+              </button>
+              <button
+                aria-label="导出光谱"
+                disabled={!result || busy}
+                onClick={exportCsv}
+              >
+                <Download size={16} />
+              </button>
+            </div>
+          </div>
+          <div className="chart-context">
+            <span>
+              {spectrum?.model || "等待计算"}
+              {stale ? " · 图中保留上次结果" : ""}
             </span>
-          )}
-        </div>
-        <div className="chart-controls">
-          {(["T", "R", "A"] as const).map((channel) => (
-            <button
-              key={channel}
-              aria-pressed={options[channel]}
-              className={!options[channel] ? "muted" : ""}
-              onClick={() =>
-                setOptions((o) => ({ ...o, [channel]: !o[channel] }))
-              }
-            >
-              <span
-                className={`line-key ${channel === "T" ? "teal-key" : channel === "R" ? "purple-key" : "amber-key"}`}
-              />
-              {channel === "A" ? "A 残差" : channel}
-            </button>
-          ))}
-          <select
-            aria-label="纵轴范围"
-            value={options.yMode}
-            onChange={(e) =>
-              setOptions((o) => ({
-                ...o,
-                yMode: e.target.value as ChartOptions["yMode"],
-              }))
-            }
-          >
-            <option value="auto">自动纵轴</option>
-            <option value="full">0–100%</option>
-          </select>
-          <button
-            className={!options.sp ? "muted" : ""}
-            aria-pressed={options.sp}
-            onClick={() => setOptions((o) => ({ ...o, sp: !o.sp }))}
-          >
-            S/P
-          </button>
-          <button
-            aria-label="导出光谱"
-            disabled={!result || busy}
-            onClick={exportCsv}
-          >
-            <Download size={16} />
-          </button>
-        </div>
-      </div>
-      <div className="chart-context">
-        <span>
-          {spectrum?.model || "等待计算"}
-          {stale ? " · 图中保留上次结果" : ""}
-        </span>
-        <span>拖拽框选缩放 · 滚轮缩放 · 双击复位</span>
-      </div>
-      <div className={stale ? "chart-stale" : ""}>
-        <SpectrumChart
-          spectrum={spectrum}
-          referenceNm={p.settings.reference_nm}
-          options={options}
-          targets={p.target_points}
-        />
-      </div>
-      <div className="spectrum-summary">
-        <div>
-          <span>最大透过率 T</span>
-          <strong className="teal-text">
-            {value(analysis?.T.max.value_percent)}
-            <small> %</small>
-          </strong>
-          <small>
-            {analysis
-              ? `@ ${value(analysis.T.max.wavelength_nm, 2)} nm`
-              : "等待计算"}
-          </small>
-        </div>
-        <div>
-          <span>最小透过率 T</span>
-          <strong>
-            {value(analysis?.T.min.value_percent)}
-            <small> %</small>
-          </strong>
-          <small>
-            {analysis
-              ? `@ ${value(analysis.T.min.wavelength_nm, 2)} nm`
-              : "等待计算"}
-          </small>
-        </div>
-        <div>
-          <span>参考波长 {p.settings.reference_nm} nm</span>
-          <strong className="teal-text">
-            {value(result?.reference_point.T_percent)}
-            <small> % T</small>
-          </strong>
-          <small>R = {value(result?.reference_point.R_percent)}%</small>
-        </div>
-        <div>
-          <span>50% 截止 · 全部交点</span>
-          <strong>
-            {analysis
-              ? analysis.crossings["50"].length
-                ? "共 " + analysis.crossings["50"].length + " 处"
-                : "无交点"
-              : "—"}
-          </strong>
-          <small>
-            {analysis?.crossings["50"].length
-              ? analysis.crossings["50"]
-                  .slice(0, 3)
-                  .map((c) => value(c.wavelength_nm, 2))
-                  .join(" / ") + " nm"
-              : "当前波段未跨过 T=50%"}
-          </small>
-        </div>
-      </div>
+            <span>拖拽框选缩放 · 滚轮缩放 · 双击复位</span>
+          </div>
+          <div className={`spectrum-canvas ${stale ? "chart-stale" : ""}`}>
+            <SpectrumChart
+              spectrum={spectrum}
+              referenceNm={p.settings.reference_nm}
+              options={options}
+              targets={p.target_points}
+            />
+          </div>
+          <div className="spectrum-summary">
+            <div>
+              <span>最大透过率 T</span>
+              <strong className="teal-text">
+                {value(analysis?.T.max.value_percent)}
+                <small> %</small>
+              </strong>
+              <small>
+                {analysis
+                  ? `@ ${value(analysis.T.max.wavelength_nm, 2)} nm`
+                  : "等待计算"}
+              </small>
+            </div>
+            <div>
+              <span>最小透过率 T</span>
+              <strong>
+                {value(analysis?.T.min.value_percent)}
+                <small> %</small>
+              </strong>
+              <small>
+                {analysis
+                  ? `@ ${value(analysis.T.min.wavelength_nm, 2)} nm`
+                  : "等待计算"}
+              </small>
+            </div>
+            <div>
+              <span>参考波长 {p.settings.reference_nm} nm</span>
+              <strong className="teal-text">
+                {value(result?.reference_point.T_percent)}
+                <small> % T</small>
+              </strong>
+              <small>R = {value(result?.reference_point.R_percent)}%</small>
+            </div>
+            <div>
+              <span>50% 截止 · 全部交点</span>
+              <strong>
+                {analysis
+                  ? analysis.crossings["50"].length
+                    ? "共 " + analysis.crossings["50"].length + " 处"
+                    : "无交点"
+                  : "—"}
+              </strong>
+              <small>
+                {analysis?.crossings["50"].length
+                  ? analysis.crossings["50"]
+                      .slice(0, 3)
+                      .map((c) => value(c.wavelength_nm, 2))
+                      .join(" / ") + " nm"
+                  : "当前波段未跨过 T=50%"}
+              </small>
+            </div>
+          </div>
+        </>
+      )}
       <div className="analysis-toolbar">
-        <div>
-          <input
-            ref={targetRef}
-            type="file"
-            accept=".csv"
-            hidden
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (!file) return;
-              try {
-                if (file.size > 2_000_000)
-                  throw new Error("目标 CSV 不能超过 2 MB");
-                const points = parseTargetCsv(await file.text());
-                update((next) => {
-                  next.target_points = points;
-                });
-              } catch (error) {
-                onError(String(error));
-              }
-            }}
-          />
-          <button
-            className="text-button"
-            disabled={busy}
-            onClick={() => targetRef.current?.click()}
-          >
-            <Upload size={13} />
-            导入目标 CSV
-          </button>
-          {!!p.target_points?.length && (
+        {mode === "targets" && (
+          <div>
+            <input
+              ref={targetRef}
+              type="file"
+              accept=".csv"
+              hidden
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                try {
+                  if (file.size > 2_000_000)
+                    throw new Error("目标 CSV 不能超过 2 MB");
+                  const points = parseTargetCsv(await file.text());
+                  update((next) => {
+                    next.target_points = points;
+                  });
+                } catch (error) {
+                  onError(String(error));
+                }
+              }}
+            />
             <button
               className="text-button"
               disabled={busy}
-              onClick={() =>
-                update((next) => {
-                  delete next.target_points;
-                })
-              }
+              onClick={() => targetRef.current?.click()}
             >
-              <X size={13} />
-              移除目标
+              <Upload size={13} />
+              导入目标 CSV
             </button>
-          )}
-        </div>
+            {!!p.target_points?.length && (
+              <button
+                className="text-button"
+                disabled={busy}
+                onClick={() =>
+                  update((next) => {
+                    delete next.target_points;
+                  })
+                }
+              >
+                <X size={13} />
+                移除目标
+              </button>
+            )}
+          </div>
+        )}
         <button
           className="text-button teal"
-          onClick={() => setDetails(!details)}
+          onClick={() => {
+            if (mode === "main") openAnalysis();
+            else setDetails(!details);
+          }}
         >
-          {details ? "收起详细分析" : "展开波段、截止边缘与峰谷分析"}{" "}
-          {details ? "↑" : "↓"}
+          {mode === "main"
+            ? "波段、交点与峰谷分析 ↗"
+            : details
+              ? "详细分析"
+              : "展开详细分析"}{" "}
+          {mode !== "main" && (details ? "↑" : "↓")}
         </button>
+        {mode === "main" && (
+          <button className="text-button targets-link" onClick={openTargets}>
+            目标曲线 ↗
+          </button>
+        )}
       </div>
-      {details && (
+      {mode === "targets" && (
+        <p className="target-description">
+          目标曲线仅作对照，不改变 Optical Core。导入 CSV
+          后主光谱立即显示目标线。当前 {p.target_points?.length || 0} 个目标点。
+        </p>
+      )}
+      {mode === "analysis" && details && (
         <div className="analysis-details">
           <div className="band-editor">
             {(["passband", "stopband"] as const).map((key, i) => (

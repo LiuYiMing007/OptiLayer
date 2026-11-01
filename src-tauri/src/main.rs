@@ -8,6 +8,7 @@ use std::{
 mod menu_check;
 mod menus;
 mod portable;
+mod tools;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 
@@ -325,18 +326,28 @@ fn main() {
     tauri::Builder::default()
         .manage(WorkspaceSelection::default())
         .manage(menus::MenuState::default())
+        .manage(tools::ToolsState::default())
         .setup(move |app| {
+            if menu_check {
+                tools::testing(app.handle());
+            }
             menus::setup(app)?;
+            if !menu_check {
+                tools::setup(app.handle());
+            }
             if menu_check {
                 menu_check::start(app.handle().clone());
             }
             Ok(())
         })
         .on_window_event(|window, event| {
+            if window.label() == "main"
+                && matches!(event, tauri::WindowEvent::CloseRequested { .. })
+            {
+                let _ = tools::save_layout(window.app_handle());
+            }
             if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
-                if let Some(menu) = window.app_handle().get_webview_window("menu") {
-                    let _ = menu.destroy();
-                }
+                tools::shutdown(window.app_handle());
                 window.app_handle().exit(0);
             }
         })
@@ -350,7 +361,16 @@ fn main() {
             menus::menu_platform,
             menus::menu_sync,
             menus::menu_snapshot,
-            menus::menu_show
+            menus::menu_show,
+            tools::tool_open,
+            tools::tool_hide,
+            tools::tool_visibility,
+            tools::tool_remember,
+            tools::tool_snapshot,
+            tools::tool_publish,
+            tools::tool_submit,
+            tools::tool_reply,
+            tools::tool_focus_main
         ])
         .build(context)
         .expect("无法启动 TFC")

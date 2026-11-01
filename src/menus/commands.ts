@@ -37,7 +37,7 @@ export function commandStates(c: MenuContext): Record<string, CommandState> {
   return Object.fromEntries(
     entries.map((item) => {
       let enabled = !!item.implemented && available;
-      if (["file.open", "file.save"].includes(item.id!))
+      if (["file.open", "file.save", "file.saveAs"].includes(item.id!))
         enabled &&= c.workspace;
       if (item.id === "edit.undo") enabled &&= c.canUndo;
       if (item.id === "edit.redo") enabled &&= c.canRedo;

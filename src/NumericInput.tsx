@@ -23,8 +23,9 @@ export default function NumericInput({
     Number.isFinite(v) ? String(Number(v.toFixed(precision))) : "";
   const [draft, setDraft] = useState(format(value));
   const focused = useRef(false);
+  const edited = useRef(false);
   useEffect(() => {
-    if (!focused.current) setDraft(format(value));
+    if (!focused.current || !edited.current) setDraft(format(value));
   }, [value, precision]);
   return (
     <input
@@ -37,13 +38,16 @@ export default function NumericInput({
       disabled={disabled}
       onFocus={() => {
         focused.current = true;
+        edited.current = false;
       }}
       onChange={(e) => {
+        edited.current = true;
         setDraft(e.target.value);
         onChange(e.target.value === "" ? NaN : Number(e.target.value));
       }}
       onBlur={() => {
         focused.current = false;
+        edited.current = false;
         setDraft(format(value));
       }}
       onKeyDown={(e) => {

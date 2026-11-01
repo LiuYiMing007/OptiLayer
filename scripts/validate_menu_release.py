@@ -24,6 +24,7 @@ assert response.returncode == 0, response.stdout + response.stderr
 report = json.loads(response.stdout.strip())
 assert report['native_menu'] and report['command_routed_once_to_main'] and report['disabled_command_blocked']
 assert report['native_enabled_and_checked_sync']
+assert all(report[key] for key in ('native_tool_windows', 'tool_close_hide_restore', 'tool_projection_ordered', 'tool_command_routed_once', 'tool_cannot_mutate_workspace'))
 if system == 'Windows':
     assert report['windows_auxiliary_close_hide_restore'] and report['auxiliary_cannot_mutate_workspace']
 assert workspace_hashes() == before, 'Native menu check changed Workspace or project settings'

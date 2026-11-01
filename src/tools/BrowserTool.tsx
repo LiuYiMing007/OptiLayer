@@ -1,0 +1,87 @@
+import { useState } from "react";
+import ToolView from "./ToolView";
+import type { ToolSnapshot } from "./state";
+import type { ToolIntent } from "./useToolHost";
+export default function BrowserTool({
+  id,
+  title,
+  snapshot,
+  send,
+  close,
+  index,
+}: {
+  id: string;
+  title: string;
+  snapshot: ToolSnapshot;
+  send: (a: ToolIntent) => Promise<void>;
+  close: () => void;
+  index: number;
+}) {
+  const [position, setPosition] = useState({
+    x: 40 + index * 22,
+    y: 70 + index * 22,
+  });
+  const [minimized, setMinimized] = useState(false);
+  return (
+    <section
+      role="dialog"
+      aria-label={title}
+      className={`browser-tool ${minimized ? "minimized" : ""}`}
+      style={{ left: position.x, top: position.y }}
+    >
+      <header
+        onPointerDown={(e) => {
+          if ((e.target as HTMLElement).closest("button")) return;
+          const start = {
+            pointerX: e.clientX,
+            pointerY: e.clientY,
+            ...position,
+          };
+          const move = (event: PointerEvent) =>
+            setPosition({
+              x: Math.max(
+                0,
+                Math.min(
+                  window.innerWidth - 120,
+                  start.x + event.clientX - start.pointerX,
+                ),
+              ),
+              y: Math.max(
+                0,
+                Math.min(
+                  window.innerHeight - 40,
+                  start.y + event.clientY - start.pointerY,
+                ),
+              ),
+            });
+          const stop = () => {
+            window.removeEventListener("pointermove", move);
+            window.removeEventListener("pointerup", stop);
+          };
+          window.addEventListener("pointermove", move);
+          window.addEventListener("pointerup", stop);
+        }}
+      >
+        <strong>{title}</strong>
+        <span>{snapshot.project.name}</span>
+        <button
+          aria-label={`最小化${title}`}
+          onClick={() => setMinimized((v) => !v)}
+        >
+          —
+        </button>
+        <button aria-label={`关闭${title}`} onClick={close}>
+          ×
+        </button>
+      </header>
+      {!minimized && (
+        <ToolView
+          key={snapshot.scope}
+          id={id}
+          snapshot={snapshot}
+          send={send}
+        />
+      )}
+    </section>
+  );
+}

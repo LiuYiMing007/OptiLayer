@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Download, Plus, Save } from "lucide-react";
-import { request } from "./api";
 import NumericInput from "./NumericInput";
 import { replaceMaterial, synchronizeBoundaries } from "./model";
 import type { Material, MaterialRole, Project } from "./types";
@@ -13,12 +12,17 @@ const roles: Record<MaterialRole, string> = {
 export default function MaterialLibrary({
   project,
   update,
+  library,
+  onSaveLibrary,
 }: {
+  library: Material[];
+  onSaveLibrary: () => Promise<void>;
   project: Project;
   update: (f: (p: Project) => void) => void;
 }) {
   const [tab, setTab] = useState<"project" | "library">("project");
-  const [library, setLibrary] = useState<Material[]>([]);
+  const [search, setSearch] = useState("");
+  const importInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
@@ -26,21 +30,11 @@ export default function MaterialLibrary({
     [role, setRole] = useState<MaterialRole>("film"),
     [n, setN] = useState(1.5),
     [source, setSource] = useState("用户输入的常数折射率");
-  async function load() {
-    const result = await request<{ materials: Material[] }>({
-      action: "library_list",
-    });
-    setLibrary(result.materials);
-  }
-  useEffect(() => {
-    void load().catch((e) => setError(String(e)));
-  }, []);
   async function saveLibrary() {
     setBusy(true);
     setError("");
     try {
-      await request({ action: "library_save", materials: project.materials });
-      await load();
+      await onSaveLibrary();
       setNotice("当前材料快照已保存到共享库；其他项目的快照不会被自动修改。");
     } catch (e) {
       setError(String(e));
@@ -50,6 +44,63 @@ export default function MaterialLibrary({
   }
   return (
     <div className="material-library">
+      <div className="material-search">
+        <input
+          aria-label="搜索材料"
+          placeholder="搜索材料名称、用途或来源"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <input
+          hidden
+          type="file"
+          ref={importInput}
+          accept=".json"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            try {
+              if (f.size > 2_000_000) throw new Error("材料文件不能超过 2 MB");
+              const data = JSON.parse(await f.text());
+              const items = Array.isArray(data) ? data : data.materials;
+              if (!Array.isArray(items) || !items.length || items.length > 1000)
+                throw new Error(
+                  "需要 1–1000 个材料的 JSON 数组或 materials 字段",
+                );
+              for (const m of items)
+                if (
+                  typeof m.name !== "string" ||
+                  !m.name.trim() ||
+                  !Number.isFinite(m.n) ||
+                  m.n <= 0 ||
+                  m.n > 20 ||
+                  m.k !== 0 ||
+                  !["film", "substrate", "medium", "all"].includes(m.role)
+                )
+                  throw new Error("材料需具名、有效 n、k=0 和用途");
+              update((p) => {
+                for (const m of items)
+                  replaceMaterial(p, {
+                    ...m,
+                    model: "constant",
+                    source: m.source || "用户导入常数材料",
+                    color: m.color || "#859bd0",
+                  });
+              });
+              setNotice("材料已提交到当前项目；共享库需单独保存。");
+            } catch (error) {
+              setError(String(error));
+            }
+          }}
+        />
+        <button
+          className="button secondary"
+          onClick={() => importInput.current?.click()}
+        >
+          导入材料 JSON
+        </button>
+      </div>
       <p className="modal-description">
         膜层、基底和入射介质共用光学材料模型。共享库可跨项目复用；项目保存自己的材料快照，避免旧结果随库更新而改变。当前支持常数
         n、k=0。
@@ -81,66 +132,73 @@ export default function MaterialLibrary({
       {tab === "project" ? (
         <>
           <div className="material-cards">
-            {project.materials.map((m, index) => (
-              <article className="material-card" key={m.name}>
-                <div className="material-card-title">
-                  <span
-                    className="material-dot"
-                    style={{ background: m.color }}
-                  />
-                  <strong>{m.name}</strong>
-                  <span className="small-label">常数模型 · k=0</span>
-                </div>
-                <div className="material-card-fields">
-                  <label>
-                    用途
-                    <select
-                      aria-label={`${m.name} 用途`}
-                      value={m.role}
-                      onChange={(e) =>
-                        update((p) => {
-                          p.materials[index].role = e.target
-                            .value as MaterialRole;
-                        })
-                      }
-                    >
-                      {Object.entries(roles).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    折射率 n
-                    <NumericInput
-                      label={`${m.name} 折射率`}
-                      value={m.n}
-                      min={0.001}
-                      max={20}
-                      onChange={(value) =>
-                        update((p) => {
-                          p.materials[index].n = value;
-                          synchronizeBoundaries(p);
-                        })
-                      }
+            {project.materials
+              .map((m, index) => ({ m, index }))
+              .filter(({ m }) =>
+                `${m.name} ${m.source} ${roles[m.role]}`
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+              )
+              .map(({ m, index }) => (
+                <article className="material-card" key={m.name}>
+                  <div className="material-card-title">
+                    <span
+                      className="material-dot"
+                      style={{ background: m.color }}
                     />
-                  </label>
-                  <label className="source-field">
-                    数据来源
-                    <input
-                      aria-label={`${m.name} 数据来源`}
-                      value={m.source}
-                      onChange={(e) =>
-                        update((p) => {
-                          p.materials[index].source = e.target.value;
-                        })
-                      }
-                    />
-                  </label>
-                </div>
-              </article>
-            ))}
+                    <strong>{m.name}</strong>
+                    <span className="small-label">常数模型 · k=0</span>
+                  </div>
+                  <div className="material-card-fields">
+                    <label>
+                      用途
+                      <select
+                        aria-label={`${m.name} 用途`}
+                        value={m.role}
+                        onChange={(e) =>
+                          update((p) => {
+                            p.materials[index].role = e.target
+                              .value as MaterialRole;
+                          })
+                        }
+                      >
+                        {Object.entries(roles).map(([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      折射率 n
+                      <NumericInput
+                        label={`${m.name} 折射率`}
+                        value={m.n}
+                        min={0.001}
+                        max={20}
+                        onChange={(value) =>
+                          update((p) => {
+                            p.materials[index].n = value;
+                            synchronizeBoundaries(p);
+                          })
+                        }
+                      />
+                    </label>
+                    <label className="source-field">
+                      数据来源
+                      <input
+                        aria-label={`${m.name} 数据来源`}
+                        value={m.source}
+                        onChange={(e) =>
+                          update((p) => {
+                            p.materials[index].source = e.target.value;
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                </article>
+              ))}
           </div>
           <button
             className="button secondary"
@@ -232,42 +290,54 @@ export default function MaterialLibrary({
       ) : (
         <>
           <div className="material-cards">
-            {library.map((m) => {
-              const current = project.materials.find((p) => p.name === m.name);
-              const same =
-                current && JSON.stringify(current) === JSON.stringify(m);
-              return (
-                <article className="material-card catalog-card" key={m.name}>
-                  <div>
-                    <div className="material-card-title">
-                      <span
-                        className="material-dot"
-                        style={{ background: m.color }}
-                      />
-                      <strong>{m.name}</strong>
-                      <span className="pill">{roles[m.role]}</span>
+            {library
+              .filter((m) =>
+                `${m.name} ${m.source} ${roles[m.role]}`
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+              )
+              .map((m) => {
+                const current = project.materials.find(
+                  (p) => p.name === m.name,
+                );
+                const same =
+                  current && JSON.stringify(current) === JSON.stringify(m);
+                return (
+                  <article className="material-card catalog-card" key={m.name}>
+                    <div>
+                      <div className="material-card-title">
+                        <span
+                          className="material-dot"
+                          style={{ background: m.color }}
+                        />
+                        <strong>{m.name}</strong>
+                        <span className="pill">{roles[m.role]}</span>
+                      </div>
+                      <p>
+                        n = {m.n} · k = {m.k}
+                      </p>
+                      <small>{m.source}</small>
                     </div>
-                    <p>
-                      n = {m.n} · k = {m.k}
-                    </p>
-                    <small>{m.source}</small>
-                  </div>
-                  <button
-                    className="button secondary"
-                    disabled={same}
-                    onClick={() => {
-                      update((p) => replaceMaterial(p, m));
-                      setNotice(
-                        `${m.name} 已${current ? "替换项目快照" : "加入项目"}，请重新计算。`,
-                      );
-                    }}
-                  >
-                    {same ? <Check size={14} /> : <Download size={14} />}{" "}
-                    {same ? "已在项目" : current ? "替换项目快照" : "加入项目"}
-                  </button>
-                </article>
-              );
-            })}
+                    <button
+                      className="button secondary"
+                      disabled={same}
+                      onClick={() => {
+                        update((p) => replaceMaterial(p, m));
+                        setNotice(
+                          `${m.name} 已${current ? "替换项目快照" : "加入项目"}，请重新计算。`,
+                        );
+                      }}
+                    >
+                      {same ? <Check size={14} /> : <Download size={14} />}{" "}
+                      {same
+                        ? "已在项目"
+                        : current
+                          ? "替换项目快照"
+                          : "加入项目"}
+                    </button>
+                  </article>
+                );
+              })}
           </div>
           <p className="small-label">
             内置 REF

@@ -2,16 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   BookOpen,
-  CircleHelp,
-  Download,
-  FilePlus2,
   FileText,
-  FlaskConical,
   FolderOpen,
-  Layers3,
-  Save,
-  ShieldCheck,
-  Upload,
   Waves,
   X,
 } from "lucide-react";
@@ -19,9 +11,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { request } from "./api";
 import { clone, referenceProject } from "./defaults";
-import { physicalSignature } from "./model";
-import LayerEditor from "./LayerEditor";
-import CalculationSettings from "./CalculationSettings";
+import { synchronizeBoundaries, physicalSignature } from "./model";
 import MaterialLibrary from "./MaterialLibrary";
 import SpectrumPanel from "./SpectrumPanel";
 import WorkspacePanel from "./WorkspacePanel";
@@ -31,9 +21,21 @@ import { useDesktopMenus } from "./menus/useDesktopMenus";
 import { changeLayer, type LayerCommand } from "./layerCommands";
 import { spectrumCsv } from "./spectrumExport";
 import { version as appVersion } from "../package.json";
+import { CalculationQueue } from "./calculationQueue";
+import {
+  applyPatches,
+  patchKey,
+  toolDefinitions,
+  type ToolId,
+  type ToolAction,
+  type ToolSnapshot,
+} from "./tools/state";
+import { useToolHost, type ToolIntent } from "./tools/useToolHost";
+import BrowserTool from "./tools/BrowserTool";
 import feedbackFixture from "../fixtures/user-feedback/380nm-project.json";
 import type {
   AnalysisBands,
+  Material,
   Project,
   SavedProject,
   Spectrum,
@@ -62,27 +64,15 @@ export default function App() {
   >(null);
   const [past, setPast] = useState<Project[]>([]),
     [future, setFuture] = useState<Project[]>([]);
-  const [panels, setPanels] = useState({
-    sidebar: true,
-    layers: true,
-    settings: true,
-    spectrum: true,
-  });
-  const [focusTarget, setFocusTarget] = useState<{
-    panel: string;
-    label?: string;
-  } | null>(null);
-  useEffect(() => {
-    if (!focusTarget) return;
-    const element = document.querySelector<HTMLElement>(
-      `[data-workbench-panel="${focusTarget.panel}"]`,
-    );
-    element?.scrollIntoView({ block: "center", behavior: "smooth" });
-    if (focusTarget.label)
-      element
-        ?.querySelector<HTMLElement>(`[aria-label="${focusTarget.label}"]`)
-        ?.focus();
-  }, [focusTarget]);
+  const [focus, setFocus] = useState<
+    { id: string; label: string; token: string } | undefined
+  >();
+  const [library, setLibrary] = useState<Material[]>([]);
+  const [calculating, setCalculating] = useState(false);
+  const [calculationError, setCalculationError] = useState("");
+  const epoch = useRef(0),
+    writers = useRef(new Map<string, string>());
+  const sequence = useRef(0);
   const [details, setDetails] = useState(false);
   const asking = useRef(false);
   const current = useRef(project);
@@ -93,17 +83,58 @@ export default function App() {
     importRef = useRef<HTMLInputElement>(null);
   const dirty = JSON.stringify(project) !== savedKey;
   const stale = !!spectrum && physicalSignature(project) !== resultKey;
-  function update(mutator: (p: Project) => void) {
+  const scope = `${workspace?.id || "unavailable"}:${project.id}:${epoch.current}`;
+  const scopeRef = useRef(scope);
+  scopeRef.current = scope;
+  const receiverRef = useRef({
+    result: (s: Spectrum, p: Project) => acceptResult(s, p),
+    error: (e: unknown) => setCalculationError(message(e)),
+    activity: setCalculating,
+  });
+  receiverRef.current = {
+    result: (s, p) => {
+      if (
+        current.current.id === p.id &&
+        physicalSignature(current.current) === physicalSignature(p)
+      ) {
+        acceptResult(s, p);
+        setCalculationError("");
+      }
+    },
+    error: (e) => setCalculationError(message(e)),
+    activity: setCalculating,
+  };
+  const queue = useRef<CalculationQueue | null>(null);
+  if (!queue.current)
+    queue.current = new CalculationQueue(
+      (p) => request<Spectrum>({ action: "calculate", project: p }),
+      (s, p) => receiverRef.current.result(s, p),
+      (e) => receiverRef.current.error(e),
+      (v) => receiverRef.current.activity(v),
+    );
+  function commit(next: Project, clearWriters = true) {
     const previous = clone(current.current);
-    const next = clone(previous);
-    mutator(next);
+    if (physicalSignature(previous) !== physicalSignature(next))
+      queue.current!.invalidate();
+    if (clearWriters) writers.current.clear();
     setPast((p) => [...p.slice(-49), previous]);
     setFuture([]);
     current.current = next;
     setProject(next);
   }
+  function update(mutator: (p: Project) => void) {
+    const next = clone(current.current);
+    mutator(next);
+    synchronizeBoundaries(next);
+    commit(next);
+  }
   function undo() {
     if (!past.length || busy) return;
+    if (physicalSignature(current.current) !== physicalSignature(past.at(-1)!))
+      queue.current!.invalidate();
+    epoch.current++;
+    scopeRef.current = `${workspace?.id || "unavailable"}:${current.current.id}:${epoch.current}`;
+    writers.current.clear();
     setFuture((f) => [clone(project), ...f]);
     current.current = past.at(-1)!;
     setProject(current.current);
@@ -114,6 +145,11 @@ export default function App() {
   }
   function redo() {
     if (!future.length || busy) return;
+    if (physicalSignature(current.current) !== physicalSignature(future[0]))
+      queue.current!.invalidate();
+    epoch.current++;
+    scopeRef.current = `${workspace?.id || "unavailable"}:${current.current.id}:${epoch.current}`;
+    writers.current.clear();
     setPast((p) => [...p, clone(project)]);
     current.current = future[0];
     setProject(current.current);
@@ -143,21 +179,39 @@ export default function App() {
     setNotice(`计算完成 · ${result.wavelength_nm.length} 点 · ${result.model}`);
   }
   async function calculate(p = current.current) {
-    const snapshot = clone(p);
-    await run(async () => {
-      acceptResult(
-        await request<Spectrum>({ action: "calculate", project: snapshot }),
-        snapshot,
-      );
-    });
+    setCalculationError("");
+    queue.current!.submit(p, true);
   }
-  async function save() {
+  const physicalKey = physicalSignature(project);
+  useEffect(() => {
+    queue.current!.invalidate();
+    setCalculationError("");
+    const timer = setTimeout(() => {
+      queue.current!.submit(current.current);
+    }, 180);
+    return () => {
+      clearTimeout(timer);
+      queue.current!.invalidate();
+    };
+  }, [physicalKey, scope]);
+  async function save(copyName?: string) {
     const snapshot = clone(current.current);
+    if (copyName) {
+      snapshot.id = crypto.randomUUID();
+      snapshot.name = copyName;
+    }
     await run(async () => {
       const r = await request<{ project: Project; warnings?: string[] }>({
         action: "save",
         project: snapshot,
       });
+      if (copyName) {
+        epoch.current++;
+        scopeRef.current = `${workspace?.id || "unavailable"}:${r.project.id}:${epoch.current}`;
+        writers.current.clear();
+        setPast([]);
+        setFuture([]);
+      }
       current.current = r.project;
       setProject(r.project);
       setSavedKey(JSON.stringify(r.project));
@@ -171,8 +225,8 @@ export default function App() {
           await request({
             action: "spectrum_save",
             project_id: r.project.id,
-            project: resultRef.current.input_snapshot,
-            spectrum: resultRef.current,
+            project: snapshot,
+            spectrum: { ...resultRef.current, input_snapshot: snapshot },
           });
         } catch (e) {
           spectrumWarning = `；项目已保存，光谱快照未保存：${message(e)}`;
@@ -181,6 +235,7 @@ export default function App() {
       setNotice(
         `项目已保存到当前工作区${r.warnings?.length ? "；" + r.warnings.join("；") : ""}${spectrumWarning}`,
       );
+      await refreshProjects();
     });
   }
   async function newProject() {
@@ -198,14 +253,134 @@ export default function App() {
     });
     setSelected(nextSelected);
   }
-  function focusPanel(
-    panel: "layers" | "settings" | "spectrum",
-    label?: string,
-  ) {
-    setModal(null);
-    setPanels((p) => ({ ...p, [panel]: true }));
-    setFocusTarget({ panel, label });
+  const toolSnapshot: ToolSnapshot = {
+    focus,
+    sequence: ++sequence.current,
+    scope,
+    project,
+    selected,
+    busy: busy || !!confirmation || !!modal,
+    calculating,
+    dirty,
+    canUndo: !!past.length,
+    canRedo: !!future.length,
+    workspace,
+    projects,
+    library,
+    spectrum,
+    stale,
+    error: error || calculationError,
+    notice,
+  };
+  const toolActionRef = useRef<
+    (source: string, action: ToolAction) => Promise<void>
+  >(async () => {});
+  const host = useToolHost(
+    toolSnapshot,
+    (source, action) => toolActionRef.current(source, action),
+    setError,
+  );
+  async function showTool(id: ToolId, label = "") {
+    setFocus({ id, label, token: crypto.randomUUID() });
+    await host.show(id);
+    if (id === "project") await refreshProjects();
+    if (id === "materials") await refreshLibrary();
   }
+  async function focusMain() {
+    if (isTauri()) await invoke("tool_focus_main");
+  }
+  async function focusPanel(panel: "layers" | "settings" | "spectrum") {
+    if (panel === "spectrum") {
+      await focusMain();
+      return;
+    }
+    await showTool(panel);
+  }
+  async function refreshProjects() {
+    const r = await request<{ projects: SavedProject[] }>({ action: "list" });
+    setProjects(r.projects);
+  }
+  async function refreshLibrary() {
+    const r = await request<{ materials: Material[] }>({
+      action: "library_list",
+    });
+    setLibrary(r.materials);
+  }
+  async function handleToolAction(source: string, action: ToolAction) {
+    if (action.scope !== scopeRef.current)
+      throw new Error("项目或工作区已切换，请使用最新窗口内容");
+    if (working.current || asking.current || modal)
+      throw new Error("主工作台正在处理，请稍后重试");
+    if (action.kind === "patch") {
+      const next = applyPatches(
+        current.current,
+        action.patches,
+        (p) => writers.current.get(patchKey(p)) === source,
+      );
+      commit(next, false);
+      for (const patch of action.patches)
+        writers.current.set(patchKey(patch), source);
+      return;
+    }
+    if (action.kind === "select") {
+      const index = current.current.layers.findIndex(
+        (l) => l.id === action.layerId,
+      );
+      if (index >= 0) setSelected(index);
+      return;
+    }
+    if (action.kind === "layer") {
+      const index = action.layerId
+        ? current.current.layers.findIndex((l) => l.id === action.layerId)
+        : selected;
+      if (index < 0 && action.command !== "layer.add")
+        throw new Error("该膜层已删除");
+      layerCommand(action.command, index);
+      return;
+    }
+    if (action.kind === "command") {
+      await commandRef.current(action.id);
+      return;
+    }
+    if (action.kind === "open-project") {
+      await openProject(action.id);
+      return;
+    }
+    if (action.kind === "save-copy") {
+      if (!action.name.trim() || action.name.length > 200)
+        throw new Error("请输入有效项目名称");
+      await save(action.name.trim());
+      return;
+    }
+    if (action.kind === "projects-refresh") {
+      await run(refreshProjects);
+      return;
+    }
+    if (action.kind === "library-refresh") {
+      await run(refreshLibrary);
+      return;
+    }
+    if (action.kind === "library-save") {
+      await run(async () => {
+        await request({
+          action: "library_save",
+          materials: current.current.materials,
+        });
+        await refreshLibrary();
+      });
+      return;
+    }
+    if (action.kind === "analyze") {
+      await analyze(current.current.analysis_bands || {});
+      return;
+    }
+    if (action.kind === "export") {
+      await download(action.name, action.content, action.type);
+      return;
+    }
+  }
+  toolActionRef.current = handleToolAction;
+  const panels = { ...host.visible, spectrum: true };
   const states = commandStates({
     busy,
     blocked: !!confirmation || !!modal,
@@ -229,19 +404,32 @@ export default function App() {
       layerCommand(id as LayerCommand);
       return;
     }
-    if (id.startsWith("view.") && id.slice(5) in panels) {
-      setPanels((p) => ({
-        ...p,
-        [id.slice(5)]: !p[id.slice(5) as keyof typeof p],
-      }));
+    if (
+      id.startsWith("view.") &&
+      toolDefinitions.some((d) => d.id === id.slice(5))
+    ) {
+      const tool = id.slice(5) as ToolId;
+      if (toolDefinitions.some((d) => d.id === tool)) {
+        if (host.visible[tool]) await host.hide(tool);
+        else await showTool(tool);
+      }
       return;
     }
     switch (id) {
+      case "project.reference":
+        await switchExample();
+        break;
+      case "project.feedback":
+        await switchExample(true);
+        break;
       case "file.new":
         await newProject();
         break;
       case "file.open":
-        await openProjects();
+        await showTool("project");
+        break;
+      case "file.saveAs":
+        await showTool("project");
         break;
       case "file.save":
         await save();
@@ -266,6 +454,7 @@ export default function App() {
         break;
       case "file.workspace":
       case "tools.workspace":
+        await focusMain();
         setModal("workspace");
         break;
       case "file.quit":
@@ -278,50 +467,55 @@ export default function App() {
         redo();
         break;
       case "layer.manage":
-        focusPanel("layers");
+        await focusPanel("layers");
         break;
       case "layer.material":
-        focusPanel("layers", `第 ${selected + 1} 层材料`);
+        await showTool("layers", `第 ${selected + 1} 层材料`);
         break;
       case "settings.wavelength":
-        focusPanel("settings", "起始波长");
+        await showTool("settings", "起始波长");
         break;
       case "settings.angle":
-        focusPanel("settings", "入射角");
+        await showTool("settings", "入射角");
+        break;
+      case "settings.substrate":
+        await showTool("substrate");
         break;
       case "settings.polarization":
-        focusPanel("settings", "偏振");
+        await showTool("settings", "偏振");
         break;
       case "tools.materials":
       case "tools.library":
-        setModal("materials");
+        await showTool("materials");
         break;
       case "calculate.spectrum":
         await calculate();
         break;
       case "analysis.spectrum":
-        focusPanel("spectrum");
+        await focusPanel("spectrum");
         break;
       case "analysis.details":
-        setDetails(true);
-        focusPanel("spectrum");
+        await showTool("analysis");
         break;
       case "view.reset":
-        setPanels({
-          sidebar: true,
-          layers: true,
-          settings: true,
-          spectrum: true,
-        });
+        for (const d of toolDefinitions) await host.hide(d.id as ToolId);
+        break;
+      case "view.spectrum":
+        await focusMain();
+        break;
+      case "view.remember":
+        await host.remember(!host.visible.remember);
         break;
       case "view.menu":
         await invoke("menu_show");
         break;
       case "help.guide":
       case "help.about":
+        await focusMain();
         setModal("about");
         break;
       case "help.shortcuts":
+        await focusMain();
         setModal("shortcuts");
         break;
     }
@@ -388,7 +582,6 @@ export default function App() {
         setWorkspaceError("");
       })
       .catch((e) => setWorkspaceError(message(e)));
-    void calculate(current.current);
   }, []);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -447,6 +640,7 @@ export default function App() {
   async function canReplace() {
     if (JSON.stringify(current.current) === savedKey) return true;
     if (asking.current) return false;
+    await focusMain();
     asking.current = true;
     try {
       return await new Promise<boolean>((resolve) =>
@@ -457,6 +651,10 @@ export default function App() {
     }
   }
   function replace(p: Project, saved = false) {
+    queue.current!.invalidate();
+    epoch.current++;
+    writers.current.clear();
+    scopeRef.current = `${workspace?.id || "unavailable"}:${p.id}:${epoch.current}`;
     current.current = p;
     setProject(p);
     setSelected(0);
@@ -469,22 +667,11 @@ export default function App() {
     setError("");
     setModal(null);
   }
-  async function openProjects() {
-    await run(async () => {
-      const r = await request<{ projects: SavedProject[] }>({ action: "list" });
-      setProjects(r.projects);
-      setModal("projects");
-    });
-  }
   async function openProject(id: string) {
     if (!(await canReplace())) return;
     await run(async () => {
       const r = await request<{ project: Project }>({ action: "load", id });
       replace(r.project, true);
-      acceptResult(
-        await request<Spectrum>({ action: "calculate", project: r.project }),
-        r.project,
-      );
     });
   }
   async function switchExample(feedback = false) {
@@ -498,10 +685,6 @@ export default function App() {
         project: raw,
       });
       replace(r.project);
-      acceptResult(
-        await request<Spectrum>({ action: "calculate", project: r.project }),
-        r.project,
-      );
     });
   }
   async function loadImportedText(name: string, text: string) {
@@ -516,10 +699,7 @@ export default function App() {
           project: JSON.parse(text),
         });
     replace(r.project);
-    acceptResult(
-      await request<Spectrum>({ action: "calculate", project: r.project }),
-      r.project,
-    );
+
     if (r.warning) setNotice(r.warning);
   }
   async function importNative() {
@@ -541,300 +721,159 @@ export default function App() {
       await loadImportedText(file.name, await file.text());
     });
   }
+  const browserSend = (id: string) => (intent: ToolIntent) =>
+    handleToolAction(`browser-${id}`, {
+      ...intent,
+      scope: scopeRef.current,
+      requestId: crypto.randomUUID(),
+    } as ToolAction).catch((e) => {
+      setError(message(e));
+      throw e;
+    });
   return (
-    <div className="app-shell">
-      <aside className="sidebar" hidden={!panels.sidebar}>
-        <div className="brand">
-          <div className="brand-mark">
-            <Waves size={25} />
-          </div>
+    <div className="spectral-workstation">
+      {platform === "browser" && (
+        <BrowserMenu
+          states={states}
+          dispatch={(id) => {
+            void executeCommand(id).catch((e) => setError(message(e)));
+          }}
+        />
+      )}
+      <header className="spectrum-topbar">
+        <div className="spectrum-project">
+          <Waves size={21} />
           <div>
-            <strong>
-              TFC<span> Workbench</span>
-            </strong>
-            <small>THIN FILM WORKBENCH</small>
+            <strong title={project.name}>{project.name}</strong>
+            <small>
+              {dirty ? "未保存" : "已保存"} ·{" "}
+              {workspace?.name || "未选择工作区"} · {project.layers.length} 层
+            </small>
           </div>
         </div>
-        <div className="workspace-label">
-          工作空间 <span>本地</span>
-        </div>
-        <nav>
-          <button className="nav-item active" onClick={() => setModal(null)}>
-            <Layers3 size={18} />
-            膜系设计<span className="nav-count">01</span>
-          </button>
-          <button
-            className="nav-item"
-            disabled={busy}
-            onClick={() => void openProjects()}
-          >
-            <FolderOpen size={18} />
-            我的项目
-          </button>
-          <button className="nav-item" onClick={() => setModal("materials")}>
-            <FlaskConical size={18} />
-            材料与基底
-            <span className="nav-count">{project.materials.length}</span>
-          </button>
-        </nav>
-        <div className="sidebar-divider" />
-        <div className="workspace-label">验证案例</div>
-        <button
-          className="sample-link"
-          disabled={busy}
-          onClick={() => void switchExample()}
-        >
-          <span className="sample-dot" />
-          <div>
-            550 nm 四层参考<small>原始 Golden Sample</small>
-          </div>
-          <ArrowUpRight size={14} />
-        </button>
-        <button
-          className="sample-link"
-          disabled={busy}
-          onClick={() => void switchExample(true)}
-        >
-          <span className="sample-dot" />
-          <div>
-            380 nm 使用反馈<small>高透过曲线 · 自动纵轴</small>
-          </div>
-          <ArrowUpRight size={14} />
-        </button>
-        <div className="sidebar-bottom">
-          <div className="local-card">
-            <span className="online-dot" />
-            <div>
-              本地计算引擎<small>独立 TMM · 材料快照</small>
-            </div>
-            <ShieldCheck size={16} />
-          </div>
-          <button className="help-link" onClick={() => setModal("about")}>
-            <CircleHelp size={16} />
-            使用说明<span>v{appVersion}</span>
-          </button>
-        </div>
-      </aside>
-      <div className="workspace">
-        {platform === "browser" && (
-          <BrowserMenu
-            states={states}
-            dispatch={(id) => {
-              void executeCommand(id).catch((e) => setError(message(e)));
-            }}
-          />
-        )}
-        <header className="topbar">
-          <div className="breadcrumb">
-            工作空间<span>/</span>
-            <span>膜系设计</span>
-          </div>
-          <div className="topbar-right">
-            {platform === "windows" && (
+        <nav className="compact-tools" aria-label="打开工具窗口">
+          {toolDefinitions
+            .filter((d) =>
+              [
+                "layers",
+                "settings",
+                "materials",
+                "substrate",
+                "project",
+                "analysis",
+              ].includes(d.id),
+            )
+            .map((d) => (
               <button
-                className="workspace-switch"
+                key={d.id}
+                aria-pressed={!!host.visible[d.id]}
                 onClick={() =>
-                  void invoke("menu_show").catch((e) => setError(message(e)))
-                }
-              >
-                显示菜单窗口
-              </button>
-            )}
-            <button
-              className="workspace-switch"
-              disabled={busy}
-              onClick={() => setModal("workspace")}
-            >
-              <FolderOpen size={14} />
-              {workspace?.location_mode === "project-relative"
-                ? "项目内 · "
-                : ""}
-              {workspace?.name || "选择工作区"}
-            </button>
-            <span className="version-badge">V{appVersion} · 离线工作区</span>
-            <span className="top-divider" />
-            <span className="platform">离线优先 · 本地工作台</span>
-          </div>
-        </header>
-        <main>
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow">OPTICAL THIN FILM DESIGN</div>
-              <h1>
-                膜系设计
-                <span className="heading-dot" />
-              </h1>
-              <p>编辑膜层、选择材料与基底，查看可追溯的光谱结果。</p>
-            </div>
-            <div className="heading-actions">
-              <button
-                className="button secondary"
-                disabled={busy}
-                onClick={() => void newProject()}
-              >
-                <FilePlus2 size={16} />
-                新建项目
-              </button>
-              <button
-                className="button primary"
-                disabled={busy}
-                onClick={() => void save()}
-              >
-                <Save size={16} />
-                保存项目
-                <span className="shortcut">
-                  {navigator.platform.includes("Mac") ? "⌘ S" : "Ctrl S"}
-                </span>
-              </button>
-            </div>
-          </div>
-          {workspaceError && (
-            <div className="notice error">
-              <span>{workspaceError}</span>
-              <button onClick={() => setModal("workspace")}>
-                重新选择工作区
-              </button>
-            </div>
-          )}
-          {(error || notice) && (
-            <div
-              role={error ? "alert" : "status"}
-              className={`notice ${error ? "error" : ""}`}
-            >
-              <span>{error || notice}</span>
-              <button
-                aria-label="关闭提示"
-                onClick={() => {
-                  setError("");
-                  setNotice("");
-                }}
-              >
-                <X size={14} />
-              </button>
-            </div>
-          )}
-          <section className="project-strip">
-            <div className="project-icon">
-              <FileText size={20} />
-            </div>
-            <div className="project-title">
-              <input
-                aria-label="项目名称"
-                value={project.name}
-                disabled={busy}
-                maxLength={200}
-                onChange={(e) =>
-                  update((p) => {
-                    p.name = e.target.value;
-                  })
-                }
-              />
-              <span>
-                <span className={`save-dot ${dirty ? "unsaved" : ""}`} />
-                {dirty ? "有未保存的更改" : "已保存到工作区"}
-                <span className="dot-separator">·</span>
-                编号从基底侧开始；表格按光传播方向显示
-              </span>
-            </div>
-            <div className="strip-actions">
-              <input
-                ref={importRef}
-                type="file"
-                accept=".tfd,.json"
-                hidden
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = "";
-                  if (file) void importFile(file);
-                }}
-              />
-              <button
-                className="text-button"
-                disabled={busy}
-                onClick={() => {
-                  if (isTauri()) void importNative();
-                  else importRef.current?.click();
-                }}
-              >
-                <Upload size={15} />
-                导入
-              </button>
-              <button
-                className="text-button"
-                disabled={busy}
-                onClick={() =>
-                  void download(
-                    `${project.name}.tfc.json`,
-                    JSON.stringify(project, null, 2),
+                  void showTool(d.id as ToolId).catch((e) =>
+                    setError(message(e)),
                   )
                 }
               >
-                <Download size={15} />
-                导出项目
+                {d.title}
               </button>
-            </div>
-          </section>
-          <div
-            className={`editor-grid ${!panels.layers || !panels.settings ? "single-editor" : ""}`}
-            hidden={!panels.layers && !panels.settings}
+            ))}
+        </nav>
+        <div className="spectrum-actions">
+          <button
+            className="button secondary"
+            disabled={busy}
+            onClick={() => void save()}
           >
-            <div data-workbench-panel="layers" hidden={!panels.layers}>
-              <LayerEditor
-                command={layerCommand}
-                project={project}
-                busy={busy}
-                selected={selected}
-                setSelected={setSelected}
-                update={update}
-                undo={undo}
-                redo={redo}
-                canUndo={!!past.length}
-                canRedo={!!future.length}
-              />
-            </div>
-            <div data-workbench-panel="settings" hidden={!panels.settings}>
-              <CalculationSettings
-                project={project}
-                busy={busy}
-                update={update}
-                calculate={() => void calculate()}
-                openMaterials={() => setModal("materials")}
-              />
-            </div>
-          </div>
-          <div data-workbench-panel="spectrum" hidden={!panels.spectrum}>
-            <SpectrumPanel
-              details={details}
-              setDetails={setDetails}
-              project={project}
-              spectrum={spectrum}
-              stale={stale}
-              busy={busy}
-              update={update}
-              analyze={(bands) => void analyze(bands)}
-              download={download}
-              onError={setError}
-            />
-          </div>
-          <footer className="workspace-footer">
-            <span>
-              <ShieldCheck size={13} />
-              独立数值计算 · 无人工归一化
-            </span>
-            <span>REF 为合成常数材料；不代表真实材料色散</span>
-          </footer>
-        </main>
-        <div className="statusbar">
-          <span>
-            <span className="online-dot" />
-            {busy ? "计算引擎处理中" : "TFC 工作台就绪"}
-          </span>
-          <span>
-            无吸收相干膜层 · 无基底背面<span className="dot-separator">·</span>v
-            {appVersion}
-          </span>
+            保存
+          </button>
+          <button
+            className="button primary"
+            disabled={busy}
+            onClick={() => void calculate()}
+          >
+            {calculating ? "更新中…" : "计算光谱"}
+          </button>
+          {platform === "windows" && (
+            <button
+              onClick={() =>
+                void invoke("menu_show").catch((e) => setError(message(e)))
+              }
+            >
+              菜单
+            </button>
+          )}
         </div>
+      </header>
+      {(error || calculationError || workspaceError) && (
+        <div role="alert" className="notice error">
+          <span>{error || calculationError || workspaceError}</span>
+          <button
+            onClick={() => {
+              setError("");
+              setCalculationError("");
+              if (workspaceError) setModal("workspace");
+            }}
+          >
+            {workspaceError ? "工作区设置" : "关闭提示"}
+          </button>
+        </div>
+      )}
+      <div className="main-spectrum">
+        <SpectrumPanel
+          mode="main"
+          project={project}
+          spectrum={spectrum}
+          stale={stale}
+          busy={busy}
+          update={update}
+          analyze={(bands) => void analyze(bands)}
+          download={download}
+          onError={setError}
+          details={details}
+          setDetails={setDetails}
+          openAnalysis={() => void showTool("analysis")}
+          openTargets={() => void showTool("targets")}
+        />
       </div>
+      <footer className="spectral-status">
+        <span>
+          {calculating
+            ? "正在自动更新光谱…"
+            : !spectrum
+              ? "等待光谱计算"
+              : stale
+                ? "参数已改变，等待更新…"
+                : "光谱已与当前膜系同步"}
+          {notice ? " · " + notice : ""}
+        </span>
+        <span>常数 n · k=0 · A 为数值残差 · {appVersion}</span>
+      </footer>
+      <input
+        ref={importRef}
+        type="file"
+        accept=".tfd,.json"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void importFile(file);
+        }}
+      />
+      {!isTauri() &&
+        toolDefinitions
+          .filter((d) => host.visible[d.id])
+          .map((d, index) => (
+            <BrowserTool
+              key={d.id}
+              id={d.id}
+              title={d.title}
+              snapshot={toolSnapshot}
+              index={index}
+              send={browserSend(d.id)}
+              close={() => {
+                void host.hide(d.id as ToolId);
+              }}
+            />
+          ))}
       {modal && (
         <div
           className="modal-backdrop"
@@ -889,7 +928,6 @@ export default function App() {
                   const p = referenceProject();
                   replace(p);
                   setProjects([]);
-                  void calculate(p);
                 }}
               />
             )}
@@ -926,7 +964,18 @@ export default function App() {
               </>
             )}
             {modal === "materials" && (
-              <MaterialLibrary project={project} update={update} />
+              <MaterialLibrary
+                project={project}
+                update={update}
+                library={library}
+                onSaveLibrary={async () => {
+                  await request({
+                    action: "library_save",
+                    materials: project.materials,
+                  });
+                  await refreshLibrary();
+                }}
+              />
             )}
             {modal === "shortcuts" && (
               <div className="shortcut-guide">
