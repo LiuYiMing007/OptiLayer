@@ -49,6 +49,7 @@ jobs:
           codesign --force --deep --sign - release/TFC.app
           codesign --verify --deep --strict release/TFC.app
       - run: node scripts/run_python.mjs scripts/validate_menu_release.py
+      - run: node scripts/run_python.mjs scripts/validate_window_ipc_release.py
       - run: node scripts/run_python.mjs scripts/validate_workspace_release.py
       - run: node scripts/run_python.mjs scripts/package_release.py
       - run: node scripts/run_python.mjs scripts/validate_portable_release.py
@@ -86,6 +87,7 @@ jobs:
           set -euo pipefail
           NOTES="docs/更新报告/${TAG#v}更新报告.md"
           test -f "$NOTES"
+          python scripts/package_combined_release.py --assets release-assets --version "${TAG#v}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release already exists; preserving its verified assets."
           else

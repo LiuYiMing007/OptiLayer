@@ -20,7 +20,7 @@ import { commandStates, entries, shortcutCommand } from "./menus/commands";
 import { useDesktopMenus } from "./menus/useDesktopMenus";
 import { changeLayer, type LayerCommand } from "./layerCommands";
 import { spectrumCsv } from "./spectrumExport";
-import { version as appVersion } from "../package.json";
+import { version, tfcRevision } from "../package.json";
 import { CalculationQueue } from "./calculationQueue";
 import {
   applyPatches,
@@ -43,6 +43,7 @@ import type {
   WorkspaceInfo,
 } from "./types";
 
+const appVersion = `${version} · 修订${tfcRevision}`;
 type Modal =
   "projects" | "materials" | "about" | "workspace" | "shortcuts" | null;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));

@@ -17,6 +17,7 @@ pub struct ToolsState {
     closing: AtomicBool,
     testing: AtomicBool,
     seen: Mutex<(HashSet<String>, Vec<String>)>,
+    opening: tauri::async_runtime::Mutex<()>,
 }
 pub fn definitions() -> Vec<Value> {
     serde_json::from_str(REGISTRY).expect("invalid tool catalogue")
@@ -187,7 +188,17 @@ pub fn open(app: &tauri::AppHandle, id: &str) -> Result<(), String> {
         let window = tauri::WebviewWindowBuilder::new(
             app,
             &label,
-            tauri::WebviewUrl::App(format!("index.html?tool={id}").into()),
+            tauri::WebviewUrl::App(
+                format!(
+                    "index.html?tool={id}{}",
+                    if crate::window_check::enabled(app) {
+                        "&window-ipc-check=1"
+                    } else {
+                        ""
+                    }
+                )
+                .into(),
+            ),
         )
         .title(format!(
             "{} · TFC Workbench",
@@ -231,12 +242,16 @@ pub fn open(app: &tauri::AppHandle, id: &str) -> Result<(), String> {
     Ok(())
 }
 #[tauri::command]
-pub fn tool_open(
+pub async fn tool_open(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
     id: String,
 ) -> Result<(), String> {
     crate::menus::require_main(&window)?;
+    // WebView2 creation from a synchronous IPC callback deadlocks on Windows.
+    // Keep the callback free and serialize duplicate/rapid open requests.
+    let state = app.state::<ToolsState>();
+    let _opening = state.opening.lock().await;
     open(&app, &id)
 }
 #[tauri::command]

@@ -15,6 +15,13 @@ export default function ToolWindow() {
     if (error && document.activeElement instanceof HTMLInputElement)
       document.activeElement.blur();
   }, [error]);
+  useEffect(() => {
+    if (
+      snapshot?.project.id &&
+      new URLSearchParams(location.search).has("window-ipc-check")
+    )
+      void invoke("window_check_ready", { projectId: snapshot.project.id });
+  }, [snapshot?.project.id]);
   const latest = useRef<ToolSnapshot | null>(null);
   const waiting = useRef(
     new Map<string, { resolve: () => void; reject: (e: unknown) => void }>(),

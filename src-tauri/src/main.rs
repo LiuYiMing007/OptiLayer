@@ -9,6 +9,7 @@ mod menu_check;
 mod menus;
 mod portable;
 mod tools;
+mod window_check;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 
@@ -315,6 +316,7 @@ fn main() {
         }
         return;
     }
+    let window_ipc_check = std::env::args_os().any(|arg| arg == "--window-ipc-self-test");
     let menu_check = std::env::args_os().any(|arg| arg == "--menu-self-test");
     let mut context = tauri::generate_context!();
     if menu_check {
@@ -323,16 +325,24 @@ fn main() {
             tauri::WebviewUrl::External("about:blank".parse().unwrap());
         context.config_mut().app.windows[0].visible = false;
     }
+    if window_ipc_check {
+        context.config_mut().app.windows[0].url =
+            tauri::WebviewUrl::App("index.html?window-ipc-check=1".into());
+    }
     tauri::Builder::default()
         .manage(WorkspaceSelection::default())
         .manage(menus::MenuState::default())
         .manage(tools::ToolsState::default())
+        .manage(window_check::CheckState::new(window_ipc_check))
         .setup(move |app| {
-            if menu_check {
+            if menu_check || window_ipc_check {
                 tools::testing(app.handle());
             }
             menus::setup(app)?;
-            if !menu_check {
+            if window_ipc_check {
+                window_check::watchdog(app.handle().clone());
+            }
+            if !menu_check && !window_ipc_check {
                 tools::setup(app.handle());
             }
             if menu_check {
@@ -370,7 +380,13 @@ fn main() {
             tools::tool_publish,
             tools::tool_submit,
             tools::tool_reply,
-            tools::tool_focus_main
+            tools::tool_focus_main,
+            window_check::window_check_enabled,
+            window_check::window_check_ready,
+            window_check::window_check_status,
+            window_check::window_check_dispatch,
+            window_check::window_check_close,
+            window_check::window_check_finish
         ])
         .build(context)
         .expect("无法启动 TFC")
