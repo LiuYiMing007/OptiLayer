@@ -1,16 +1,14 @@
-# TFC · v0.1.5-dev.2
+# TFC · v0.1.5
 
-0.1.5 开发中：第二项已加入 [光谱主窗口与独立工具窗口](docs/0.1.5-多窗口工作台设计.md)，共享一个项目状态并自动重算。第一项为 [跨平台菜单](docs/0.1.5-跨平台菜单设计.md)，Mac 使用系统菜单，Windows 使用独立菜单窗口。[dev.2 双平台自动验收已通过](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41271255666)，Mac 原生操作已实测；正式版本仍为 0.1.4，后续界面及光谱调整继续进行；[0.1.5 开发记录](docs/更新报告/0.1.5更新报告.md)。
+跨平台、离线优先、可迁移 Workspace 的光学薄膜工作台。macOS 使用系统菜单，Windows 使用独立菜单小窗口；光谱主窗与工具窗口共享同一个项目和计算状态。
 
-GitHub：**[私有源码仓库](https://github.com/LiuYiMing007/tfc-workbench)** · [版本下载与更新内容](https://github.com/LiuYiMing007/tfc-workbench/releases) · [逐次更新记录](https://github.com/LiuYiMing007/tfc-workbench/commits/main)
+0.1.5 完成光谱主窗口、膜层结构和计算参数三个代表窗口的工程界面：统一曲线主题、紧凑表格、连续键盘编辑及属性面板。材料、基底、项目、分析等其他窗口保留已有样式。Optical Core 与项目格式未改，没有 AI Agent 或膜系优化。
 
-0.1.4：默认数据位于程序所属项目文件夹的 `Workspace/`，工作区选择以相对路径保存在项目内 `.tfc/`。把整个项目文件夹放到固态 U 盘，Mac/Windows 的程序会寻找同一份数据，不再默认使用各台电脑的旧位置。
+[下载正式版](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.1.5) · [0.1.5 更新报告](docs/更新报告/0.1.5更新报告.md) · [工程界面规范](docs/0.1.5-工程界面规范.md)
 
-便携使用见 [0.1.4 更新报告](docs/更新报告/0.1.4更新报告.md)。历史验收：[Windows 0.1.3](docs/V0.1.3-Windows验收.md)、[Mac 0.1.3 回传](docs/V0.1.3-Mac合并与往返验收.md)。0.1.4 双平台构建与实际客户端定位/搬迁检查已[通过](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41251215959)，详见[本版验收](docs/V0.1.4-便携工作区验收.md)。
+Mac 为 Apple Silicon / macOS 14+，Windows 为 x64 / WebView2。两个包使用同一套 Workspace 数据；可将两个包内的 macOS、Windows 子目录合并到同一个 TFC 项目根目录。升级只替换程序子目录，保留 Workspace、Workspaces、.tfc，不要用新包中的空工作区覆盖原数据。
 
-更新说明：[0.1.2](docs/更新报告/0.1.2更新报告.md) · [0.1.3](docs/更新报告/0.1.3更新报告.md) · [0.1.4](docs/更新报告/0.1.4更新报告.md)。
-
-版本保存与后续上传见 [GitHub 版本管理](docs/GitHub版本管理.md)。
+正式包由版本标签触发双平台构建，只有两端全部检查通过才发布。自动检查与 Windows 人工显示/键盘体验的覆盖范围分开记录；尚未完成 Windows 人工视觉、多显示器及物理 SSD 往返验收。Mac 使用临时签名，无 Developer ID 公证；Windows 无商业代码签名证书。
 
 ## 技术路线
 
@@ -27,7 +25,7 @@ React UI → Tauri 桌面宿主 → JSON 应用服务
                             └─ Repository → Workspace → SQLite / JSON / 光谱
 ```
 
-0.1.5-dev.2 的主光谱窗口持有唯一 Project / Workspace 状态；原生工具窗口通过受校验命令编辑，接收只读投影，自动计算队列只发布最新结果。详见 [多窗口工作台设计](docs/0.1.5-多窗口工作台设计.md)。
+0.1.5 的主光谱窗口持有唯一 Project / Workspace 状态；原生工具窗口通过受校验命令编辑，接收只读投影，自动计算队列只发布最新结果。详见 [多窗口工作台设计](docs/0.1.5-多窗口工作台设计.md)。
 
 Optical Core 不依赖数据库、文件系统、UI、TFCalc 解析器或 AI。Python 进程通过 JSON 收发结果，打包后不依赖用户安装 Python。浏览器开发桥接仍复用相同内核；独立浏览器产品尚未实现。
 

@@ -61,3 +61,7 @@ with tempfile.TemporaryDirectory(prefix='tfc-portable-package-') as temporary:
 report={'version':version,'platform':os_name,'actual_host_location_check':True,'default_is_project_workspace':True,'independent_of_cwd_and_machine_preferences':True,'relative_selection_survives_project_move':True,'saved_spectrum_exactly_reproduced':True,'missing_saved_workspace_not_recreated':True,'limits':'Directory move with real native entry point; physical drive-letter reassignment, disconnect and native UI are separate checks.'}
 (root/f'docs/v{version}-{os_name.lower()}-portable-check.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print(json.dumps(report,ensure_ascii=False))
+
+checks=root/'release/checks'
+checks.mkdir(parents=True,exist_ok=True)
+(checks/'portable-location.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')

@@ -43,6 +43,11 @@ jobs:
       - if: runner.os == 'macOS'
         run: npm run tauri -- bundle --config src-tauri/tauri.release.conf.json --bundles app
       - run: node scripts/run_python.mjs scripts/stage_release.py
+      - name: Seal and verify macOS application
+        if: runner.os == 'macOS'
+        run: |
+          codesign --force --deep --sign - release/TFC.app
+          codesign --verify --deep --strict release/TFC.app
       - run: node scripts/run_python.mjs scripts/validate_menu_release.py
       - run: node scripts/run_python.mjs scripts/validate_workspace_release.py
       - run: node scripts/run_python.mjs scripts/package_release.py

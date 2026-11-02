@@ -37,3 +37,7 @@ with tempfile.TemporaryDirectory(prefix='tfc-portable-') as temporary:
 print(json.dumps(report,ensure_ascii=False,indent=2))
 version=json.loads((root/'package.json').read_text(encoding='utf-8'))['version']
 (root/f'docs/v{version}-{platform.system().lower()}-workspace-check.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+checks=root/'release/checks'
+checks.mkdir(parents=True,exist_ok=True)
+(checks/'packaged-workspace.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
