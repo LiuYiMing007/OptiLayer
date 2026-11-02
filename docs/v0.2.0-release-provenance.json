@@ -1,0 +1,219 @@
+{
+  "version": "0.2.0",
+  "source_commit": "87bb503bd59f32458496c81cf998806788e66e4f",
+  "release": {
+    "assets": [
+      {
+        "digest": "sha256:a4ac4b8cfb390ef6423484b8d19f9f3f398ef845655e49ce69a9fdebb4b89f24",
+        "name": "TFC-0.2.0-macOS-arm64.zip",
+        "size": 38515881,
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.0/TFC-0.2.0-macOS-arm64.zip"
+      },
+      {
+        "digest": "sha256:7caa1b0d73a433bafaefad17f5b110ac11014669d4dac9594f248b7d6944a882",
+        "name": "TFC-0.2.0-macOS-arm64.zip.sha256",
+        "size": 92,
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.0/TFC-0.2.0-macOS-arm64.zip.sha256"
+      },
+      {
+        "digest": "sha256:2e4b1b86109f28d19c847935346af8e3d2c391bd804cd5e2c97b6c6413920ed1",
+        "name": "TFC-0.2.0-macOS-Windows-portable.zip",
+        "size": 95529080,
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.0/TFC-0.2.0-macOS-Windows-portable.zip"
+      },
+      {
+        "digest": "sha256:aedfaa3db65409b3324b5c7d8f5164f73d8cde4202957652022bec74a6dc5aed",
+        "name": "TFC-0.2.0-macOS-Windows-portable.zip.sha256",
+        "size": 103,
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.0/TFC-0.2.0-macOS-Windows-portable.zip.sha256"
+      },
+      {
+        "digest": "sha256:475ca167e6701645f84573f6ec61b495842e04818a166e14f709c48133152474",
+        "name": "TFC-0.2.0-Windows-x64-portable.zip",
+        "size": 57017499,
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.0/TFC-0.2.0-Windows-x64-portable.zip"
+      },
+      {
+        "digest": "sha256:ce72bce83a83db02b77660e827651d4395997aa5239debce48aaab392046865d",
+        "name": "TFC-0.2.0-Windows-x64-portable.zip.sha256",
+        "size": 102,
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.0/TFC-0.2.0-Windows-x64-portable.zip.sha256"
+      }
+    ],
+    "draft": false,
+    "prerelease": false,
+    "tag": "v0.2.0",
+    "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.0"
+  },
+  "workflow_run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41484073957",
+  "successful_attempt": 2,
+  "platforms": {
+    "macOS": "success",
+    "Windows": "success"
+  },
+  "checks": {
+    "macOS": {
+      "packaged-workspace": {
+        "packaged_engine": "release/TFC.app/Contents/Resources/engine/tfc-engine",
+        "workspace_relocation": true,
+        "spectrum_exact_reproduction": true,
+        "samples": 121
+      },
+      "portable-location": {
+        "version": "0.2.0",
+        "platform": "Darwin",
+        "actual_host_location_check": true,
+        "default_is_project_workspace": true,
+        "independent_of_cwd_and_machine_preferences": true,
+        "relative_selection_survives_project_move": true,
+        "saved_spectrum_exactly_reproduced": true,
+        "missing_saved_workspace_not_recreated": true,
+        "limits": "Directory move with real native entry point; physical drive-letter reassignment, disconnect and native UI are separate checks."
+      },
+      "catalogue": {
+        "all_pass": true,
+        "platform": "Darwin",
+        "catalogue_total": 1211,
+        "ready": 1186,
+        "quarantined": 25,
+        "catalogue_digest": "b9b1f343224ba98809b2873691d73fa57363bd55b6d210bece7590ab5f989036",
+        "packaged_data_loaded": true,
+        "metal_absorption_and_glass_dispersion": true,
+        "move_save_exact_recalculation": true
+      },
+      "native-menu": {
+        "auxiliary_cannot_mutate_workspace": false,
+        "command_routed_once_to_main": true,
+        "disabled_command_blocked": true,
+        "native_enabled_and_checked_sync": true,
+        "native_menu": true,
+        "native_tool_windows": true,
+        "platform": "macos",
+        "tool_cannot_mutate_workspace": true,
+        "tool_close_hide_restore": true,
+        "tool_command_routed_once": true,
+        "tool_projection_ordered": true,
+        "windows_auxiliary_close_hide_restore": false,
+        "workspace_untouched": true,
+        "version": "0.2.0",
+        "limits": "Native window lifecycle/state/routing checks; visual placement and interactive clicks on Windows need a real-device review."
+      },
+      "window-ipc": {
+        "all_pass": true,
+        "close_hide_reopen": true,
+        "main_button_ipc": [
+          "layers",
+          "materials",
+          "substrate",
+          "settings",
+          "project",
+          "analysis",
+          "targets"
+        ],
+        "menu_command_ipc": [
+          "layers",
+          "materials",
+          "substrate",
+          "settings",
+          "project",
+          "analysis",
+          "targets"
+        ],
+        "platform": "macos",
+        "shared_project_rendered": true,
+        "workspace_used": false,
+        "version": "0.2.0",
+        "limits": "Real frontend IPC and React tool rendering; does not simulate physical mouse clicks on native OS menus or validate display scaling."
+      }
+    },
+    "Windows": {
+      "packaged-workspace": {
+        "packaged_engine": "release\\Windows\\TFC\\engine\\tfc-engine.exe",
+        "workspace_relocation": true,
+        "spectrum_exact_reproduction": true,
+        "samples": 121
+      },
+      "portable-location": {
+        "version": "0.2.0",
+        "platform": "Windows",
+        "actual_host_location_check": true,
+        "default_is_project_workspace": true,
+        "independent_of_cwd_and_machine_preferences": true,
+        "relative_selection_survives_project_move": true,
+        "saved_spectrum_exactly_reproduced": true,
+        "missing_saved_workspace_not_recreated": true,
+        "limits": "Directory move with real native entry point; physical drive-letter reassignment, disconnect and native UI are separate checks."
+      },
+      "catalogue": {
+        "all_pass": true,
+        "platform": "Windows",
+        "catalogue_total": 1211,
+        "ready": 1186,
+        "quarantined": 25,
+        "catalogue_digest": "b9b1f343224ba98809b2873691d73fa57363bd55b6d210bece7590ab5f989036",
+        "packaged_data_loaded": true,
+        "metal_absorption_and_glass_dispersion": true,
+        "move_save_exact_recalculation": true
+      },
+      "native-menu": {
+        "auxiliary_cannot_mutate_workspace": true,
+        "command_routed_once_to_main": true,
+        "disabled_command_blocked": true,
+        "native_enabled_and_checked_sync": true,
+        "native_menu": true,
+        "native_tool_windows": true,
+        "platform": "windows",
+        "tool_cannot_mutate_workspace": true,
+        "tool_close_hide_restore": true,
+        "tool_command_routed_once": true,
+        "tool_projection_ordered": true,
+        "windows_auxiliary_close_hide_restore": true,
+        "workspace_untouched": true,
+        "version": "0.2.0",
+        "limits": "Native window lifecycle/state/routing checks; visual placement and interactive clicks on Windows need a real-device review."
+      },
+      "window-ipc": {
+        "all_pass": true,
+        "close_hide_reopen": true,
+        "main_button_ipc": [
+          "layers",
+          "materials",
+          "substrate",
+          "settings",
+          "project",
+          "analysis",
+          "targets"
+        ],
+        "menu_command_ipc": [
+          "layers",
+          "materials",
+          "substrate",
+          "settings",
+          "project",
+          "analysis",
+          "targets"
+        ],
+        "platform": "windows",
+        "shared_project_rendered": true,
+        "workspace_used": false,
+        "version": "0.2.0",
+        "limits": "Real frontend IPC and React tool rendering; does not simulate physical mouse clicks on native OS menus or validate display scaling."
+      }
+    }
+  },
+  "published_six_asset_digests_verified": true,
+  "combined_native_files_byte_identical": true,
+  "combined_file_counts": {
+    "macOS": 189,
+    "Windows": 200
+  },
+  "combined_macos_strict_signature": true,
+  "combined_runtime_catalogue_loaded": true,
+  "catalogue_sha256": "b9b1f343224ba98809b2873691d73fa57363bd55b6d210bece7590ab5f989036",
+  "catalogue_total": 1211,
+  "ready": 1186,
+  "quarantined": 25,
+  "no_user_workspace_in_packages": true,
+  "ready_to_copy_directory": "release/0.2.0/TFC",
+  "limits": "Windows visual scaling, physical SSD/drive-letter changes and multi-monitor interaction were not manually validated. macOS ad-hoc signature, no Developer ID notarization."
+}
