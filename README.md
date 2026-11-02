@@ -6,11 +6,11 @@
 
 0.1.5 完成光谱主窗口、膜层结构和计算参数三个代表窗口的工程界面：统一曲线主题、紧凑表格、连续键盘编辑及属性面板。材料、基底、项目、分析等其他窗口保留已有样式。Optical Core 与项目格式未改，没有 AI Agent 或膜系优化。
 
-[下载正式版](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.1.5) · [0.1.5 更新报告](docs/更新报告/0.1.5更新报告.md) · [工程界面规范](docs/0.1.5-工程界面规范.md)
+[下载双系统合并包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.1.5/TFC-0.1.5-macOS-Windows-portable.zip) · [全部下载](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.1.5) · [0.1.5 更新报告](docs/更新报告/0.1.5更新报告.md) · [工程界面规范](docs/0.1.5-工程界面规范.md)
 
 Mac 为 Apple Silicon / macOS 14+，Windows 为 x64 / WebView2。两个包使用同一套 Workspace 数据；可将两个包内的 macOS、Windows 子目录合并到同一个 TFC 项目根目录。升级只替换程序子目录，保留 Workspace、Workspaces、.tfc，不要用新包中的空工作区覆盖原数据。
 
-正式包由版本标签触发双平台构建，只有两端全部检查通过才发布。自动检查与 Windows 人工显示/键盘体验的覆盖范围分开记录；尚未完成 Windows 人工视觉、多显示器及物理 SSD 往返验收。Mac 使用临时签名，无 Developer ID 公证；Windows 无商业代码签名证书。
+正式包由版本标签触发双平台构建，只有两端全部检查通过才发布。修订2 双平台真实前端 IPC 检查已确认全部七个工具窗口可打开、隐藏和重开。自动检查与 Windows 人工显示/键盘体验的覆盖范围分开记录；尚未完成 Windows 人工视觉、多显示器及物理 SSD 往返验收。Mac 使用临时签名，无 Developer ID 公证；Windows 无商业代码签名证书。
 
 ## 技术路线
 

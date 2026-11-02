@@ -1,0 +1,52 @@
+{
+  "version": "0.1.5",
+  "revision": 2,
+  "source_commit": "0e0f47c1813f6431940f6ff3b4690a8edc663da9",
+  "verification_run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41469747170",
+  "replacement_run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41472087880",
+  "original_source_archive_tag": "archive/0.1.5-before-windows-window-fix",
+  "combined_asset": "TFC-0.1.5-macOS-Windows-portable.zip",
+  "combined_sha256": "5b4d268272db61a657d64e69d3c287eaa5457cda68adb961f8290cdc70aea82c",
+  "combined_published_digest_verified": true,
+  "mac_strict_signature_verified": true,
+  "windows_pe_x64_version_verified": true,
+  "shared_project_relative_location_verified": true,
+  "workspace_excluded": true,
+  "windows_and_mac_frontend_ipc_all_seven_tools_passed": true,
+  "assets": [
+    {
+      "name": "TFC-0.1.5-macOS-arm64.zip",
+      "digest": "sha256:2fc37c3edd730d905da74db11dfec3432f360ad46526c685ad4f5692178047aa",
+      "size": 37235807
+    },
+    {
+      "name": "TFC-0.1.5-macOS-arm64.zip.sha256",
+      "digest": "sha256:e97f84a7f387b5ee63bc2d9e2d174467b0c3204e03d1a432c40c0b7deaa8c6a4",
+      "size": 92
+    },
+    {
+      "name": "TFC-0.1.5-macOS-Windows-portable.zip",
+      "digest": "sha256:5b4d268272db61a657d64e69d3c287eaa5457cda68adb961f8290cdc70aea82c",
+      "size": 92980522
+    },
+    {
+      "name": "TFC-0.1.5-macOS-Windows-portable.zip.sha256",
+      "digest": "sha256:d9aad457be560dbd7b9e2592fcb8ed201c9647a705366d20807ae1cbb9765e75",
+      "size": 103
+    },
+    {
+      "name": "TFC-0.1.5-Windows-x64-portable.zip",
+      "digest": "sha256:ea672ca7faf74e2d6138ee185ac6297aa1d244e2dba395e66e56e65c6e8caf72",
+      "size": 55748991
+    },
+    {
+      "name": "TFC-0.1.5-Windows-x64-portable.zip.sha256",
+      "digest": "sha256:48367c2bfb99c67baae56af0c8050a984057abd6e0757859027008bb84c15fc9",
+      "size": 102
+    }
+  ],
+  "limits": [
+    "Automated real frontend IPC; no physical Windows menu clicks or display scaling check",
+    "No physical SSD drive-letter roundtrip in this revision"
+  ]
+}
