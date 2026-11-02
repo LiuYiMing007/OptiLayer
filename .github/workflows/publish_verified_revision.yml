@@ -1,0 +1,78 @@
+name: Publish authorized 0.1.5 revision 2
+on:
+  workflow_dispatch:
+    inputs:
+      source_run:
+        description: Successful v0.1.5 revision 2 verification run
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  replace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: ${{ inputs.source_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v0.1.5
+      - name: Require verified source and archived original
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]]
+          test "$(python -c 'import json; p=json.load(open("package.json")); print(p["version"]+":"+str(p["tfcRevision"]))')" = '0.1.5:2'
+          gh run view "$SOURCE_RUN" --json headSha,conclusion > "$RUNNER_TEMP/source.json"
+          python -c 'import json,subprocess,os; r=json.load(open(os.environ["RUNNER_TEMP"]+"/source.json")); assert r["conclusion"]=="success" and r["headSha"]==subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()'
+          test -n "$(git ls-remote origin refs/tags/archive/0.1.5-before-windows-window-fix)"
+          gh run download "$SOURCE_RUN" --pattern 'release-*' --dir inputs
+          gh run download "$SOURCE_RUN" --pattern 'checks-*' --dir checks
+          mkdir release-assets
+          cp inputs/release-macOS/* inputs/release-Windows/* release-assets/
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          expected={d['id'] for d in json.load(open('src/tools/windows.json'))}
+          for platform in ['macOS','Windows']:
+              r=json.loads(Path(f'checks/checks-{platform}/window-ipc.json').read_text())
+              assert r['all_pass'] and r['shared_project_rendered'] and r['close_hide_reopen']
+              assert set(r['main_button_ipc'])==set(r['menu_command_ipc'])==expected
+              assert not r['workspace_used'] and r['version']=='0.1.5'
+          PY
+      - name: Combine and replace only user-authorized version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/package_combined_release.py --assets release-assets --version 0.1.5
+          {
+            echo '**0.1.5 修订2：已修复 Windows 工具窗口打不开及后续菜单无响应。**'
+            echo
+            echo '界面版本显示“修订2”。可直接下载 macOS-Windows-portable.zip 合并包，同时包含两端程序；仅替换程序子目录，保留原工作区。旧包和源码已存档。'
+            echo
+            echo "本次发布源码：$(git rev-parse HEAD)；双平台真实前端 IPC 检查通过：[验收运行](https://github.com/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN)。"
+            echo
+            python scripts/release_notes.py v0.1.5
+          } > "$RUNNER_TEMP/notes.md"
+          gh release upload v0.1.5 release-assets/* --clobber
+          gh release edit v0.1.5 --title 'TFC v0.1.5 · 修订2（Windows 窗口修复）' --notes-file "$RUNNER_TEMP/notes.md" --draft=false --prerelease=false --latest
+          gh release view v0.1.5 --json assets > "$RUNNER_TEMP/published.json"
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          assets={a['name']:a for a in json.load(open(os.environ['RUNNER_TEMP']+'/published.json'))['assets']}
+          files=list(Path('release-assets').iterdir())
+          assert len(files)==6 and set(assets)=={p.name for p in files}
+          for p in files:
+              assert assets[p.name]['state']=='uploaded'
+              assert assets[p.name]['digest']=='sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: combined-0.1.5-revision2
+          path: release-assets/*macOS-Windows*
+          if-no-files-found: error
+          retention-days: 30

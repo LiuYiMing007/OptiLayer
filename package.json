@@ -12,7 +12,7 @@
     "engine:test": "node scripts/run_python.mjs -m unittest discover -s engine/tests -v",
     "engine:bundle": "node scripts/run_python.mjs scripts/bundle_engine.py",
     "desktop:build": "npm run engine:bundle && node scripts/build_desktop.mjs && node scripts/run_python.mjs scripts/stage_release.py",
-    "test": "npm run engine:test && node --experimental-strip-types --test tests/*.test.ts && node scripts/run_python.mjs -m unittest discover -s tests -p 'test_*.py' -v",
+    "test": "npm run engine:test && node --experimental-strip-types --test tests/*.test.ts && node scripts/run_python.mjs -m unittest discover -s tests -p \"test_*.py\" -v",
     "validate:optics": "node scripts/run_python.mjs scripts/validate_engine.py",
     "sync": "node scripts/git_sync.mjs sync",
     "publish:version": "node scripts/git_sync.mjs release"
