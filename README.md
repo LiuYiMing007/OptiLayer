@@ -1,16 +1,16 @@
-# TFC · v0.1.5 修订2
+# TFC · v0.2.0
 
 跨平台、离线优先、可迁移 Workspace 的光学薄膜工作台。macOS 使用系统菜单，Windows 使用独立菜单小窗口；光谱主窗与工具窗口共享同一个项目和计算状态。
 
-修订2 修复 Windows 同步创建 WebView2 工具窗口导致的卡死；新增真实前端 IPC 多窗口回归检查及双系统合并便携包。
+0.2.0 从用户提供的 TFCalc 数据中完整登记 1,211 份材料／基底记录：1,186 项可用，25 项原数据损坏、为空或含负 k 的记录单独列为待核查并禁止用于计算。保留全部逐波长 n/k、色散系数、原名称、备注与来源校验，不将真实数据简化成固定 n。
 
-0.1.5 完成光谱主窗口、膜层结构和计算参数三个代表窗口的工程界面：统一曲线主题、紧凑表格、连续键盘编辑及属性面板。材料、基底、项目、分析等其他窗口保留已有样式。Optical Core 与项目格式未改，没有 AI Agent 或膜系优化。
+材料与基底使用紧凑可搜索目录，支持来源／用途／状态筛选、50 行分页、n/k 预览与一键应用。新增原创光学图标。旧项目、便携工作区、单一 Project State 和 0.1.5 的多窗口能力继续保留。
 
-[下载双系统合并包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.1.5/TFC-0.1.5-macOS-Windows-portable.zip) · [全部下载](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.1.5) · [0.1.5 更新报告](docs/更新报告/0.1.5更新报告.md) · [工程界面规范](docs/0.1.5-工程界面规范.md)
+[下载双系统合并包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.0/TFC-0.2.0-macOS-Windows-portable.zip) · [全部下载](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.0) · [0.2.0 更新报告](docs/更新报告/0.2.0更新报告.md) · [材料验收及异常清单](docs/0.2.0-材料与基底导入验收.md)
 
-Mac 为 Apple Silicon / macOS 14+，Windows 为 x64 / WebView2。两个包使用同一套 Workspace 数据；可将两个包内的 macOS、Windows 子目录合并到同一个 TFC 项目根目录。升级只替换程序子目录，保留 Workspace、Workspaces、.tfc，不要用新包中的空工作区覆盖原数据。
+Mac 为 Apple Silicon / macOS 14+，Windows 为 x64 / WebView2。两个客户端使用同一套 Workspace 数据。升级只替换 `macOS` 和 `Windows` 程序子目录，保留 `Workspace`、`Workspaces`、`.tfc`，不要用空目录覆盖数据。材料目录已打入两端程序，无需原 TFCalc 文件夹或联网。
 
-正式包由版本标签触发双平台构建，只有两端全部检查通过才发布。修订2 双平台真实前端 IPC 检查已确认全部七个工具窗口可打开、隐藏和重开。自动检查与 Windows 人工显示/键盘体验的覆盖范围分开记录；尚未完成 Windows 人工视觉、多显示器及物理 SSD 往返验收。Mac 使用临时签名，无 Developer ID 公证；Windows 无商业代码签名证书。
+正式包由不可变版本标签触发双平台构建，只有两端测试、打包内材料加载／搬迁复算、菜单、真实前端七个工具窗口 IPC 和便携路径检查通过才发布。Windows 人工显示缩放、多显示器及物理 SSD 往返未作为自动验收冒充。Mac 使用临时签名，无 Developer ID 公证；Windows 无商业代码签名证书。
 
 ## 技术路线
 
@@ -22,12 +22,12 @@ Mac 为 Apple Silicon / macOS 14+，Windows 为 x64 / WebView2。两个包使用
 
 ```text
 React UI → Tauri 桌面宿主 → JSON 应用服务
-                            ├─ Optical Core：models / optics / analysis
-                            ├─ TFCalc 参考子集解析器
+                            ├─ Optical Core：materials / models / optics / analysis
+                            ├─ MAT 导入器 / 只读材料目录 / TFD 参考子集解析器
                             └─ Repository → Workspace → SQLite / JSON / 光谱
 ```
 
-0.1.5 的主光谱窗口持有唯一 Project / Workspace 状态；原生工具窗口通过受校验命令编辑，接收只读投影，自动计算队列只发布最新结果。详见 [多窗口工作台设计](docs/0.1.5-多窗口工作台设计.md)。
+主光谱窗口持有唯一 Project / Workspace 状态；原生工具窗口通过受校验命令编辑，接收只读投影，自动计算队列只发布最新结果。详见 [多窗口工作台设计](docs/0.1.5-多窗口工作台设计.md)。
 
 Optical Core 不依赖数据库、文件系统、UI、TFCalc 解析器或 AI。Python 进程通过 JSON 收发结果，打包后不依赖用户安装 Python。浏览器开发桥接仍复用相同内核；独立浏览器产品尚未实现。
 
@@ -48,15 +48,15 @@ imports/ exports/ config/    数据目录；部分用途预留
 
 ## 第一条业务链路
 
-新建项目 → 从共享库选择材料或添加常数材料/基底 → 编辑膜层、d / n·d / QWOT、入射角与偏振 → 计算 → 查看 R/T、S/P 和分析 → 保存项目与有效光谱。
+新建项目 → 检索材料目录或添加常数材料/基底 → 编辑膜层、d / n·d / QWOT、入射角与偏振 → 计算 → 查看 R/T/A、S/P 和分析 → 保存项目与有效光谱。
 
 保留之前的厚度联动、基底选择、目标曲线叠加、图表缩放及指标分析。物理输入变化后标记旧结果并禁止误导出。每个项目保存材料快照，共享库更新不改变历史项目。
 
 ## 模型边界
 
-当前仅支持各向同性、常数实数 n、k=0、单面相干膜层、半无限边界介质，不含基底背面反射。内置材料为合成验证常数，不等同于真实工艺或厂商数据。A 为 100−R−T 的数值残差。TFD 仅解析 ENVIRON / LAYERS / LAYER 参考子集。
+支持各向同性、常数 n/k、逐波长 n/k 表，以及当前目录使用的 TFCalc Sellmeier / Cauchy / Hartmann 色散公式。既有无吸收常数计算路径保留；色散／吸收使用经独立对照的稳定散射递推。A=100−R−T 是膜系吸收，无吸收时是数值残差。半无限基底不包含背面反射，入射介质要求无吸收；负 k 增益、各向异性及非相干厚基底尚不支持。TFD 仍只解析 ENVIRON / LAYERS / LAYER 参考子集。
 
-本版没有实现 Rust/WASM Core、吸收和色散、膜系优化、AI Agent、云同步、PWA 或移动端应用。
+内置 REF 条目依然是合成验证常数；导入目录来自用户提供的旧 TFCalc 数据，不等同于实际沉积工艺的实测值。范围和异常规则见 [材料与计算设计](docs/0.2.0-材料目录与计算设计.md)。本版没有实现 Rust/WASM Core、膜系优化、AI Agent、云同步、PWA 或移动端应用。
 
 ## 开发
 
@@ -84,7 +84,7 @@ node scripts/run_python.mjs scripts/package_release.py
 node scripts/run_python.mjs scripts/validate_portable_release.py
 ```
 
-自动测试含 32 项 Python、4 项 TypeScript 与 Mac 7 项 Rust 路径测试（Windows 为 6 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
+自动测试含 39 项引擎 Python、25 项 TypeScript、4 项打包 Python 与 Mac 10 项 Rust 测试（Windows 为 9 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
 
 各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 默认只构建便携目录，要求目标电脑已有 WebView2；离线安装器配置另行保留，尚未验收。Windows 实测与未完成项见本版验收记录。GitHub Actions 已接入，在线构建结果以 Actions 页面为准。
 
@@ -93,7 +93,8 @@ node scripts/run_python.mjs scripts/validate_portable_release.py
 - `engine/optics.py`、`models.py`、`analysis.py`：保留的计算、校验和分析。
 - `engine/application.py`：应用服务；`main.py`：进程入口。
 - `engine/workspace.py`、`repository.py`：工作区与持久化。
-- `engine/importers/tfd.py`：TFCalc 参考子集解析。
+- `engine/importers/`：MAT 只读提取与 TFD 参考子集解析。
+- `engine/materials.py`：纯光学常数求值；`engine/catalogue.py`、`engine/data/`：只读材料目录。
 - `src/`：编辑器、材料库、光谱和工作区界面。
 - `src-tauri/`：本机工作区选择、进程通信、文件导出与打包。
 - `scripts/`：构建、数值验证和交付整理；`.github/workflows/`：跨平台检查。

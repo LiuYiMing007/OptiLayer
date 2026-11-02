@@ -74,6 +74,7 @@ export type ToolAction = { scope: string; requestId: string } & (
   | { kind: "open-project"; id: string }
   | { kind: "library-save" | "library-refresh" | "projects-refresh" }
   | { kind: "save-copy"; name: string }
+  | { kind: "catalogue-import"; name: string; substrate?: boolean }
   | { kind: "analyze" }
   | { kind: "export"; name: string; content: string; type?: string }
 );
@@ -223,9 +224,12 @@ export function applyPatches(
         !Number.isFinite(patch.value.n) ||
         patch.value.n <= 0 ||
         patch.value.n > 20 ||
-        patch.value.k !== 0
+        !Number.isFinite(patch.value.k) ||
+        patch.value.k < 0 ||
+        patch.value.catalogue_summary ||
+        patch.value.status === "quarantined"
       )
-        throw new Error("当前仅支持有效常数 n 和 k=0");
+        throw new Error("材料需要有效 n/k 和完整、可用的光学数据");
     } else if (patch.kind === "setting") {
       if (!allowedSettings.has(patch.field)) throw new Error("计算参数无效");
       actual = project.settings[patch.field];

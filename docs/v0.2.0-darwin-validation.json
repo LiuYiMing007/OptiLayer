@@ -1,0 +1,215 @@
+{
+  "date": "2026-11-03",
+  "checks": [
+    {
+      "test": "裸基底 R (%)",
+      "actual": 4.257999496094733,
+      "expected": 4.257999496094735,
+      "absolute_error": 1.7763568394002505e-15,
+      "tolerance": 1e-10,
+      "pass": true
+    },
+    {
+      "test": "裸基底 T (%)",
+      "actual": 95.74200050390527,
+      "expected": 95.74200050390527,
+      "absolute_error": 0.0,
+      "tolerance": 1e-10,
+      "pass": true
+    },
+    {
+      "test": "单层 QWOT=1，550 nm R (%)",
+      "actual": 20.661157024793393,
+      "expected": 20.661157024793386,
+      "absolute_error": 7.105427357601002e-15,
+      "tolerance": 1e-10,
+      "pass": true
+    },
+    {
+      "test": "单层 QWOT=1，550 nm T (%)",
+      "actual": 79.33884297520662,
+      "expected": 79.33884297520662,
+      "absolute_error": 0.0,
+      "tolerance": 1e-10,
+      "pass": true
+    },
+    {
+      "test": "Golden 400 nm R_percent",
+      "actual": 17.472420123834535,
+      "expected": 17.47241934,
+      "absolute_error": 7.838345368327282e-07,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 400 nm T_percent",
+      "actual": 82.52757987616549,
+      "expected": 82.52758066,
+      "absolute_error": 7.838345084110188e-07,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 450 nm R_percent",
+      "actual": 27.360367185205327,
+      "expected": 27.360367,
+      "absolute_error": 1.8520532663046652e-07,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 450 nm T_percent",
+      "actual": 72.63963281479462,
+      "expected": 72.639633,
+      "absolute_error": 1.852053799211717e-07,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 500 nm R_percent",
+      "actual": 24.884006291043008,
+      "expected": 24.88400638,
+      "absolute_error": 8.89569911066701e-08,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 500 nm T_percent",
+      "actual": 75.11599370895706,
+      "expected": 75.11599362,
+      "absolute_error": 8.895706571365736e-08,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 550 nm R_percent",
+      "actual": 22.64633447172687,
+      "expected": 22.64633447,
+      "absolute_error": 1.7268710905682383e-09,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 550 nm T_percent",
+      "actual": 77.35366552827321,
+      "expected": 77.35366553,
+      "absolute_error": 1.7267893781536259e-09,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 600 nm R_percent",
+      "actual": 24.297786252855307,
+      "expected": 24.29778617,
+      "absolute_error": 8.285530839202693e-08,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 600 nm T_percent",
+      "actual": 75.70221374714463,
+      "expected": 75.70221383,
+      "absolute_error": 8.28553794463005e-08,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 650 nm R_percent",
+      "actual": 26.665145503524805,
+      "expected": 26.66514549,
+      "absolute_error": 1.3524804387543554e-08,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 650 nm T_percent",
+      "actual": 73.33485449647515,
+      "expected": 73.33485451,
+      "absolute_error": 1.3524854125535057e-08,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 700 nm R_percent",
+      "actual": 27.41926230203499,
+      "expected": 27.4192624,
+      "absolute_error": 9.79650103261065e-08,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 700 nm T_percent",
+      "actual": 72.580737697965,
+      "expected": 72.5807376,
+      "absolute_error": 9.796499966796546e-08,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden 全部 301 点最大误差（百分点）",
+      "actual": 7.838345368327282e-07,
+      "expected": 0.0,
+      "absolute_error": 7.838345368327282e-07,
+      "tolerance": 1e-05,
+      "pass": true
+    },
+    {
+      "test": "Golden max |R+T−1|",
+      "actual": 1.6653345369377348e-15,
+      "expected": 0.0,
+      "absolute_error": 1.6653345369377348e-15,
+      "tolerance": 1e-10,
+      "pass": true
+    },
+    {
+      "test": "380nm 使用反馈 0° S/P 独立实现最大误差（百分点）",
+      "actual": 1.4210854715202004e-13,
+      "expected": 0.0,
+      "absolute_error": 1.4210854715202004e-13,
+      "tolerance": 1e-08,
+      "pass": true
+    },
+    {
+      "test": "四层膜系 0° S/P 独立实现最大误差（百分点）",
+      "actual": 2.5579538487363607e-13,
+      "expected": 0.0,
+      "absolute_error": 2.5579538487363607e-13,
+      "tolerance": 1e-08,
+      "pass": true
+    },
+    {
+      "test": "四层膜系 30° S/P 独立实现最大误差（百分点）",
+      "actual": 2.5579538487363607e-13,
+      "expected": 0.0,
+      "absolute_error": 2.5579538487363607e-13,
+      "tolerance": 1e-08,
+      "pass": true
+    },
+    {
+      "test": "四层膜系 45° S/P 独立实现最大误差（百分点）",
+      "actual": 2.4158453015843406e-13,
+      "expected": 0.0,
+      "absolute_error": 2.4158453015843406e-13,
+      "tolerance": 1e-08,
+      "pass": true
+    },
+    {
+      "test": "四层膜系 75° S/P 独立实现最大误差（百分点）",
+      "actual": 3.552713678800501e-13,
+      "expected": 0.0,
+      "absolute_error": 3.552713678800501e-13,
+      "tolerance": 1e-08,
+      "pass": true
+    }
+  ],
+  "user_case_380nm": {
+    "wavelength_nm": 380.0,
+    "R_percent": 0.060575747746204056,
+    "T_percent": 99.93942425225381,
+    "A_percent": -2.220446049250313e-14,
+    "energy_error": 2.220446049250313e-16
+  },
+  "golden_max_error_percentage_points": 7.838345368327282e-07,
+  "independent_reference": "sbyrnes321/tmm 0.2.0",
+  "all_pass": true
+}

@@ -69,7 +69,12 @@ export default function SpectrumChart({
       if (options.T) trace("T", x, spectrum.T_percent, curveStyle("T"));
       if (options.R) trace("R", x, spectrum.R_percent, curveStyle("R"));
       if (options.A)
-        trace("A（数值残差）", x, spectrum.A_percent, curveStyle("A"));
+        trace(
+          spectrum.absorbing ? "A（吸收）" : "A（数值残差）",
+          x,
+          spectrum.A_percent,
+          curveStyle("A"),
+        );
       if (options.sp) {
         if (options.T) {
           trace("Ts", x, spectrum.Ts_percent, curveStyle("T", "computed", "s"));

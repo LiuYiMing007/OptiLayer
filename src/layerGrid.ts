@@ -1,5 +1,6 @@
 import { physicalThickness, thicknessValue } from "./model.ts";
 import type { Project } from "./types.ts";
+import { materialAt } from "./materials.ts";
 export const thicknessUnits = ["physical", "optical", "qwot"] as const;
 export type GridCell = { row: number; col: number };
 export function moveCell(
@@ -34,7 +35,10 @@ export function gridValue(p: Project, cell: GridCell): string {
   const l = p.layers[p.layers.length - 1 - cell.row];
   if (!l) return "";
   if (!cell.col) return l.material;
-  const n = p.materials.find((m) => m.name === l.material)!.n;
+  const n = materialAt(
+    p.materials.find((m) => m.name === l.material)!,
+    p.settings.reference_nm,
+  )[0];
   return String(
     thicknessValue(
       l.thickness_nm,
@@ -74,7 +78,10 @@ export function pasteGrid(p: Project, start: GridCell, text: string): Project {
         throw new Error(`材料不存在或不能用于膜层：${name}`);
       layer.material = name;
     }
-    const n = next.materials.find((m) => m.name === layer.material)!.n;
+    const n = materialAt(
+      next.materials.find((m) => m.name === layer.material)!,
+      next.settings.reference_nm,
+    )[0];
     const ds: number[] = [];
     cells.forEach((text, c) => {
       const col = start.col + c;

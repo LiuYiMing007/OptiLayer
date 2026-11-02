@@ -1,4 +1,5 @@
 """Host-independent application tools. Optical Core never imports storage or IO."""
+from catalogue import catalogue_summaries, catalogue_material
 from models import validate
 from optics import calculate_spectrum, calculate_rt
 from analysis import analyze_spectrum
@@ -17,6 +18,13 @@ def calculate(project):
 
 def dispatch(request, workspace=None):
     action=request['action']
+    if action=='library_list':
+        workspace=workspace or configured_workspace()
+        custom=storage_action(workspace,request)['materials']
+        names={m['name'] for m in custom}
+        return {'materials':custom+[m for m in catalogue_summaries() if m['name'] not in names]}
+    if action=='catalogue_list':return {'materials':catalogue_summaries()}
+    if action=='catalogue_get':return {'material':catalogue_material(request['name'])}
     if action=='calculate':return calculate(request['project'])
     if action=='calculate_rt':return calculate_rt(request['project'],request['wavelength_nm'],request.get('polarization'))
     if action=='analyze':return analyze_spectrum(request['spectrum'],request.get('bands'))

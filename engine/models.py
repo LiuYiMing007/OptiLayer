@@ -2,6 +2,8 @@
 import copy
 import math
 import uuid
+import numpy as np
+from materials import optical_constants
 
 BUILTIN_MATERIALS = [
     {'name': 'TA2O5_REF', 'n': 2.1, 'k': 0, 'color': '#16a18f', 'role': 'film', 'model': 'constant', 'source': '合成验证常数；非真实镀膜材料色散'},
@@ -29,10 +31,29 @@ def validate_material(material):
     if len(material['name']) > 100:
         raise ValueError('材料名称不能超过 100 个字符')
     number(material['n'], f"{material['name']} 折射率", 0, 20, strict=True)
-    if number(material.get('k', 0), '消光系数') != 0:
-        raise ValueError('当前引擎只支持 k=0；吸收材料尚未实现')
-    if material.get('model', 'constant') != 'constant':
-        raise ValueError('当前只支持 constant 材料模型')
+    if material.get('catalogue_summary') or material.get('status') == 'quarantined':
+        raise ValueError('材料目录摘要或待核查数据不能用于计算')
+    number(material.get('k', 0), '消光系数', 0, 1e6)
+    model = material.get('model', 'constant')
+    if model == 'tabulated':
+        samples = material.get('samples', [])
+        if not isinstance(samples, list) or not 1 <= len(samples) <= 10001:
+            raise ValueError('材料表需要 1–10001 个点')
+        optical_constants(material, np.asarray([r[0] for r in samples]))
+    elif model == 'tfcalc-formula':
+        f = material.get('formula', {})
+        if f.get('n_type') not in (1,4,5,6) or f.get('k_type') not in (1,2):
+            raise ValueError('不支持的色散公式')
+        for key, count in [('coefficients',6), ('k_coefficients',3)]:
+            a = f.get(key)
+            if not isinstance(a,list) or len(a)!=count or any(not isinstance(x,(int,float)) or not math.isfinite(x) for x in a):
+                raise ValueError('色散系数无效')
+        bounds = material.get('range_nm', [])
+        if len(bounds)!=2 or not 0 < bounds[0] < bounds[1] <= 1e7:
+            raise ValueError('色散范围无效')
+        optical_constants(material,np.array([material.get('preview_nm', min(max(550,bounds[0]),bounds[1]))]))
+    elif model != 'constant':
+        raise ValueError('未知材料模型')
     if material.get('role', 'all') not in ('film', 'substrate', 'medium', 'all'):
         raise ValueError('材料用途无效')
     return material
@@ -70,7 +91,7 @@ def normalize_project(project):
         material = next((m for m in p['materials'] if m['name'] == s[key]), None)
         if material is None:
             raise ValueError(f'{kind} 所选材料不存在')
-        s[f'{kind}_n'] = material['n']
+        s[f'{kind}_n'] = float(optical_constants(material, np.array([s['reference_nm']]))[0][0])
     return p
 
 

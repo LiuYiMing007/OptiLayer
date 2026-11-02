@@ -1,4 +1,5 @@
 import type { Material, Project, TargetPoint } from "./types";
+import { materialAt } from "./materials.ts";
 export type ThicknessUnit = "physical" | "optical" | "qwot";
 export function thicknessValue(
   d: number,
@@ -30,7 +31,10 @@ export function synchronizeBoundaries(p: Project): void {
     const m = p.materials.find(
       (m) => m.name === p.settings[`${kind}_material`],
     );
-    if (m) p.settings[`${kind}_n`] = m.n;
+    if (m) {
+      const n = materialAt(m, p.settings.reference_nm)[0];
+      if (Number.isFinite(n) && n > 0) p.settings[`${kind}_n`] = n;
+    }
   }
 }
 export function replaceMaterial(p: Project, material: Material): void {

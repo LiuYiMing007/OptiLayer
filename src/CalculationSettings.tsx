@@ -1,16 +1,13 @@
 import CommitNumber from "./CommitNumber";
-import NumericInput from "./NumericInput";
 import { synchronizeBoundaries } from "./model";
 import type { Polarization, Project, Settings } from "./types";
 export default function CalculationSettings({
-  mode = "parameters",
   project: p,
   busy,
   update,
   calculate,
   openMaterials,
 }: {
-  mode?: "parameters" | "substrate";
   project: Project;
   busy: boolean;
   update: (f: (p: Project) => void) => void;
@@ -27,60 +24,6 @@ export default function CalculationSettings({
         m.role === "all" ||
         m.role === (kind === "incident" ? "medium" : "substrate") ||
         m.name === p.settings[`${kind}_material`],
-    );
-  if (mode === "substrate")
-    return (
-      <section className="panel substrate-tool">
-        <div className="panel-heading">
-          <h2>基底</h2>
-        </div>
-        <div className="settings-fields">
-          <label>
-            基底材料
-            <select
-              aria-label="基底材料"
-              disabled={busy}
-              value={p.settings.substrate_material}
-              onChange={(e) =>
-                update((next) => {
-                  next.settings.substrate_material = e.target.value;
-                  synchronizeBoundaries(next);
-                })
-              }
-            >
-              {media("substrate").map((m) => (
-                <option key={m.name}>{m.name}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            当前基底折射率 n
-            <NumericInput
-              label="基底折射率"
-              value={p.settings.substrate_n}
-              min={0.001}
-              max={20}
-              disabled={busy}
-              onChange={(n) =>
-                update((next) => {
-                  const m = next.materials.find(
-                    (m) => m.name === next.settings.substrate_material,
-                  )!;
-                  m.n = n;
-                  synchronizeBoundaries(next);
-                })
-              }
-            />
-          </label>
-          <p>k=0 · 常数折射率 · 不含基底背面反射</p>
-          <button className="button secondary" onClick={openMaterials}>
-            管理材料与基底
-          </button>
-          <p className="model-note">
-            修改基底材料快照会自动更新主光谱，保持膜层物理厚度。
-          </p>
-        </div>
-      </section>
     );
   return (
     <section className="engineering-parameters">

@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "platform": "macOS Apple Silicon",
+  "isolated_workspace": "acceptance/0.2.0-ui/TFC/Workspace",
+  "source_workspace_modified": false,
+  "native_menu_opened_materials": true,
+  "catalogue_total_with_four_reference_entries": 1215,
+  "search_multiple_keywords": true,
+  "import_full_silver_snapshot": true,
+  "native_substrate_window": true,
+  "schott_bk7_selected_and_boundary_updated": true,
+  "layer_table_silver_replacement": true,
+  "automatic_spectrum_update": true,
+  "native_save_shortcut": true,
+  "main_project_saved_state": true,
+  "absorption_channel_available": true,
+  "reference_550nm": {
+    "R_percent_display": 95.8794,
+    "T_percent_display": 0.134
+  },
+  "screenshots": [
+    "v0.2.0-mac-materials.png",
+    "v0.2.0-mac-substrate.png",
+    "v0.2.0-mac-spectrum.png"
+  ],
+  "limits": "Native manual interaction through accessibility; not Windows visual or physical SSD round trip."
+}

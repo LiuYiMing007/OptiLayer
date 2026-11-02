@@ -6,7 +6,31 @@ export interface Material {
   k: number;
   color: string;
   role: MaterialRole;
-  model: "constant";
+  model: "constant" | "tabulated" | "tfcalc-formula";
+  samples?: number[][];
+  range_nm?: [number, number];
+  formula?: {
+    n_type: number;
+    k_type: number;
+    coefficients: number[];
+    k_coefficients: number[];
+    wavelength_unit: string;
+  };
+  display_name?: string;
+  collection?: string;
+  provenance?: {
+    path: string;
+    sha256: string;
+    encoding: string;
+    comments: string[];
+  };
+  status?: "ready" | "quarantined";
+  issues?: string[];
+  catalogue_summary?: boolean;
+  point_count?: number;
+  preview_nm?: number;
+  preview?: number[][];
+  duplicate_of?: string;
   source: string;
 }
 export interface Layer {
@@ -105,6 +129,9 @@ export interface Spectrum {
   Rp_percent: number[];
   Ts_percent: number[];
   Tp_percent: number[];
+  absorbing?: boolean;
+  warnings?: string[];
+  energy_check?: string;
   max_energy_error: number;
   energy_error: number[];
   model: string;

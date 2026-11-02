@@ -1,6 +1,6 @@
 {
   "name": "tfc-for-mac",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -36,5 +36,5 @@
     "typescript": "~5.7.2",
     "vite": "^6.0.0"
   },
-  "tfcRevision": 2
+  "tfcRevision": 1
 }

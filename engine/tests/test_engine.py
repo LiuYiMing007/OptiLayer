@@ -44,7 +44,7 @@ class EngineTests(unittest.TestCase):
         for key,value in [('step_nm',0),('end_nm',300),('angle_deg',90),('incident_n',-1),('start_nm',float('nan'))]:
             p=fixture(); p['settings'][key]=value
             with self.assertRaises(ValueError): engine.calculate(p)
-        p=fixture(); p['materials'][0]['k']=0.01
+        p=fixture(); p['materials'][0]['k']=-0.01
         with self.assertRaises(ValueError): engine.calculate(p)
         p=fixture(); p['layers'][0]['material']='UNKNOWN'
         with self.assertRaises(ValueError): engine.calculate(p)

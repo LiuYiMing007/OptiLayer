@@ -103,7 +103,7 @@ test("transport key order is irrelevant, named substrate changes synchronize bou
   assert.equal(result.settings.substrate_n, 1.7);
   assert.equal(result.layers[0].thickness_nm, 100);
 });
-test("nonfinite thickness, absorbing material and structural patch proposals reject", () => {
+test("nonfinite thickness, negative extinction and structural patch proposals reject", () => {
   const p = project();
   for (const value of [NaN, Infinity, -1])
     assert.throws(() =>
@@ -118,7 +118,7 @@ test("nonfinite thickness, absorbing material and structural patch proposals rej
     applyPatches(
       p,
       edits(p, (p) => {
-        p.materials[0].k = 0.1;
+        p.materials[0].k = -0.1;
       }),
     ),
   );

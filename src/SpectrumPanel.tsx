@@ -67,6 +67,14 @@ export default function SpectrumPanel({
   };
   return (
     <section className={`panel chart-panel spectrum-${mode}`}>
+      {!!result?.warnings?.length && (
+        <details className="spectrum-material-warnings">
+          <summary>材料数据提示 · {result.warnings.length} 项</summary>
+          {result.warnings.map((warning, i) => (
+            <p key={i}>{warning}</p>
+          ))}
+        </details>
+      )}
       {mode === "main" && (
         <>
           <div className="panel-heading chart-heading">
@@ -85,7 +93,11 @@ export default function SpectrumPanel({
                     className="line-key"
                     style={{ background: curveStyle(channel).color }}
                   />
-                  {channel === "A" ? "A 残差" : channel}
+                  {channel === "A"
+                    ? result?.absorbing
+                      ? "A 吸收"
+                      : "A 残差"
+                    : channel}
                 </button>
               ))}
               <select
@@ -386,7 +398,7 @@ export default function SpectrumPanel({
           <div className="analysis-bottom">
             <span>
               {result
-                ? `${result.wavelength_nm.length} 点 · max |R+T−1|=${result.max_energy_error.toExponential(2)}`
+                ? `${result.wavelength_nm.length} 点 · ${result.absorbing ? "被动性偏差" : "max |R+T−1|"}=${result.max_energy_error.toExponential(2)}`
                 : "等待有效计算结果"}
             </span>
             <button
@@ -414,8 +426,8 @@ export default function SpectrumPanel({
           </div>
           <p className="analysis-footnote">
             {analysis?.note || "阈值与峰谷来自计算采样；没有交点时不推断截止。"}{" "}
-            A=100−R−T，为无吸收模型的数值残差。峰谷/边缘最多展示 12
-            项，报告包含全部结果。目标 CSV 使用 wavelength_nm 与 T_percent /
+            A=100−R−T：吸收模型为膜系吸收，无吸收模型为数值残差。峰谷/边缘最多展示
+            12 项，报告包含全部结果。目标 CSV 使用 wavelength_nm 与 T_percent /
             R_percent 列。
           </p>
         </div>

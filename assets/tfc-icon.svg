@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Original TFC identity: a precise interface splitting an incident beam. -->
+  <rect x="72" y="72" width="880" height="880" rx="190" fill="#172b3b"/>
+  <rect x="96" y="96" width="832" height="832" rx="169" fill="none" stroke="#314a5c" stroke-width="3"/>
+  <path d="M188 523H836" stroke="#9eb6c5" stroke-width="9"/>
+  <path d="M205 544H819M216 567H808M228 590H796" stroke="#44687f" stroke-width="10"/>
+  <path d="M512 240V786" stroke="#6e8b9e" stroke-width="5" stroke-dasharray="13 16"/>
+  <path d="M241 270L507 517" fill="none" stroke="#edf6fb" stroke-width="29" stroke-linecap="round"/>
+  <path d="M375 393L409 423L369 417" fill="none" stroke="#edf6fb" stroke-width="18" stroke-linejoin="round"/>
+  <path d="M512 523L776 278" fill="none" stroke="#69c9c3" stroke-width="27" stroke-linecap="round"/>
+  <path d="M773 330L778 276L724 279" fill="none" stroke="#69c9c3" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M512 523L660 785" fill="none" stroke="#71a9e0" stroke-width="27" stroke-linecap="round"/>
+  <path d="M613 758L661 788L663 734" fill="none" stroke="#71a9e0" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="512" cy="523" r="18" fill="#edf6fb"/>
+</svg>

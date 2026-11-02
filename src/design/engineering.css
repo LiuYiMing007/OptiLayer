@@ -451,3 +451,357 @@
 .grid-context-menu button:hover {
   background: #dceaf8;
 }
+
+/* Catalogue workbench: bounded DOM, compact rows and persistent detail inspector. */
+.catalogue-window {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+  height: 100%;
+  font-size: 12px;
+  color: var(--text, #242424);
+}
+.catalogue-toolbar,
+.catalogue-filters,
+.catalogue-current {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid #d8dde3;
+  flex-wrap: wrap;
+}
+.catalogue-toolbar button,
+.catalogue-pagination button,
+.catalogue-add button {
+  min-height: 27px;
+  padding: 3px 9px;
+  border: 1px solid #cfd5db;
+  background: #fff;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.catalogue-tabs {
+  display: flex;
+  margin-right: auto;
+  gap: 2px;
+}
+.catalogue-tabs button[aria-selected="true"] {
+  background: #e5edf5;
+  border-color: #a9bfd5;
+}
+.catalogue-filters input {
+  flex: 1;
+  min-width: 210px;
+}
+.catalogue-window input,
+.catalogue-window select {
+  height: 28px;
+  padding: 3px 6px;
+  border: 1px solid #cfd5db;
+  background: white;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.catalogue-current select {
+  flex: 1;
+  max-width: 300px;
+}
+.catalogue-body {
+  display: grid;
+  grid-template-columns: minmax(340px, 1fr) 290px;
+  flex: 1;
+  min-height: 240px;
+  overflow: hidden;
+}
+.catalogue-table-area {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.catalogue-table-scroll {
+  overflow: auto;
+  flex: 1;
+  max-height: calc(100vh - 210px);
+  min-height: 200px;
+}
+.catalogue-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12px;
+}
+.catalogue-table th {
+  position: sticky;
+  top: 0;
+  background: #edf0f3;
+  text-align: left;
+  font-weight: 500;
+  height: 29px;
+  border-bottom: 1px solid #ccd3da;
+  z-index: 1;
+}
+.catalogue-table th,
+.catalogue-table td {
+  padding: 4px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.catalogue-table td {
+  height: 28px;
+  border-bottom: 1px solid #edf0f3;
+}
+.catalogue-table th:first-child {
+  width: 30%;
+}
+.catalogue-table th:nth-child(2) {
+  width: 19%;
+}
+.catalogue-table th:nth-child(3) {
+  width: 11%;
+}
+.catalogue-table th:nth-child(4) {
+  width: 16%;
+}
+.catalogue-table tr {
+  cursor: default;
+}
+.catalogue-table tr:hover {
+  background: #f0f4f8;
+}
+.catalogue-table tr.selected {
+  background: #dceaf8;
+}
+.catalogue-table tr:focus-visible {
+  outline: 2px solid #3978b8;
+  outline-offset: -2px;
+}
+.catalogue-table .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.catalogue-used {
+  color: #666;
+  font-size: 10px;
+}
+.catalogue-pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-top: 1px solid #d8dde3;
+}
+.catalogue-pagination > span:first-child {
+  margin-right: auto;
+  color: #666;
+}
+.catalogue-detail {
+  padding: 12px;
+  border-left: 1px solid #d8dde3;
+  background: #fafbfc;
+  overflow: auto;
+  max-height: calc(100vh - 170px);
+}
+.catalogue-detail h2 {
+  font-size: 14px;
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.catalogue-detail h3 {
+  font-size: 12px;
+  margin: 8px 0;
+}
+.catalogue-path,
+.catalogue-hint {
+  color: #626c76;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.catalogue-path {
+  margin: 4px 0 12px;
+}
+.catalogue-detail dl {
+  display: grid;
+  grid-template-columns: 85px 1fr;
+  gap: 7px;
+  margin: 8px 0;
+}
+.catalogue-detail dt {
+  color: #666;
+}
+.catalogue-detail dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.catalogue-detail pre,
+.catalogue-detail code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font:
+    11px/1.6 ui-monospace,
+    monospace;
+}
+.catalogue-detail details {
+  margin: 10px 0;
+  font-size: 11px;
+}
+.catalogue-detail summary {
+  cursor: pointer;
+  color: #536579;
+}
+.nk-preview {
+  border: 1px solid #e0e5ea;
+  background: white;
+  margin: 12px 0;
+}
+.nk-preview svg {
+  display: block;
+  width: 100%;
+}
+.nk-preview text {
+  font:
+    10px -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  fill: #666;
+}
+.catalogue-issues {
+  border-left: 2px solid #b68b4e;
+  padding: 5px 8px;
+  background: #f7f3eb;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 10px 0;
+}
+.catalogue-issues p {
+  margin: 5px 0;
+}
+.catalogue-window .catalogue-apply {
+  width: 100%;
+  min-height: 29px;
+  background: #3978b8;
+  border: 1px solid #326ca6;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 12px;
+}
+.catalogue-window button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.catalogue-edit {
+  border-top: 1px solid #d8dde3;
+  margin-top: 14px;
+  padding-top: 3px;
+}
+.catalogue-edit label {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  margin: 6px 0;
+}
+.catalogue-edit input,
+.catalogue-edit select {
+  width: 100%;
+  min-width: 0;
+}
+.catalogue-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  background: #f3f6f9;
+  border-bottom: 1px solid #d8dde3;
+}
+.catalogue-add label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.catalogue-add label input {
+  width: 70px;
+}
+.catalogue-footer,
+.catalogue-notice {
+  font-size: 11px;
+  padding: 6px 8px;
+  color: #626c76;
+  border-top: 1px solid #e0e5ea;
+  margin: 0;
+  line-height: 1.5;
+}
+.catalogue-empty {
+  color: #666;
+}
+.tool-materials .tool-content,
+.tool-substrate .tool-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.spectrum-material-warnings {
+  flex: none;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: #7a633e;
+  border-bottom: 1px solid #e2ded5;
+}
+.spectrum-material-warnings summary {
+  cursor: pointer;
+}
+.spectrum-material-warnings p {
+  margin: 4px 0;
+}
+.tool-materials .tool-content,
+.tool-substrate .tool-content {
+  display: flex;
+  flex-direction: column;
+}
+.tool-materials .tool-notice,
+.tool-substrate .tool-notice {
+  flex: none;
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tool-materials .catalogue-window,
+.tool-substrate .catalogue-window {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.catalogue-body {
+  grid-template-columns: minmax(250px, 1fr) minmax(240px, 290px);
+  min-height: 0;
+}
+.catalogue-detail {
+  min-width: 0;
+  max-height: none;
+}
+.catalogue-detail dd {
+  overflow-wrap: anywhere;
+}
+.catalogue-table-scroll {
+  max-height: none;
+  min-height: 0;
+}
+.catalogue-window :focus-visible {
+  outline: 2px solid #3978b8;
+  outline-offset: 1px;
+}
+.catalogue-window .catalogue-filters input:focus {
+  border-color: #3978b8;
+  box-shadow: none;
+}
+.browser-tool.tool-materials,
+.browser-tool.tool-substrate {
+  width: min(960px, 96vw);
+  max-width: calc(100vw - 45px);
+}

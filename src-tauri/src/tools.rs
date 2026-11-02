@@ -296,7 +296,7 @@ fn projection(mut snapshot: Value, label: &str) -> Value {
             v.remove("spectrum");
         }
     }
-    if label != "tool-materials" {
+    if label != "tool-materials" && label != "tool-substrate" {
         if let Some(v) = snapshot.as_object_mut() {
             v.remove("library");
         }

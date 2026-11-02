@@ -75,3 +75,9 @@ node scripts/run_python.mjs engine/main.py --workspace ./MyWorkspace --create-wo
 - 过期光谱拒绝归档；副本写入失败仍可从 SQLite 读取已保存项目。
 - Windows 路径字符串、POSIX 绝对路径与父目录逃逸拒绝。
 - 当前版本 Windows CI 必须实际运行后才可将其对应检查标为通过；本机结果不替代 Windows。
+
+## 0.2.0 材料模型附加字段
+
+内置 TFCalc 目录随程序只读分发，不自动覆盖现有工作区共享库。项目选用条目时存储完整 `samples` 或 `formula`、`range_nm`、来源及 SHA-256；目录摘要不能保存为计算材料。SQLite 表和 workspace manifest 版本不变，项目仍为 schema_version=1，以可选字段兼容原常数项目。0.1.x 不能计算新增的 tabulated / tfcalc-formula 模型；使用这些数据的项目需 0.2.0 及以上打开。
+
+项目内仅存实际选用材料，仍最多 300 种，不复制全部 1,211 项。移动 Workspace 后不依赖原 TFCalc 文件路径，也不依赖原电脑的目录。

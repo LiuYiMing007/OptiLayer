@@ -81,19 +81,22 @@ export default function ToolView({
           canRedo={s.canRedo}
         />
       )}
-      {id === "materials" && (
+      {(id === "materials" || id === "substrate") && (
         <MaterialLibrary
           project={s.project}
           update={update}
           library={s.library || []}
+          substrate={id === "substrate"}
+          onImport={(name, substrate) =>
+            send({ kind: "catalogue-import", name, substrate })
+          }
           onSaveLibrary={() => send({ kind: "library-save" })}
         />
       )}
-      {(id === "settings" || id === "substrate") && (
+      {id === "settings" && (
         <CalculationSettings
           project={s.project}
           busy={s.busy}
-          mode={id === "substrate" ? "substrate" : "parameters"}
           update={update}
           calculate={() => command("calculate.spectrum")}
           openMaterials={() => command("tools.materials")}

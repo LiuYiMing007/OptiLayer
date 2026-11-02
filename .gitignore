@@ -48,3 +48,6 @@ Workspaces/
 
 # Ready-to-carry local project includes private user Workspace
 便携项目/
+
+# Local PDF extraction and QA scratch
+tmp/

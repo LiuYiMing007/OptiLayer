@@ -148,7 +148,7 @@ async fn engine_request(
         }
         let pure = matches!(
             action,
-            "calculate" | "calculate_rt" | "analyze" | "validate" | "import_tfd"
+            "calculate" | "calculate_rt" | "analyze" | "validate" | "import_tfd" | "catalogue_list" | "catalogue_get"
         );
         let root = if pure {
             None

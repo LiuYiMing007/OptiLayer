@@ -50,6 +50,7 @@ jobs:
           codesign --verify --deep --strict release/TFC.app
       - run: node scripts/run_python.mjs scripts/validate_menu_release.py
       - run: node scripts/run_python.mjs scripts/validate_window_ipc_release.py
+      - run: node scripts/run_python.mjs scripts/validate_catalogue_release.py
       - run: node scripts/run_python.mjs scripts/validate_workspace_release.py
       - run: node scripts/run_python.mjs scripts/package_release.py
       - run: node scripts/run_python.mjs scripts/validate_portable_release.py
@@ -94,3 +95,9 @@ jobs:
             python scripts/release_notes.py "$TAG" > "$RUNNER_TEMP/release-notes.md"
             gh release create "$TAG" release-assets/* --verify-tag --title "TFC $TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
           fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: combined-release
+          path: release-assets/*macOS-Windows*
+          if-no-files-found: error
+          retention-days: 30

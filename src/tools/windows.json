@@ -10,18 +10,18 @@
   {
     "id": "materials",
     "title": "材料",
-    "width": 820,
-    "height": 700,
-    "minWidth": 650,
-    "minHeight": 400
+    "width": 960,
+    "height": 680,
+    "minWidth": 720,
+    "minHeight": 440
   },
   {
     "id": "substrate",
     "title": "基底",
-    "width": 420,
-    "height": 420,
-    "minWidth": 360,
-    "minHeight": 320
+    "width": 960,
+    "height": 680,
+    "minWidth": 720,
+    "minHeight": 440
   },
   {
     "id": "settings",

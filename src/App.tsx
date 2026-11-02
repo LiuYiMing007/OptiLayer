@@ -11,7 +11,11 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { request } from "./api";
 import { clone, referenceProject } from "./defaults";
-import { synchronizeBoundaries, physicalSignature } from "./model";
+import {
+  replaceMaterial,
+  synchronizeBoundaries,
+  physicalSignature,
+} from "./model";
 import MaterialLibrary from "./MaterialLibrary";
 import SpectrumPanel from "./SpectrumPanel";
 import WorkspacePanel from "./WorkspacePanel";
@@ -43,7 +47,8 @@ import type {
   WorkspaceInfo,
 } from "./types";
 
-const appVersion = `${version} · 修订${tfcRevision}`;
+const appVersion =
+  tfcRevision > 1 ? `${version} · 修订${tfcRevision}` : version;
 type Modal =
   "projects" | "materials" | "about" | "workspace" | "shortcuts" | null;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -321,6 +326,22 @@ export default function App() {
       commit(next, false);
       for (const patch of action.patches)
         writers.current.set(patchKey(patch), source);
+      return;
+    }
+    if (action.kind === "catalogue-import") {
+      const scope = scopeRef.current;
+      const result = await request<{ material: Material }>({
+        action: "catalogue_get",
+        name: action.name,
+      });
+      if (scope !== scopeRef.current)
+        throw new Error("项目已切换，请重新选择材料");
+      const next = structuredClone(current.current);
+      replaceMaterial(next, result.material);
+      if (action.substrate)
+        next.settings.substrate_material = result.material.name;
+      synchronizeBoundaries(next);
+      commit(next, false);
       return;
     }
     if (action.kind === "select") {
@@ -858,7 +879,7 @@ export default function App() {
                 : "光谱已与当前膜系同步"}
           {notice ? " · " + notice : ""}
         </span>
-        <span>常数 n · k=0 · A 为数值残差 · {appVersion}</span>
+        <span>各向同性 n/k · A=100−R−T · {appVersion}</span>
       </footer>
       <input
         ref={importRef}
@@ -981,6 +1002,15 @@ export default function App() {
                 project={project}
                 update={update}
                 library={library}
+                onImport={(name, substrate) =>
+                  handleToolAction("main", {
+                    kind: "catalogue-import",
+                    name,
+                    substrate,
+                    scope: scopeRef.current,
+                    requestId: crypto.randomUUID(),
+                  })
+                }
                 onSaveLibrary={async () => {
                   await request({
                     action: "library_save",
@@ -1060,9 +1090,10 @@ export default function App() {
                 <div className="model-note">
                   <BookOpen size={18} />
                   <p>
-                    当前为各向同性、无吸收常数 n
+                    当前支持各向同性常数、色散及吸收 n/k
                     的单面相干膜层模型。尚不支持色散、吸收、基底背面及非相干厚基底；TFD
-                    只读取参考子集。A 为数值残差。真实材料数据需明确来源。
+                    只读取参考子集。A
+                    为膜系吸收；无吸收时为数值残差。材料记录保留来源。
                   </p>
                 </div>
               </div>
