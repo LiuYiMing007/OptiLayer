@@ -1,0 +1,29 @@
+{
+  "version": "0.1.5",
+  "source_commit": "718339b54766e0c6fc09cb9df53009de0a335961",
+  "release_run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41456821637",
+  "macOS": {
+    "asset": "TFC-0.1.5-macOS-arm64.zip",
+    "sha256": "73f800ddd1ee592ae3472596f11cb5a6146bd39cf5cd49df195d5bb21ce49264",
+    "workspace_excluded": true,
+    "published_release_digest_matches": true,
+    "download_source": "successful release workflow artifact, compared against published Release digest and checksum",
+    "strict_signature_verified": true
+  },
+  "limits": [
+    "macOS ad-hoc signature; not Developer ID notarized",
+    "Windows manual visual and physical keyboard review pending"
+  ],
+  "Windows": {
+    "asset": "TFC-0.1.5-Windows-x64-portable.zip",
+    "sha256": "beca9ff3394be2837a9961f041a8b70606248b0407866522e52abe764bb5496b",
+    "workspace_excluded": true,
+    "published_release_digest_matches": true,
+    "download_source": "successful release workflow artifact, compared against published Release digest and checksum",
+    "pe_x64_and_version_verified": true
+  },
+  "combined_project_relative_location_verified": true,
+  "release_published": true,
+  "ci_status": "success",
+  "assets_unchanged_after_publication": true
+}
