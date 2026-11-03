@@ -14,21 +14,34 @@ const handlers = {};
 let installed = [],
   deleted = [],
   network = 0,
-  requestedOptions;
-const keys = ["unrelated-app", "tfc-mobile-ancient", "tfc-mobile-previous"];
+  requestedOptions,
+  missing = false;
+const keys = [
+  "unrelated-app",
+  "tfc-mobile-%2Fother%2F-current",
+  "tfc-mobile-%2F-ancient",
+  "tfc-mobile-%2F-previous",
+];
 const cache = {
   addAll: async (urls) => {
     installed = urls;
   },
   match: async (request, options) => {
     requestedOptions = options;
-    return request.url.endsWith("mobile.html") ? "offline-page" : undefined;
+    const url = typeof request === "string" ? request : request.url;
+    if (typeof request === "string")
+      return missing && url.endsWith("icon.png") ? undefined : "cached-asset";
+    return url.endsWith("mobile.html") ? "offline-page" : undefined;
   },
 };
 vm.runInNewContext(worker, {
   URL,
   self: {
-    location: { origin: "https://example.test" },
+    location: {
+      origin: "https://example.test",
+      href: "https://example.test/sw.js",
+    },
+    registration: { scope: "https://example.test/" },
     clients: { claim: async () => {} },
     addEventListener: (event, handler) => {
       handlers[event] = handler;
@@ -62,7 +75,7 @@ handlers.activate({
   },
 });
 await work;
-assert.deepEqual(deleted, ["tfc-mobile-ancient"]);
+assert.deepEqual(deleted, ["tfc-mobile-%2F-ancient"]);
 handlers.fetch({
   request: { method: "GET", url: "https://example.test/mobile.html" },
   respondWith: (p) => {
@@ -72,6 +85,30 @@ handlers.fetch({
 assert.equal(await work, "offline-page");
 assert.equal(network, 0);
 assert.equal(requestedOptions.ignoreVary, true);
+let reported;
+const messageEvent = {
+  data: { type: "TFC_OFFLINE_CHECK" },
+  ports: [
+    {
+      postMessage: (value) => {
+        reported = value;
+      },
+    },
+  ],
+  waitUntil: (p) => {
+    work = p;
+  },
+};
+handlers.message(messageEvent);
+await work;
+assert.equal(reported.complete, true);
+assert.equal(reported.cached, installed.length);
+assert.equal(reported.materials, 1211);
+missing = true;
+handlers.message(messageEvent);
+await work;
+assert.equal(reported.complete, false);
+assert.ok(reported.cached < reported.expected);
 const assets = await fs.readdir(path.join(root, "assets"));
 const js = (
   await Promise.all(

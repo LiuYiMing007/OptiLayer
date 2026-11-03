@@ -53,3 +53,19 @@ test("mobile rejects missing materials, invalid thickness and render-unsafe disp
 test("mobile refuses oversized files before JSON parsing", () => {
   assert.throws(() => parsePocketProject(" ".repeat(10_000_001)), /10 MB/);
 });
+
+import { offlineResourceUrls } from "../src/mobile/offline.ts";
+test("offline verification follows scoped deployment and current hashed resources", () => {
+  const urls = offlineResourceUrls(
+    "https://example.test/verify/",
+    [
+      "https://example.test/verify/assets/main-abc.js",
+      "https://external.test/script.js",
+    ],
+    ["./assets/style-abc.css"],
+  );
+  assert.equal(urls.length, 6);
+  assert.ok(urls.includes("https://example.test/verify/mobile.html"));
+  assert.ok(urls.includes("https://example.test/verify/assets/main-abc.js"));
+  assert.ok(!urls.some((u) => u.includes("external.test")));
+});

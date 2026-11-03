@@ -54,3 +54,7 @@ Apple 官方：[将网站作为 iPhone 网页应用打开](https://support.apple
 
 ![材料详情](mobile-material-detail-preview.png)
 ![项目只读查看](mobile-project-preview.png)
+
+## 离线及 iPhone 协同验收
+
+后续新增设备模式显示、前台缓存完整性检查、8 秒超时与部署路径缓存隔离；用户第一轮 iPhone 检查反馈异常，尚未通过真机验收。Mac Safari 的实际停止服务器重载与材料查询已通过。逐项结果和待测项见 [离线与真机验收记录](iPhone离线与真机验收.md)。

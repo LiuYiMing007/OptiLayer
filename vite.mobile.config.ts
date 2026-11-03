@@ -27,13 +27,17 @@ export default defineConfig({
         const hash = createHash("sha256");
         for (const f of files.sort())
           hash.update(await readFile(path.join(root, f)));
+        const materialCount = JSON.parse(
+          await readFile("engine/data/tfcalc-catalogue.json", "utf8"),
+        ).materials.length;
         const key = `tfc-mobile-${hash.digest("hex").slice(0, 16)}`;
         await writeFile(
           path.join(root, "sw.js"),
-          `const CACHE=${JSON.stringify(key)}; const FILES=${JSON.stringify(files.map((f) => "./" + f))};
+          `const PREFIX="tfc-mobile-"+encodeURIComponent(new URL(self.registration.scope).pathname)+"-";const CACHE=PREFIX+${JSON.stringify(key)}; const FILES=${JSON.stringify(files.map((f) => "./" + f))};
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES))));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('tfc-mobile-')&&k!==CACHE).slice(0,-1).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==self.location.origin)return;e.respondWith((async()=>{const c=await caches.open(CACHE);const hit=await c.match(e.request,{ignoreVary:true});if(hit)return hit;for(const key of (await caches.keys()).filter(k=>k.startsWith('tfc-mobile-')&&k!==CACHE)){const old=await (await caches.open(key)).match(e.request,{ignoreVary:true});if(old)return old;}return fetch(e.request);})());});`,
+self.addEventListener('message',e=>{if(e.data?.type!=='TFC_OFFLINE_CHECK'||!e.ports[0])return;e.waitUntil((async()=>{const c=await caches.open(CACHE);const hits=await Promise.all(FILES.map(f=>c.match(new URL(f,self.location.href).href,{ignoreVary:true})));const cached=hits.filter(Boolean).length;e.ports[0].postMessage({cache:CACHE,cached,expected:FILES.length,complete:cached===FILES.length,materials:${materialCount}});})());});
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).slice(0,-1).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==self.location.origin)return;e.respondWith((async()=>{const c=await caches.open(CACHE);const hit=await c.match(e.request,{ignoreVary:true});if(hit)return hit;for(const key of (await caches.keys()).filter(k=>k.startsWith(PREFIX)&&k!==CACHE)){const old=await (await caches.open(key)).match(e.request,{ignoreVary:true});if(old)return old;}return fetch(e.request);})());});`,
         );
       },
     },

@@ -14,6 +14,8 @@ import type { Material, Project } from "../types";
 import { materialAt, materialLabel, matchesMaterial } from "../materials";
 import { parsePocketProject, projects, type PocketProject } from "./data";
 import "./mobile.css";
+import DeviceCheck from "./DeviceCheck";
+import { checkOfflineCache } from "./offline";
 const materials = catalogue.materials as Material[];
 const fmt = (n: number, digits = 5) =>
   Number.isFinite(n)
@@ -284,8 +286,14 @@ function App() {
     navigator.serviceWorker
       .register("./sw.js", { scope: "./" })
       .then(() => navigator.serviceWorker.ready)
-      .then(() => {
-        if (active) setOffline("材料库与界面已准备离线使用");
+      .then(() => checkOfflineCache(materials.length))
+      .then((report) => {
+        if (active)
+          setOffline(
+            report.complete
+              ? "材料库与界面已准备离线使用"
+              : "离线资源不完整，请联网重新下载",
+          );
       })
       .catch(() => {
         if (active) setOffline("离线准备失败，请联网刷新后重试");
@@ -466,7 +474,6 @@ function App() {
                 从“文件”导入项目 JSON
                 <input
                   type="file"
-                  accept=".json,application/json"
                   onChange={(e) => {
                     void load(e.target.files?.[0]);
                     e.target.value = "";
@@ -530,6 +537,7 @@ function App() {
                 添加到主屏幕”，可像应用一样打开。
               </p>
             </section>
+            <DeviceCheck materialCount={materials.length} />
             <section>
               <h2>内置资料</h2>
               <p>
