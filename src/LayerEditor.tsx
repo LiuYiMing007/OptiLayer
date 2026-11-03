@@ -418,6 +418,7 @@ export default function LayerEditor({
                       ) : c ? (
                         String(Number(Number(raw).toFixed(6)))
                       ) : (
+                        p.materials.find((m) => m.name === raw)?.display_name ||
                         raw
                       )}
                     </td>
@@ -439,12 +440,18 @@ export default function LayerEditor({
                 p.layers.some((l) => l.material === m.name),
             )
             .map((m) => (
-              <option key={m.name} value={m.name} />
+              <option
+                key={m.name}
+                value={m.name}
+                label={m.display_name || m.name}
+              />
             ))}
         </datalist>
       </div>
       <div className="engineering-boundary">
-        基底：{p.settings.substrate_material}
+        基底：
+        {p.materials.find((m) => m.name === p.settings.substrate_material)
+          ?.display_name || p.settings.substrate_material}
         <span>n = {p.settings.substrate_n}　不含背面反射</span>
       </div>
       <footer className="engineering-grid-status">

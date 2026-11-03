@@ -14,7 +14,9 @@
 OpticalWorkspace/
 ├── workspace.json
 ├── projects/     # 按稳定项目 ID 导出的 JSON 恢复副本
-├── materials/    # 按名称 UTF-8 哈希命名的材料恢复副本
+├── materials/
+│   ├── catalogue/  # TFCalc-0.2.0.original.json 原始目录快照
+│   └── custom/     # 可读名称加稳定 ID 哈希的 *.material.json 恢复副本
 ├── spectra/      # 保存项目时保留的有效计算结果
 ├── database/
 │   └── workspace.sqlite3
@@ -81,3 +83,13 @@ node scripts/run_python.mjs engine/main.py --workspace ./MyWorkspace --create-wo
 内置 TFCalc 目录随程序只读分发，不自动覆盖现有工作区共享库。项目选用条目时存储完整 `samples` 或 `formula`、`range_nm`、来源及 SHA-256；目录摘要不能保存为计算材料。SQLite 表和 workspace manifest 版本不变，项目仍为 schema_version=1，以可选字段兼容原常数项目。0.1.x 不能计算新增的 tabulated / tfcalc-formula 模型；使用这些数据的项目需 0.2.0 及以上打开。
 
 项目内仅存实际选用材料，仍最多 300 种，不复制全部 1,211 项。移动 Workspace 后不依赖原 TFCalc 文件路径，也不依赖原电脑的目录。
+
+## 0.2.1 启动恢复与材料编辑
+
+macOS AppTranslocation 隔离目录和未带项目标记的 Applications 目录不能推断固态盘上的真实数据位置。此时明确报错，用户通过工作区设置“选择便携项目位置…”选择实际 TFC 文件夹或已有 Workspace。原本已记住但缺失的 Workspace 不会偷偷新建。初次连接保留当前内存中的项目。Finder 的 .DS_Store 等普通元数据文件不再妨碍创建空工作区，其它内容仍拒绝覆盖。
+
+显式恢复选择另在设备应用配置目录保存 project-location.json，作为隔离启动时的本机定位提示；这是宿主偏好，不进入 Workspace、不上传、不作为跨平台数据引用。正常从便携项目启动始终优先当前程序所属项目；换电脑或磁盘位置变更后可重新选择。项目内的工作区选择仍使用相对路径。
+
+内置 1211 条目录即使尚未连接 Workspace 也可查询；连接后将完整原始目录导出至 materials/catalogue/TFCalc-0.2.0.original.json，已有文件不覆盖。材料数据没有改变，因此文件的数据版本仍为 0.2.0。编辑内置记录产生 USER/ 独立副本，保存至 SQLite 共享库和 materials/custom/可读名称-哈希.material.json，并更新当前项目引用，项目修改可撤销。原始条目保留，历史项目快照不会自动更新。
+
+JSON 是恢复副本，不监控外部文件变化。建议在软件中编辑；外部修改后使用材料窗口“导入 JSON”，支持单个材料或材料数组，验证后再加入项目并保存到共享库。重命名可能留下旧名恢复副本，不自动删除用户文件；数据库仍是权威数据。原有根目录哈希文件保留。

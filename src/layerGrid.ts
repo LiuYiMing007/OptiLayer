@@ -65,7 +65,13 @@ export function pasteGrid(p: Project, start: GridCell, text: string): Project {
   lines.forEach((cells, r) => {
     const layer = next.layers[next.layers.length - 1 - start.row - r];
     if (start.col === 0) {
-      const name = cells[0].trim();
+      const entered = cells[0].trim();
+      const labels = p.materials.filter((m) => m.display_name === entered);
+      const name = p.materials.some((m) => m.name === entered)
+        ? entered
+        : labels.length === 1
+          ? labels[0].name
+          : entered;
       if (
         !p.materials.some(
           (m) =>

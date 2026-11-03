@@ -4,6 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import ToolView from "./ToolView";
 import { toolDefinitions, type ToolAction, type ToolSnapshot } from "./state";
 import type { ToolIntent } from "./useToolHost";
+import { readCatalogue } from "../api";
 import { shortcutCommand } from "../menus/commands";
 
 export default function ToolWindow() {
@@ -22,6 +23,41 @@ export default function ToolWindow() {
     )
       void invoke("window_check_ready", { projectId: snapshot.project.id });
   }, [snapshot?.project.id]);
+  const catalogueCheck = useRef(false);
+  useEffect(() => {
+    if (
+      !new URLSearchParams(location.search).has("window-ipc-check") ||
+      !["materials", "substrate"].includes(id) ||
+      !snapshot?.library?.length ||
+      catalogueCheck.current
+    )
+      return;
+    catalogueCheck.current = true;
+    void (async () => {
+      const full = await readCatalogue("TFC/SOPRA/AG");
+      if (full.material.samples?.length !== 121)
+        throw new Error("材料工具窗口读取不到完整 n/k");
+      const edit = document.querySelector<HTMLButtonElement>(
+        ".catalogue-edit-button",
+      );
+      if (!edit) throw new Error("材料编辑入口缺失");
+      edit.click();
+      const deadline = Date.now() + 10000;
+      while (Date.now() < deadline) {
+        if (document.querySelector('[aria-label="编辑 n/k 数据表"]')) {
+          await invoke("window_check_details", {
+            details: { editor: true, catalogue: true },
+          });
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      throw new Error("材料编辑窗口没有显示完整 n/k 数据表");
+    })().catch(
+      (e) =>
+        void invoke("window_check_details", { details: { error: String(e) } }),
+    );
+  }, [id, snapshot?.library?.length]);
   const latest = useRef<ToolSnapshot | null>(null);
   const waiting = useRef(
     new Map<string, { resolve: () => void; reject: (e: unknown) => void }>(),

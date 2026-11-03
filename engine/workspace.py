@@ -36,7 +36,7 @@ class Workspace:
                 raise ValueError('所选目录没有 workspace.json；请打开已有工作区或新建工作区')
             self.root.mkdir(parents=True, exist_ok=True)
             # Do not turn an unrelated populated folder into a workspace silently.
-            if any(self.root.iterdir()):
+            if any(not (p.is_file() and (p.name in ('.DS_Store', 'Thumbs.db', 'desktop.ini') or p.name.startswith('._'))) for p in self.root.iterdir()):
                 raise ValueError('新工作区需要空文件夹，请新建子文件夹后选择')
             manifest = {'format': FORMAT, 'schema_version': VERSION, 'id': str(uuid.uuid4()),
                         'name': self.root.name, 'created_at': datetime.now(timezone.utc).isoformat(),

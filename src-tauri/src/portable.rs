@@ -29,6 +29,12 @@ pub fn project_root(executable: &Path, development: Option<&Path>) -> Result<Pat
         marker_default(root)?;
         return root.canonicalize().map_err(|e| e.to_string());
     }
+    if executable
+        .components()
+        .any(|p| p.as_os_str() == "AppTranslocation")
+    {
+        return Err("macOS 正在隔离位置运行应用，无法确定固态盘项目位置。请在工作区设置中选择 TFC 项目文件夹。".into());
+    }
     // Use the .app's parent on macOS; never store data inside its signed bundle.
     let anchor = executable
         .ancestors()
@@ -41,6 +47,11 @@ pub fn project_root(executable: &Path, development: Option<&Path>) -> Result<Pat
             marker_default(candidate)?;
             return candidate.canonicalize().map_err(|e| e.to_string());
         }
+    }
+    if anchor.file_name().is_some_and(|n| n == "Applications") {
+        return Err(
+            "应用位于 Applications，尚未关联便携项目。请在工作区设置中选择 TFC 项目文件夹。".into(),
+        );
     }
     // A standalone client uses its enclosing folder, never AppData or cwd.
     anchor
@@ -240,6 +251,17 @@ mod tests {
         )
         .unwrap();
         assert!(selected(&f.0).is_err());
+    }
+    #[test]
+    fn mac_isolated_and_applications_launches_need_explicit_location() {
+        let f = Folder::new();
+        let isolated =
+            f.0.join("AppTranslocation/uuid/d/TFC.app/Contents/MacOS/tfc");
+        fs::create_dir_all(isolated.parent().unwrap()).unwrap();
+        assert!(project_root(&isolated, None).unwrap_err().contains("隔离"));
+        let installed = f.0.join("Applications/TFC.app/Contents/MacOS/tfc");
+        fs::create_dir_all(installed.parent().unwrap()).unwrap();
+        assert!(project_root(&installed, None).unwrap_err().contains("选择"));
     }
     #[test]
     fn standalone_mac_uses_app_parent_and_windows_uses_executable_parent() {

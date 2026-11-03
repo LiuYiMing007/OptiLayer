@@ -25,6 +25,7 @@ export interface ToolSnapshot {
   busy: boolean;
   calculating: boolean;
   dirty: boolean;
+  persisted?: boolean;
   canUndo: boolean;
   canRedo: boolean;
   workspace: WorkspaceInfo | null;
@@ -75,6 +76,19 @@ export type ToolAction = { scope: string; requestId: string } & (
   | { kind: "library-save" | "library-refresh" | "projects-refresh" }
   | { kind: "save-copy"; name: string }
   | { kind: "catalogue-import"; name: string; substrate?: boolean }
+  | {
+      kind: "material-save";
+      material: Material;
+      replaces: string;
+      expected: Material | null;
+      substrate?: boolean;
+    }
+  | {
+      kind: "material-editing";
+      active: boolean;
+      tool: "materials" | "substrate";
+    }
+  | { kind: "materials-folder" }
   | { kind: "analyze" }
   | { kind: "export"; name: string; content: string; type?: string }
 );

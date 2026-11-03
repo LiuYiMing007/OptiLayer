@@ -7,6 +7,7 @@ import sqlite3
 import uuid
 from models import BUILTIN_MATERIALS, validate, validate_material
 from workspace import atomic_json
+from catalogue import catalogue
 
 SCHEMA_VERSION = 3
 
@@ -28,6 +29,13 @@ def connect_db(workspace):
         conn.execute("INSERT OR IGNORE INTO materials VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))", (material['name'], json.dumps(material, ensure_ascii=False)))
     conn.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
     conn.commit()
+    # A discoverable, portable reference export. Never overwrite files users have.
+    catalogue_file=workspace.resolve(workspace.manifest['directories']['materials']+'/catalogue/TFCalc-0.2.0.original.json')
+    if not catalogue_file.exists():
+        try:
+            atomic_json(catalogue_file,catalogue())
+        except OSError:
+            pass  # Database operations remain usable on export failure.
     return conn
 
 
@@ -59,8 +67,9 @@ def storage_action(workspace, request):
                 for material in materials:
                     try:
                         key=hashlib.sha256(material['name'].encode('utf-8')).hexdigest()
-                        atomic_json(workspace.directory('materials')/f'{key}.material.json', material)
-                    except OSError as error:
+                        label=re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', material.get('display_name',material['name'])).strip(' .')[:60] or 'material'
+                        atomic_json(workspace.resolve(workspace.manifest['directories']['materials']+f'/custom/{label}-{key[:12]}.material.json'), material)
+                    except (OSError, ValueError) as error:
                         warnings.append(f'材料已入库，但恢复副本未写入：{error}')
                 return {'saved': True, 'warnings': warnings}
             if action == 'save':

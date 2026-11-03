@@ -90,6 +90,23 @@ export default function ToolView({
           onImport={(name, substrate) =>
             send({ kind: "catalogue-import", name, substrate })
           }
+          onMaterialSave={(material, replaces, expected) =>
+            send({
+              kind: "material-save",
+              material,
+              replaces,
+              expected,
+              substrate: id === "substrate",
+            })
+          }
+          onEditing={(active) =>
+            send({
+              kind: "material-editing",
+              active,
+              tool: id as "materials" | "substrate",
+            })
+          }
+          openFolder={() => send({ kind: "materials-folder" })}
           onSaveLibrary={() => send({ kind: "library-save" })}
         />
       )}
@@ -118,8 +135,12 @@ export default function ToolView({
             />
           </label>
           <p>
-            {s.dirty ? "有未保存的更改" : "已保存到工作区"} ·{" "}
-            {s.project.layers.length} 层 · 工作区：
+            {s.dirty
+              ? "有未保存的更改"
+              : s.persisted
+                ? "已保存到工作区"
+                : "新项目，尚未写入工作区"}{" "}
+            · {s.project.layers.length} 层 · 工作区：
             {s.workspace?.name || "未选择"}
           </p>
           <div className="project-tool-actions">

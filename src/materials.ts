@@ -48,7 +48,7 @@ export function materialAt(m: Material, nm: number): [number, number] {
 export const materialLabel = (m: Material) => m.display_name || m.name;
 export function matchesMaterial(m: Material, query: string): boolean {
   const text =
-    `${m.name} ${m.display_name || ""} ${m.collection || ""} ${m.source} ${m.provenance?.comments.join(" ") || ""}`.toLocaleLowerCase();
+    `${m.name} ${m.display_name || ""} ${m.collection || ""} ${m.source} ${m.provenance?.comments?.join(" ") || ""}`.toLocaleLowerCase();
   return query
     .trim()
     .toLocaleLowerCase()

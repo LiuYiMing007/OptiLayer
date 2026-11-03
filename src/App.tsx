@@ -1,3 +1,6 @@
+import { applyMaterialChange } from "./applyMaterialChange";
+import UnsavedDialog from "./UnsavedDialog";
+import { projectKey, hasUnsavedChanges, dataKey } from "./projectStatus";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
@@ -58,7 +61,8 @@ export default function App() {
   const [project, setProject] = useState<Project>(referenceProject);
   const [spectrum, setSpectrum] = useState<Spectrum | null>(null),
     [resultKey, setResultKey] = useState("");
-  const [savedKey, setSavedKey] = useState(""),
+  const [persisted, setPersisted] = useState(false);
+  const [savedKey, setSavedKey] = useState(() => projectKey(project)),
     [selected, setSelected] = useState(0);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -80,6 +84,7 @@ export default function App() {
     writers = useRef(new Map<string, string>());
   const sequence = useRef(0);
   const [details, setDetails] = useState(false);
+  const materialEditors = useRef(new Map<string, "materials" | "substrate">());
   const asking = useRef(false);
   const current = useRef(project);
   current.current = project;
@@ -87,7 +92,7 @@ export default function App() {
   resultRef.current = spectrum;
   const working = useRef(false),
     importRef = useRef<HTMLInputElement>(null);
-  const dirty = JSON.stringify(project) !== savedKey;
+  const dirty = hasUnsavedChanges(project, savedKey);
   const stale = !!spectrum && physicalSignature(project) !== resultKey;
   const scope = `${workspace?.id || "unavailable"}:${project.id}:${epoch.current}`;
   const scopeRef = useRef(scope);
@@ -165,15 +170,17 @@ export default function App() {
     setFuture((f) => f.slice(1));
   }
   async function run(task: () => Promise<void>) {
-    if (working.current) return;
+    if (working.current) return false;
     working.current = true;
     setBusy(true);
     setError("");
     setNotice("");
     try {
       await task();
+      return true;
     } catch (e) {
       setError(message(e));
+      return false;
     } finally {
       working.current = false;
       setBusy(false);
@@ -206,7 +213,7 @@ export default function App() {
       snapshot.id = crypto.randomUUID();
       snapshot.name = copyName;
     }
-    await run(async () => {
+    return await run(async () => {
       const r = await request<{ project: Project; warnings?: string[] }>({
         action: "save",
         project: snapshot,
@@ -220,7 +227,8 @@ export default function App() {
       }
       current.current = r.project;
       setProject(r.project);
-      setSavedKey(JSON.stringify(r.project));
+      setSavedKey(projectKey(r.project));
+      setPersisted(true);
       let spectrumWarning = "";
       if (
         resultRef.current &&
@@ -268,6 +276,7 @@ export default function App() {
     busy: busy || !!confirmation || !!modal,
     calculating,
     dirty,
+    persisted,
     canUndo: !!past.length,
     canRedo: !!future.length,
     workspace,
@@ -290,7 +299,8 @@ export default function App() {
     setFocus({ id, label, token: crypto.randomUUID() });
     await host.show(id);
     if (id === "project") await refreshProjects();
-    if (id === "materials") await refreshLibrary();
+    if ((id === "materials" || id === "substrate") && workspace)
+      await refreshLibrary();
   }
   async function focusMain() {
     if (isTauri()) await invoke("tool_focus_main");
@@ -313,9 +323,14 @@ export default function App() {
     setLibrary(r.materials);
   }
   async function handleToolAction(source: string, action: ToolAction) {
+    if (action.kind === "material-editing") {
+      if (action.active) materialEditors.current.set(source, action.tool);
+      else materialEditors.current.delete(source);
+      return;
+    }
     if (action.scope !== scopeRef.current)
       throw new Error("项目或工作区已切换，请使用最新窗口内容");
-    if (working.current || asking.current || modal)
+    if (working.current || asking.current || (modal && source !== "main"))
       throw new Error("主工作台正在处理，请稍后重试");
     if (action.kind === "patch") {
       const next = applyPatches(
@@ -326,6 +341,46 @@ export default function App() {
       commit(next, false);
       for (const patch of action.patches)
         writers.current.set(patchKey(patch), source);
+      return;
+    }
+    if (action.kind === "materials-folder") {
+      await request({ action: "materials_reveal" });
+      return;
+    }
+    if (action.kind === "material-save") {
+      if (
+        dataKey(
+          current.current.materials.find((m) => m.name === action.replaces) ||
+            null,
+        ) !== dataKey(action.expected)
+      )
+        throw new Error("该材料已被其它窗口更新，请取消编辑并重新载入最新数据");
+      const scope = scopeRef.current;
+      const ok = await run(async () => {
+        const { material } = await request<{ material: Material }>({
+          action: "material_validate",
+          material: action.material,
+        });
+        if (scope !== scopeRef.current)
+          throw new Error("项目已切换，请重新编辑");
+        const next = applyMaterialChange(
+          current.current,
+          material,
+          action.replaces,
+          action.expected,
+          !!action.substrate,
+        );
+        const result = await request<{ warnings?: string[] }>({
+          action: "library_save",
+          materials: [material],
+        });
+        commit(next);
+        await refreshLibrary();
+        setNotice(
+          `材料已保存到共享库并更新项目${result.warnings?.length ? "；" + result.warnings.join("；") : "；项目修改可撤销，请保存项目"}`,
+        );
+      });
+      if (!ok) throw new Error("材料保存未完成，请查看主窗口的错误信息后重试");
       return;
     }
     if (action.kind === "catalogue-import") {
@@ -371,7 +426,7 @@ export default function App() {
     if (action.kind === "save-copy") {
       if (!action.name.trim() || action.name.length > 200)
         throw new Error("请输入有效项目名称");
-      await save(action.name.trim());
+      if (!(await save(action.name.trim()))) throw new Error("另存为未完成");
       return;
     }
     if (action.kind === "projects-refresh") {
@@ -383,13 +438,18 @@ export default function App() {
       return;
     }
     if (action.kind === "library-save") {
-      await run(async () => {
-        await request({
+      const ok = await run(async () => {
+        const result = await request<{ warnings?: string[] }>({
           action: "library_save",
           materials: current.current.materials,
         });
         await refreshLibrary();
+        setNotice(
+          result.warnings?.join("；") ||
+            "项目材料已保存到共享库与材料数据文件夹",
+        );
       });
+      if (!ok) throw new Error("共享材料保存失败，请查看主窗口错误");
       return;
     }
     if (action.kind === "analyze") {
@@ -605,11 +665,29 @@ export default function App() {
       })
       .catch((e) => setWorkspaceError(message(e)));
   }, []);
+  useEffect(() => {
+    let disposed = false;
+    void request<{ materials: Material[] }>({ action: "catalogue_list" })
+      .then((r) => {
+        if (!disposed)
+          setLibrary((existing) => [
+            ...existing,
+            ...r.materials.filter(
+              (m) => !existing.some((x) => x.name === m.name),
+            ),
+          ]);
+      })
+      .catch((e) => {
+        if (!disposed) setError(`材料目录加载失败：${message(e)}`);
+      });
+    return () => {
+      disposed = true;
+    };
+  }, []);
   // Restored native tools may open before the frontend's showTool entry point.
   // Load their shared catalogues once the authoritative Workspace is known.
   useEffect(() => {
     setProjects([]);
-    setLibrary([]);
     if (!workspace) return;
     let disposed = false;
     void Promise.allSettled([
@@ -644,13 +722,13 @@ export default function App() {
       }
     };
     const leave = (e: BeforeUnloadEvent) => {
-      if (JSON.stringify(current.current) !== savedKey) {
+      if (hasUnsavedChanges(current.current, savedKey)) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
     window.addEventListener("keydown", handler);
-    window.addEventListener("beforeunload", leave);
+    if (!isTauri()) window.addEventListener("beforeunload", leave);
     return () => {
       window.removeEventListener("keydown", handler);
       window.removeEventListener("beforeunload", leave);
@@ -667,7 +745,11 @@ export default function App() {
           setNotice("正在处理，请完成后再关闭工作台");
           return;
         }
-        if (JSON.stringify(current.current) === savedKey) return;
+        if (
+          !hasUnsavedChanges(current.current, savedKey) &&
+          !materialEditors.current.size
+        )
+          return;
         event.preventDefault();
         if (await canReplace()) await getCurrentWindow().destroy();
       })
@@ -682,7 +764,13 @@ export default function App() {
     };
   }, [savedKey]);
   async function canReplace() {
-    if (JSON.stringify(current.current) === savedKey) return true;
+    if (materialEditors.current.size) {
+      const tool = materialEditors.current.values().next().value!;
+      await showTool(tool);
+      setNotice("请先在材料窗口保存或取消当前编辑，再切换项目或退出。");
+      return false;
+    }
+    if (!hasUnsavedChanges(current.current, savedKey)) return true;
     if (asking.current) return false;
     await focusMain();
     asking.current = true;
@@ -706,7 +794,8 @@ export default function App() {
     setFuture([]);
     setSpectrum(null);
     setResultKey("");
-    setSavedKey(saved ? JSON.stringify(p) : "");
+    setSavedKey(projectKey(p));
+    setPersisted(saved);
     setNotice("");
     setError("");
     setModal(null);
@@ -743,6 +832,7 @@ export default function App() {
           project: JSON.parse(text),
         });
     replace(r.project);
+    setSavedKey("");
 
     if (r.warning) setNotice(r.warning);
   }
@@ -789,7 +879,7 @@ export default function App() {
           <div>
             <strong title={project.name}>{project.name}</strong>
             <small>
-              {dirty ? "未保存" : "已保存"} ·{" "}
+              {dirty ? "未保存" : persisted ? "已保存" : "新项目 · 未修改"} ·{" "}
               {workspace?.name || "未选择工作区"} · {project.layers.length} 层
             </small>
           </div>
@@ -952,13 +1042,13 @@ export default function App() {
               <WorkspacePanel
                 workspace={workspace}
                 error={workspaceError}
-                beforeChange={canReplace}
+                beforeChange={workspace ? canReplace : async () => true}
                 onChanged={(w) => {
                   const unchanged =
                     workspace?.id === w.id && workspace.root === w.root;
                   setWorkspace(w);
                   setWorkspaceError("");
-                  if (unchanged) return;
+                  if (unchanged || !workspace) return;
                   const p = referenceProject();
                   replace(p);
                   setProjects([]);
@@ -1011,6 +1101,26 @@ export default function App() {
                     requestId: crypto.randomUUID(),
                   })
                 }
+                onMaterialSave={(material, replaces, expected) =>
+                  handleToolAction("main", {
+                    kind: "material-save",
+                    material,
+                    replaces,
+                    expected,
+                    scope: scopeRef.current,
+                    requestId: crypto.randomUUID(),
+                  })
+                }
+                onEditing={(active) =>
+                  handleToolAction("main", {
+                    kind: "material-editing",
+                    active,
+                    tool: "materials",
+                    scope: scopeRef.current,
+                    requestId: crypto.randomUUID(),
+                  })
+                }
+                openFolder={() => request<void>({ action: "materials_reveal" })}
                 onSaveLibrary={async () => {
                   await request({
                     action: "library_save",
@@ -1102,38 +1212,25 @@ export default function App() {
         </div>
       )}
       {confirmation && (
-        <div className="modal-backdrop confirmation-backdrop">
-          <section
-            role="alertdialog"
-            aria-modal="true"
-            aria-label="未保存的更改"
-            className="modal confirm-modal"
-          >
-            <h2>保留当前修改？</h2>
-            <p>当前项目有未保存的更改。可以先返回保存，或放弃修改后继续。</p>
-            <div className="confirm-actions">
-              <button
-                className="button secondary"
-                autoFocus
-                onClick={() => {
-                  confirmation(false);
-                  setConfirmation(null);
-                }}
-              >
-                返回编辑
-              </button>
-              <button
-                className="button primary"
-                onClick={() => {
-                  confirmation(true);
-                  setConfirmation(null);
-                }}
-              >
-                放弃修改并继续
-              </button>
-            </div>
-          </section>
-        </div>
+        <UnsavedDialog
+          name={project.name}
+          cancel={() => {
+            confirmation(false);
+            setConfirmation(null);
+          }}
+          discard={() => {
+            confirmation(true);
+            setConfirmation(null);
+          }}
+          save={async () => {
+            const ok = await save();
+            if (ok) {
+              confirmation(true);
+              setConfirmation(null);
+            }
+            return !!ok;
+          }}
+        />
       )}
     </div>
   );

@@ -1,3 +1,6 @@
+import { flushSync } from "react-dom";
+import { request } from "../api";
+import type { Material } from "../types";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { referenceProject } from "../defaults";
@@ -5,13 +8,18 @@ import { useDesktopMenus } from "../menus/useDesktopMenus";
 import { toolDefinitions, type ToolId, type ToolSnapshot } from "./state";
 import { useToolHost } from "./useToolHost";
 interface Status {
+  details?: Record<
+    string,
+    { editor?: boolean; catalogue?: boolean; error?: string }
+  >;
   ready: Record<string, string>;
   visible: Record<string, boolean>;
   menu: { project: string } | null;
 }
 // Only mounted after the host explicitly authorizes --window-ipc-self-test.
-// Reuses production IPC hooks and child React windows, but never mounts App/engine/storage.
+// Reuses production IPC hooks and child React windows, with pure catalogue reads; never mounts App or opens a Workspace.
 export default function WindowIpcCheck() {
+  const [library, setLibrary] = useState<Material[]>([]);
   const [project] = useState(referenceProject),
     [error, setError] = useState("");
   const sequence = useRef(0),
@@ -28,7 +36,7 @@ export default function WindowIpcCheck() {
     canRedo: false,
     workspace: null,
     projects: [],
-    library: [],
+    library,
     spectrum: null,
     stale: false,
     error: "",
@@ -69,18 +77,37 @@ export default function WindowIpcCheck() {
       shared_project_rendered: false,
       close_hide_reopen: false,
       workspace_used: false,
+      catalogue_without_workspace: false,
+      material_and_substrate_editors: false,
     };
     async function until(predicate: (s: Status) => boolean) {
       const end = Date.now() + 12000;
       while (Date.now() < end) {
         if (latest.current.error) throw new Error(latest.current.error);
         const s = await invoke<Status>("window_check_status");
+        for (const d of Object.values(s.details || {}))
+          if (d.error) throw new Error(d.error);
         if (predicate(s)) return s;
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
       throw new Error("frontend IPC/render acknowledgement timed out");
     }
     void (async () => {
+      const catalogue = await request<{ materials: Material[] }>({
+        action: "catalogue_list",
+      });
+      if (catalogue.materials.length !== 1211)
+        throw new Error("内置材料目录缺失");
+      const silver = catalogue.materials.find(
+        (m) => m.name === "TFC/SOPRA/AG",
+      )!;
+      flushSync(() =>
+        setLibrary([
+          silver,
+          ...catalogue.materials.filter((m) => m.name !== silver.name),
+        ]),
+      );
+      report.catalogue_without_workspace = true;
       await until((s) => s.menu?.project === project.name);
       for (const d of toolDefinitions) {
         const id = d.id as ToolId;
@@ -93,6 +120,8 @@ export default function WindowIpcCheck() {
           (s) => s.visible[id] && s.ready[`tool-${id}`] === project.id,
         );
         (report.main_button_ipc as string[]).push(id);
+        if (id === "materials" || id === "substrate")
+          await until((s) => !!s.details?.[`tool-${id}`]?.editor);
         await latest.current.host.hide(id);
         await until((s) => !s.visible[id]);
         await invoke("window_check_dispatch", { id: `view.${id}` });
@@ -110,6 +139,7 @@ export default function WindowIpcCheck() {
       await until(
         (s) => s.visible.layers && s.ready["tool-layers"] === project.id,
       );
+      report.material_and_substrate_editors = true;
       report.shared_project_rendered = true;
       report.close_hide_reopen = true;
       report.all_pass = true;

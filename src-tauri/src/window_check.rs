@@ -1,4 +1,4 @@
-//! Explicit release regression mode: real webviews and frontend IPC, no engine or Workspace.
+//! Explicit release regression mode: real webviews and frontend IPC, pure catalogue reads only, no Workspace writes.
 use serde_json::{json, Value};
 use std::{
     collections::HashMap,
@@ -12,6 +12,7 @@ use tauri::Manager;
 pub struct CheckState {
     pub enabled: bool,
     ready: Mutex<HashMap<String, String>>,
+    details: Mutex<HashMap<String, Value>>,
     finished: AtomicBool,
 }
 impl CheckState {
@@ -19,6 +20,7 @@ impl CheckState {
         Self {
             enabled,
             ready: Mutex::new(HashMap::new()),
+            details: Mutex::new(HashMap::new()),
             finished: AtomicBool::new(false),
         }
     }
@@ -60,6 +62,23 @@ pub fn window_check_ready(
     Ok(())
 }
 #[tauri::command]
+pub fn window_check_details(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    details: Value,
+) -> Result<(), String> {
+    require(&app)?;
+    if !["tool-materials", "tool-substrate"].contains(&window.label()) {
+        return Err("不是材料工具窗口".into());
+    }
+    app.state::<CheckState>()
+        .details
+        .lock()
+        .map_err(|e| e.to_string())?
+        .insert(window.label().into(), details);
+    Ok(())
+}
+#[tauri::command]
 pub fn window_check_status(
     window: tauri::WebviewWindow,
     app: tauri::AppHandle,
@@ -67,7 +86,7 @@ pub fn window_check_status(
     require(&app)?;
     crate::menus::require_main(&window)?;
     Ok(
-        json!({"ready":app.state::<CheckState>().ready.lock().map_err(|e| e.to_string())?.clone(), "visible":crate::tools::visibility(&app), "menu":crate::menus::menu_snapshot(app.clone())?}),
+        json!({"details":app.state::<CheckState>().details.lock().map_err(|e|e.to_string())?.clone(),"ready":app.state::<CheckState>().ready.lock().map_err(|e| e.to_string())?.clone(), "visible":crate::tools::visibility(&app), "menu":crate::menus::menu_snapshot(app.clone())?}),
     )
 }
 #[tauri::command]

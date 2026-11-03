@@ -15,6 +15,9 @@ use tauri_plugin_dialog::DialogExt;
 
 #[derive(Default)]
 struct WorkspaceSelection(Mutex<Option<PathBuf>>);
+// Runtime root plus a host-only locator for macOS isolated launches. Workspace
+// contents and .tfc preferences always remain relative to the chosen project.
+static PROJECT_OVERRIDE: Mutex<Option<PathBuf>> = Mutex::new(None);
 
 fn run_engine(
     app: &tauri::AppHandle,
@@ -111,6 +114,11 @@ fn run_engine(
 }
 
 fn project_folder() -> Result<PathBuf, String> {
+    if let Some(root) = PROJECT_OVERRIDE.lock().map_err(|e| e.to_string())?.as_ref() {
+        return root
+            .canonicalize()
+            .map_err(|e| format!("所选项目位置不可用：{e}，请重新选择项目文件夹"));
+    }
     let executable = std::env::current_exe().map_err(|e| e.to_string())?;
     let development = if cfg!(debug_assertions) {
         Path::new(env!("CARGO_MANIFEST_DIR")).parent()
@@ -148,7 +156,15 @@ async fn engine_request(
         }
         let pure = matches!(
             action,
-            "calculate" | "calculate_rt" | "analyze" | "validate" | "import_tfd" | "catalogue_list" | "catalogue_get"
+            "calculate"
+                | "calculate_rt"
+                | "analyze"
+                | "validate"
+                | "import_tfd"
+                | "catalogue_list"
+                | "catalogue_get"
+                | "material_validate"
+                | "materials_validate"
         );
         let root = if pure {
             None
@@ -156,6 +172,122 @@ async fn engine_request(
             Some(current_workspace(&app)?)
         };
         run_engine(&app, root.as_deref(), false, request)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn material_check(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    materials: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    if !["main", "tool-materials", "tool-substrate"].contains(&window.label()) {
+        return Err("此窗口无权校验材料".into());
+    }
+    if materials.to_string().len() > 2_000_000 {
+        return Err("材料数据不能超过 2 MB".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        run_engine(
+            &app,
+            None,
+            false,
+            serde_json::json!({"action":"materials_validate","materials":materials}),
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn catalogue_read(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    name: String,
+) -> Result<serde_json::Value, String> {
+    if !["main", "tool-materials", "tool-substrate"].contains(&window.label()) {
+        return Err("此窗口无权读取材料目录".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        run_engine(
+            &app,
+            None,
+            false,
+            serde_json::json!({"action":"catalogue_get","name":name}),
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn project_pick(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+) -> Result<Option<serde_json::Value>, String> {
+    menus::require_main(&window)?;
+    tauri::async_runtime::spawn_blocking(move|| {
+        let Some(folder)=app.dialog().file().set_parent(&window).set_title("选择 TFC 便携项目文件夹或已有 Workspace").blocking_pick_folder() else {return Ok(None);};
+        let picked=folder.into_path().map_err(|e|e.to_string())?.canonicalize().map_err(|e|e.to_string())?;
+        let (project,workspace,create)=if picked.join("workspace.json").is_file() {
+            let parent=picked.parent().ok_or("工作区缺少项目父目录")?;
+            let project=parent.ancestors().find(|p|p.join(portable::MARKER).exists()).unwrap_or(parent).to_path_buf();
+            (project,picked,false)
+        } else {
+            let (workspace,create)=portable::selected(&picked)?;
+            (picked,workspace,create)
+        };
+        let old=PROJECT_OVERRIDE.lock().map_err(|e|e.to_string())?.replace(project.clone());
+        let result=(|| {
+            let result=run_engine(&app,Some(&workspace),create,serde_json::json!({"action":"workspace_info"}))?;
+            portable::remember(&project,&workspace)?;
+            if !project.join(portable::MARKER).exists() {
+                std::fs::write(project.join(portable::MARKER),serde_json::to_vec_pretty(&serde_json::json!({"format":"tfc-portable-project","schema_version":1,"default_workspace":"Workspace"})).map_err(|e|e.to_string())?).map_err(|e|e.to_string())?;
+            }
+            Ok(result)
+        })();
+        if result.is_err() {*PROJECT_OVERRIDE.lock().map_err(|e|e.to_string())?=old;return result.map(Some);}
+        *app.state::<WorkspaceSelection>().0.lock().map_err(|e|e.to_string())?=Some(workspace);
+        if let Ok(config)=app.path().app_config_dir() {
+            if std::fs::create_dir_all(&config).is_ok() {
+                let _=std::fs::write(config.join("project-location.json"),serde_json::to_vec(&serde_json::json!({"project":project})).unwrap_or_default());
+            }
+        }
+        result.map(Some)
+    }).await.map_err(|e|e.to_string())?
+}
+#[tauri::command]
+async fn materials_reveal(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
+    menus::require_main(&window)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = current_workspace(&app)?;
+        let info = run_engine(
+            &app,
+            Some(&root),
+            false,
+            serde_json::json!({"action":"workspace_info"}),
+        )?;
+        // Initialize the discoverable catalogue export alongside the user library.
+        run_engine(
+            &app,
+            Some(&root),
+            false,
+            serde_json::json!({"action":"library_list"}),
+        )?;
+        let relative = info["workspace"]["directories"]["materials"]
+            .as_str()
+            .ok_or("缺少材料目录")?;
+        let path = portable::resolve(&root, relative)?;
+        #[cfg(target_os = "macos")]
+        let status = Command::new("open").arg(&path).status();
+        #[cfg(windows)]
+        let status = Command::new("explorer.exe").arg(&path).spawn().map(|_| ());
+        #[cfg(not(any(target_os = "macos", windows)))]
+        let status = Command::new("xdg-open").arg(&path).status();
+        status.map_err(|e| format!("无法打开材料文件夹：{e}"))?;
+        Ok(path.to_string_lossy().into_owned())
     })
     .await
     .map_err(|e| e.to_string())?
@@ -343,6 +475,20 @@ fn main() {
                 window_check::watchdog(app.handle().clone());
             }
             if !menu_check && !window_ipc_check {
+                if project_folder().is_err() {
+                    if let Ok(config) = app.path().app_config_dir() {
+                        if let Ok(bytes) = std::fs::read(config.join("project-location.json")) {
+                            if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                                if let Some(path) = value["project"].as_str() {
+                                    let root = PathBuf::from(path);
+                                    if root.is_dir() && root.join(portable::MARKER).is_file() {
+                                        *PROJECT_OVERRIDE.lock().unwrap() = Some(root);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 tools::setup(app.handle());
             }
             if menu_check {
@@ -364,6 +510,10 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             engine_request,
+            catalogue_read,
+            material_check,
+            project_pick,
+            materials_reveal,
             workspace_pick,
             workspace_copy,
             export_file,
@@ -384,6 +534,7 @@ fn main() {
             window_check::window_check_enabled,
             window_check::window_check_ready,
             window_check::window_check_status,
+            window_check::window_check_details,
             window_check::window_check_dispatch,
             window_check::window_check_close,
             window_check::window_check_finish

@@ -805,3 +805,166 @@
   width: min(960px, 96vw);
   max-width: calc(100vw - 45px);
 }
+/* Focused confirmation: only destructive project transitions require a choice. */
+.unsaved-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #17263533;
+  backdrop-filter: blur(2px);
+}
+.unsaved-dialog {
+  width: 420px;
+  max-width: calc(100vw - 36px);
+  padding: 22px 22px 16px;
+  background: #fff;
+  border: 1px solid #cdd5de;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px #17263526;
+  font-size: 13px;
+  color: #242424;
+}
+.unsaved-dialog h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.unsaved-dialog p {
+  line-height: 1.6;
+  margin: 6px 0;
+}
+.unsaved-help {
+  color: #666;
+  font-size: 12px;
+}
+.unsaved-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+.unsaved-dialog button,
+.material-editor-panel button,
+.catalogue-edit-button {
+  min-height: 29px;
+  padding: 4px 12px;
+  border: 1px solid #cdd5de;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+}
+.unsaved-dialog .discard-button {
+  color: #8a4141;
+}
+.unsaved-dialog .save-button,
+.material-editor-panel .save-button {
+  color: #fff;
+  background: #3978b8;
+  border-color: #3978b8;
+}
+.unsaved-dialog button:focus-visible {
+  outline: 2px solid #3978b8;
+  outline-offset: 2px;
+}
+.catalogue-edit-button {
+  width: 100%;
+  margin: 7px 0;
+}
+.material-editor-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  background: #fff;
+  padding: 12px;
+  font-size: 12px;
+  overflow: auto;
+}
+.material-editor-panel header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #d8dde3;
+}
+.material-editor-panel h2 {
+  font-size: 14px;
+  margin: 0;
+}
+.material-editor-panel header span,
+.material-editor-panel footer span {
+  color: #666;
+  font-size: 11px;
+}
+.material-editor-panel fieldset {
+  border: 0;
+  margin: 0;
+  padding: 12px 0 0;
+  min-height: 0;
+}
+.material-property-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 18px;
+}
+.material-property-grid label {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.material-property-grid .full-width {
+  grid-column: 1/-1;
+}
+.material-editor-panel input,
+.material-editor-panel select {
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  padding: 3px 6px;
+  border: 1px solid #cdd5de;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.nk-table-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+.nk-table-editor textarea {
+  width: 100%;
+  height: 280px;
+  min-height: 160px;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid #cdd5de;
+  border-radius: 3px;
+  font:
+    12px/1.6 ui-monospace,
+    "Cascadia Code",
+    monospace;
+  white-space: pre;
+  tab-size: 16;
+}
+.material-editor-panel footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid #d8dde3;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+.material-editor-panel footer span {
+  margin-right: auto;
+}
+.workspace-material-path code {
+  overflow-wrap: anywhere;
+}
+.workspace-recovery-help {
+  color: #666;
+  font-size: 12px;
+}

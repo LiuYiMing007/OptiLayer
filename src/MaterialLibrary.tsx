@@ -1,4 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import MaterialEditor from "./MaterialEditor";
+import { editableCopy } from "./materialEditing";
+import { readCatalogue, checkMaterials } from "./api";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { replaceMaterial, synchronizeBoundaries } from "./model";
 import { materialAt, materialLabel, matchesMaterial } from "./materials";
 import { chartTheme } from "./design/chartTheme";
@@ -83,6 +86,9 @@ export default function MaterialLibrary({
   library,
   onSaveLibrary,
   onImport,
+  onMaterialSave,
+  openFolder,
+  onEditing,
   substrate = false,
 }: {
   project: Project;
@@ -90,6 +96,13 @@ export default function MaterialLibrary({
   library: Material[];
   onSaveLibrary: () => Promise<void>;
   onImport: (name: string, substrate?: boolean) => Promise<void>;
+  onMaterialSave: (
+    material: Material,
+    replaces: string,
+    expected: Material | null,
+  ) => Promise<void>;
+  openFolder: () => Promise<void>;
+  onEditing: (active: boolean) => Promise<void>;
   substrate?: boolean;
 }) {
   const [tab, setTab] = useState<"project" | "library">("library"),
@@ -109,6 +122,37 @@ export default function MaterialLibrary({
     [newRole, setNewRole] = useState<MaterialRole>(
       substrate ? "substrate" : "film",
     );
+  const [editing, setEditing] = useState<{
+    material: Material;
+    replaces: string;
+    expected: Material | null;
+  } | null>(null);
+  const editingActive = useRef(false),
+    editingCallback = useRef(onEditing);
+  editingCallback.current = onEditing;
+  useEffect(
+    () => () => {
+      if (editingActive.current)
+        void editingCallback.current(false).catch(() => {});
+    },
+    [],
+  );
+  async function edit(item: Material) {
+    await perform(async () => {
+      const full = item.catalogue_summary
+        ? (await readCatalogue(item.name)).material
+        : item;
+      await onEditing(true);
+      editingActive.current = true;
+      setEditing({
+        material: editableCopy(full),
+        replaces: item.name,
+        expected: structuredClone(
+          project.materials.find((m) => m.name === item.name) || null,
+        ),
+      });
+    });
+  }
   const fileInput = useRef<HTMLInputElement>(null);
   const items = tab === "project" ? project.materials : library;
   const filtered = useMemo(
@@ -164,6 +208,30 @@ export default function MaterialLibrary({
     setPage(0);
     setSelected("");
   }
+  if (editing)
+    return (
+      <MaterialEditor
+        material={editing.material}
+        cancel={() => {
+          void onEditing(false).then(() => {
+            editingActive.current = false;
+            setEditing(null);
+          });
+        }}
+        save={async (m) => {
+          await onMaterialSave(m, editing.replaces, editing.expected);
+          await onEditing(false);
+          editingActive.current = false;
+          setEditing(null);
+          setTab("project");
+          setCollection("");
+          setSearch("");
+          setRole("");
+          setSelected(m.name);
+          setNotice("材料已保存；当前项目使用更新后的快照。");
+        }}
+      />
+    );
   return (
     <section className="catalogue-window">
       {substrate && (
@@ -204,6 +272,7 @@ export default function MaterialLibrary({
         </div>
       )}
       <div className="catalogue-toolbar">
+        <button onClick={() => void perform(openFolder)}>打开数据文件夹</button>
         <div className="catalogue-tabs" role="tablist" aria-label="材料来源">
           <button
             role="tab"
@@ -522,7 +591,7 @@ export default function MaterialLibrary({
                   最近端点规则。单点表按常数处理。计算结果会提示超范围使用。
                 </p>
               )}
-              {!!m.provenance?.comments.length && (
+              {!!m.provenance?.comments?.length && (
                 <details>
                   <summary>原始数据备注</summary>
                   <pre>{m.provenance.comments.join("\n")}</pre>
@@ -549,6 +618,13 @@ export default function MaterialLibrary({
                     : inProject
                       ? "更新项目快照"
                       : "加入当前项目"}
+              </button>
+              <button
+                className="catalogue-edit-button"
+                disabled={busy || m.status === "quarantined"}
+                onClick={() => void edit(m)}
+              >
+                {m.name.startsWith("TFC/") ? "编辑副本…" : "编辑材料 / 基底…"}
               </button>
               {tab === "project" && m.model === "constant" && (
                 <div className="catalogue-edit">
@@ -642,7 +718,9 @@ export default function MaterialLibrary({
           try {
             if (f.size > 2000000) throw Error("材料 JSON 不能超过 2 MB");
             const data = JSON.parse(await f.text());
-            const items = Array.isArray(data) ? data : data.materials;
+            const items = Array.isArray(data)
+              ? data
+              : data.materials || (data.name ? [data] : null);
             if (!Array.isArray(items) || !items.length || items.length > 300)
               throw Error("需要 1–300 个材料");
             for (const x of items)
@@ -666,8 +744,9 @@ export default function MaterialLibrary({
                 .size > 300
             )
               throw Error("单个项目最多 300 种材料");
+            const checked = await checkMaterials(items);
             update((p) => {
-              for (const x of items)
+              for (const x of checked.materials)
                 replaceMaterial(p, {
                   ...x,
                   color: x.color || "#6488a6",

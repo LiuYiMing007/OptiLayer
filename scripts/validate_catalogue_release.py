@@ -27,6 +27,14 @@ with tempfile.TemporaryDirectory(prefix='tfc-catalogue-') as folder:
     project=json.loads((root/'docs/user-380nm-recovery.tfc.json').read_text(encoding='utf-8'))
     project['materials'] += [silver,glass]; project['settings'].update(substrate_material=glass['name'],start_nm=450,end_nm=650,step_nm=1)
     project['layers'][0]['material']=silver['name']
+    edited=json.loads(json.dumps(silver));edited['name']='USER/ci-silver';edited['display_name']='CI 编辑银';edited['samples'][5][2]+=.01
+    edited=call({'action':'material_validate','material':edited})['material']
+    call({'action':'library_save','materials':[edited]})
+    files=list((workspace/'materials/custom').glob('*.material.json'))
+    assert len(files)==1 and json.loads(files[0].read_text(encoding='utf-8'))==edited
+    assert (workspace/'materials/catalogue/TFCalc-0.2.0.original.json').exists()
+    project['materials'].append(edited);project['layers'][0]['material']=edited['name']
+
     call({'action':'save','project':project})
     spectrum=call({'action':'calculate','project':project})
     assert spectrum['absorbing'] and min(spectrum['A_percent']) > -1e-8
@@ -37,7 +45,7 @@ with tempfile.TemporaryDirectory(prefix='tfc-catalogue-') as folder:
     assert spectrum==call({'action':'calculate','project':loaded})
     report={'all_pass':True,'platform':platform.system(),'catalogue_total':1211,'ready':1186,'quarantined':25,
             'catalogue_digest':hashlib.sha256((root/'engine/data/tfcalc-catalogue.json').read_bytes()).hexdigest(),
-            'packaged_data_loaded':True,'metal_absorption_and_glass_dispersion':True,'move_save_exact_recalculation':True}
+            'packaged_data_loaded':True,'metal_absorption_and_glass_dispersion':True,'move_save_exact_recalculation':True,'material_edit_and_custom_file':True,'visible_original_catalogue_export':True}
 checks=root/'release/checks';checks.mkdir(parents=True,exist_ok=True)
 (checks/'catalogue.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print(json.dumps(report,ensure_ascii=False))

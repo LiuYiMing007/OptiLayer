@@ -1,5 +1,6 @@
 """Host-independent application tools. Optical Core never imports storage or IO."""
 from catalogue import catalogue_summaries, catalogue_material
+from material_edit import prepare_material
 from models import validate
 from optics import calculate_spectrum, calculate_rt
 from analysis import analyze_spectrum
@@ -23,6 +24,11 @@ def dispatch(request, workspace=None):
         custom=storage_action(workspace,request)['materials']
         names={m['name'] for m in custom}
         return {'materials':custom+[m for m in catalogue_summaries() if m['name'] not in names]}
+    if action=='materials_validate':
+        items=request['materials']
+        if not isinstance(items,list) or not 1<=len(items)<=300:raise ValueError('一次校验 1–300 种材料')
+        return {'materials':[prepare_material(m) for m in items]}
+    if action=='material_validate':return {'material':prepare_material(request['material'])}
     if action=='catalogue_list':return {'materials':catalogue_summaries()}
     if action=='catalogue_get':return {'material':catalogue_material(request['name'])}
     if action=='calculate':return calculate(request['project'])
