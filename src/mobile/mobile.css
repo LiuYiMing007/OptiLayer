@@ -1,0 +1,362 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #202e3b;
+  background: #f3f5f7;
+  font-size: 14px;
+  --accent: #286c87;
+  --curve-n: #3978b8;
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button,
+select {
+  cursor: pointer;
+}
+button {
+  border: 1px solid #d1dae1;
+  background: white;
+  color: var(--accent);
+  border-radius: 7px;
+  min-height: 44px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #3978b8;
+  outline-offset: 2px;
+}
+input,
+select {
+  min-height: 44px;
+  border: 1px solid #d1dae1;
+  border-radius: 7px;
+  padding: 8px;
+  background: white;
+  color: inherit;
+  font-size: 16px;
+  max-width: 100%;
+}
+.pocket {
+  max-width: 680px;
+  margin: auto;
+}
+header {
+  padding: calc(15px + env(safe-area-inset-top)) 18px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #dce2e7;
+  background: #f3f5f7;
+}
+.brand {
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: 0.8px;
+}
+.brand b {
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.edition {
+  font-size: 11px;
+  color: #6a7885;
+}
+main {
+  padding: 18px 16px calc(100px + env(safe-area-inset-bottom));
+}
+h1 {
+  font-size: 24px;
+  letter-spacing: -0.5px;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+h2 {
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+p {
+  line-height: 1.65;
+  margin: 8px 0 14px;
+}
+.muted,
+small {
+  color: #667785;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.search {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #d1dae1;
+  border-radius: 8px;
+  padding: 0 10px;
+  margin: 20px 0 10px;
+  color: #697a88;
+}
+.search input {
+  width: 100%;
+  border: 0;
+  min-width: 0;
+  background: transparent;
+}
+.filters {
+  display: flex;
+  gap: 8px;
+}
+.filters select {
+  min-width: 0;
+  flex: 1;
+  font-size: 13px;
+}
+.list-caption {
+  display: flex;
+  justify-content: space-between;
+  color: #687887;
+  font-size: 12px;
+  margin: 20px 0 8px;
+}
+.list {
+  border-top: 1px solid #d9e1e7;
+}
+.row {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid #e1e7eb;
+  background: white;
+  border-radius: 0;
+  justify-content: space-between;
+  color: inherit;
+  padding: 12px;
+  min-height: 66px;
+}
+.row span {
+  min-width: 0;
+}
+.row strong {
+  font-weight: 550;
+  display: block;
+  overflow-wrap: anywhere;
+}
+.row small {
+  display: block;
+  margin-top: 3px;
+}
+.row svg {
+  flex-shrink: 0;
+  color: #8092a1;
+}
+.pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0;
+  font-size: 12px;
+}
+.back {
+  background: transparent;
+  border: 0;
+  padding-left: 0;
+  margin: -6px 0 10px;
+}
+section {
+  background: white;
+  border-top: 1px solid #dce3e8;
+  border-bottom: 1px solid #dce3e8;
+  padding: 16px 12px;
+  margin: 20px 0;
+}
+.property {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.property input {
+  width: 150px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.readings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 20px 0;
+  gap: 16px;
+  color: #657783;
+  font-size: 12px;
+}
+.readings strong {
+  display: block;
+  color: #243d50;
+  font-size: 24px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+.notice {
+  border-left: 3px solid #ac8154;
+  background: #f8f1e8;
+  padding: 12px;
+  color: #715334;
+  font-size: 13px;
+}
+.notice button {
+  margin-left: 10px;
+}
+figure {
+  background: white;
+  margin: 20px 0;
+  padding: 12px;
+  border-bottom: 1px solid #dce3e8;
+}
+figcaption {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+svg {
+  max-width: 100%;
+}
+svg text {
+  font-size: 10px;
+  fill: #6a7885;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+th,
+td {
+  padding: 10px 6px;
+  border-bottom: 1px solid #e5eaee;
+  text-align: right;
+}
+th {
+  font-weight: 500;
+  color: #667785;
+}
+td:nth-child(2) {
+  max-width: 180px;
+}
+dl {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
+  margin: 0;
+}
+dt {
+  color: #667785;
+}
+dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.break {
+  overflow-wrap: anywhere;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+details {
+  margin: 12px 0;
+  font-size: 12px;
+}
+summary {
+  cursor: pointer;
+  min-height: 36px;
+  line-height: 36px;
+  color: var(--accent);
+}
+.import-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #e4edf1;
+  border: 1px solid #c5d9e2;
+  color: #235b70;
+  min-height: 48px;
+  border-radius: 8px;
+  margin: 20px 0;
+  cursor: pointer;
+}
+.import-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.import-button:focus-within {
+  outline: 2px solid #3978b8;
+}
+.empty {
+  text-align: center;
+  color: #71808c;
+  padding: 36px 12px;
+}
+.empty svg {
+  margin: 10px;
+}
+.empty h2 {
+  color: #374d5f;
+}
+.project-row details {
+  padding: 0 12px;
+}
+nav {
+  position: fixed;
+  bottom: 0;
+  width: min(100%, 680px);
+  display: flex;
+  border-top: 1px solid #d9e2e9;
+  background: #fafcfd;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+nav button {
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  background: transparent;
+  border: 0;
+  color: #6a7c89;
+  font-size: 11px;
+  border-radius: 8px;
+}
+nav button[aria-current] {
+  color: #205f7a;
+  background: #e7eff4;
+}
+@media (min-width: 700px) {
+  main {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}

@@ -15,7 +15,10 @@
     "test": "npm run engine:test && node --experimental-strip-types --test tests/*.test.ts && node scripts/run_python.mjs -m unittest discover -s tests -p \"test_*.py\" -v",
     "validate:optics": "node scripts/run_python.mjs scripts/validate_engine.py",
     "sync": "node scripts/git_sync.mjs sync",
-    "publish:version": "node scripts/git_sync.mjs release"
+    "publish:version": "node scripts/git_sync.mjs release",
+    "mobile:dev": "vite --config vite.mobile.config.ts",
+    "mobile:build": "tsc -b && vite build --config vite.mobile.config.ts",
+    "mobile:preview": "vite preview --config vite.mobile.config.ts --host 0.0.0.0 --port 1421"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "TFC 随行 · 光学薄膜资料",
+  "short_name": "TFC 随行",
+  "lang": "zh-CN",
+  "start_url": "./mobile.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f5f7",
+  "theme_color": "#f3f5f7",
+  "icons": [
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

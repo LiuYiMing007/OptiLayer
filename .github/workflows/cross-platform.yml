@@ -34,6 +34,15 @@ jobs:
       - run: npm test
       - run: npm run validate:optics
       - run: npm run build
+      - name: Build and check mobile viewing framework
+        run: npm run mobile:build && node scripts/check_mobile_build.mjs
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'macOS'
+        with:
+          name: mobile-framework-preview
+          path: dist/mobile/
+          if-no-files-found: error
+          retention-days: 30
       - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
       - name: Check release version
         if: startsWith(github.ref, 'refs/tags/')

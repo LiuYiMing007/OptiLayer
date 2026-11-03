@@ -33,7 +33,7 @@ React UI → Tauri 桌面宿主 → JSON 应用服务
 
 主光谱窗口持有唯一 Project / Workspace 状态；原生工具窗口通过受校验命令编辑，接收只读投影，自动计算队列只发布最新结果。详见 [多窗口工作台设计](docs/0.1.5-多窗口工作台设计.md)。
 
-Optical Core 不依赖数据库、文件系统、UI、TFCalc 解析器或 AI。Python 进程通过 JSON 收发结果，打包后不依赖用户安装 Python。浏览器开发桥接仍复用相同内核；独立浏览器产品尚未实现。
+Optical Core 不依赖数据库、文件系统、UI、TFCalc 解析器或 AI。Python 进程通过 JSON 收发结果，打包后不依赖用户安装 Python。浏览器开发桥接仍复用相同内核；独立浏览器光谱计算尚未实现。新增独立的 [iPhone 随行查阅框架](docs/iPhone随行框架.md)，内置完整材料库，支持只读项目导入与本机保存，不连接桌面计算桥。
 
 ## Workspace
 
@@ -105,3 +105,7 @@ node scripts/run_python.mjs scripts/validate_portable_release.py
 - `docs/`：路线决策、数据规范、开发顺序与验收记录。
 
 下一阶段见 [当前开发顺序](docs/当前开发顺序.md)。旧数值证据保留于 [光谱引擎验收](docs/V0.1.1-光谱引擎验收.md)，用户工程与升级前数据库副本均未替换。
+
+## iPhone 随行框架（预览）
+
+`npm run mobile:dev` 启动手机界面开发服务，`npm run mobile:build` 构建独立静态包，`npm run mobile:preview` 预览 `/mobile.html`。含完整 1,211 条材料/基底记录、n/k 查询、只读项目 JSON 导入、IndexedDB 本机保存及主屏幕光学图标。离线安装需 HTTPS；未发布 iOS 原生安装包，也未进行 iPhone 真机验收。详见 [使用与开发说明](docs/iPhone随行框架.md)。
