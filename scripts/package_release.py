@@ -16,10 +16,12 @@ with tempfile.TemporaryDirectory(prefix='tfc-package-') as folder:
     project = Path(folder)/'TFC'
     project.mkdir()
     shutil.copy2(root/'tfc-project.json', project/'tfc-project.json')
-    (project/'使用说明.txt').write_text(
+    (project/'README.txt').write_text(
         '将整个 TFC 文件夹放在固态 U 盘或其它可写位置。\n'
         'Mac 启动 macOS/TFC.app；Windows 启动 Windows/TFC.exe。\n'
-        '默认数据在此文件夹内的 Workspace；位置设置在 .tfc，均需随项目一起保留。\n'
+        '连接后数据保存在此文件夹内的 Workspace；位置设置在 .tfc，均需随项目一起保留。\n'
+        '首次打开若未连接，请在数据位置中选择实际 TFC 文件夹；膜系需保存后才写入 projects。\n'
+        '材料与基底在 Workspace/materials，编辑后的副本在 custom；界面可直接打开文件夹。\n'
         '要在两种系统共用数据，可将两个下载包的 macOS、Windows 子目录合并到同一个 TFC 文件夹。\n'
         '升级仅替换程序子目录，不覆盖或删除 Workspace、Workspaces、.tfc。\n'
         '旧版数据请在工作区面板选择“迁入旧工作区（复制）”。\n'

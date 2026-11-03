@@ -1,17 +1,21 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 export async function request<T>(body: Record<string, unknown>): Promise<T> {
   if (isTauri()) {
+    if (body.action === "workspace_reveal")
+      return invoke<T>("workspace_reveal", { section: body.section });
     if (body.action === "project_pick") return invoke<T>("project_pick");
     if (body.action === "materials_reveal")
       return invoke<T>("materials_reveal");
     if (body.action === "workspace_copy") return invoke<T>("workspace_copy");
-    if (body.action === "materials_reveal" || body.action === "project_pick")
-      throw new Error("请在桌面版中选择项目位置或打开数据文件夹");
     if (body.action === "workspace_pick")
       return invoke<T>("workspace_pick", { create: body.create });
     return invoke<T>("engine_request", { request: body });
   }
-  if (body.action === "materials_reveal" || body.action === "project_pick")
+  if (
+    body.action === "materials_reveal" ||
+    body.action === "project_pick" ||
+    body.action === "workspace_reveal"
+  )
     throw new Error("请在桌面版中选择项目位置或打开数据文件夹");
   if (body.action === "workspace_pick" || body.action === "workspace_copy")
     throw new Error("浏览器预览的工作区由本地服务启动参数指定");

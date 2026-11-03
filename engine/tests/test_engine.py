@@ -54,6 +54,14 @@ class EngineTests(unittest.TestCase):
         for bad in [text.replace('LAYERS*4*','LAYERS*3*'),text.replace('TA2O5_REF','UNKNOWN')]:
             with self.assertRaises(ValueError): engine.parse_tfd(bad, fixture())
 
+    def test_unsupported_tfd_preserves_original_project_and_names_environment(self):
+        import copy
+        project=fixture();before=copy.deepcopy(project)
+        text=(ROOT/'fixtures/reference/reference_4layer_550nm.tfd').read_text(encoding='utf-8').replace('*AIR*GLASS*','*AIR*BK7*')
+        with self.assertRaisesRegex(ValueError,'AIR / BK7'):
+            engine.parse_tfd(text,project)
+        self.assertEqual(project,before)
+
     def test_sqlite_save_load_update(self):
         with tempfile.TemporaryDirectory() as folder:
             old=os.environ.get('TFC_WORKSPACE_ROOT'); os.environ['TFC_WORKSPACE_ROOT']=folder

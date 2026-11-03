@@ -15,8 +15,8 @@ use tauri_plugin_dialog::DialogExt;
 
 #[derive(Default)]
 struct WorkspaceSelection(Mutex<Option<PathBuf>>);
-// Runtime root plus a host-only locator for macOS isolated launches. Workspace
-// contents and .tfc preferences always remain relative to the chosen project.
+// Explicit selection is session-only. Never restore another app installation's
+// machine-global locator; portable preferences live inside the project.
 static PROJECT_OVERRIDE: Mutex<Option<PathBuf>> = Mutex::new(None);
 
 fn run_engine(
@@ -247,11 +247,6 @@ async fn project_pick(
         })();
         if result.is_err() {*PROJECT_OVERRIDE.lock().map_err(|e|e.to_string())?=old;return result.map(Some);}
         *app.state::<WorkspaceSelection>().0.lock().map_err(|e|e.to_string())?=Some(workspace);
-        if let Ok(config)=app.path().app_config_dir() {
-            if std::fs::create_dir_all(&config).is_ok() {
-                let _=std::fs::write(config.join("project-location.json"),serde_json::to_vec(&serde_json::json!({"project":project})).unwrap_or_default());
-            }
-        }
         result.map(Some)
     }).await.map_err(|e|e.to_string())?
 }
@@ -261,6 +256,21 @@ async fn materials_reveal(
     app: tauri::AppHandle,
 ) -> Result<String, String> {
     menus::require_main(&window)?;
+    reveal_data(app, "materials".into()).await
+}
+#[tauri::command]
+async fn workspace_reveal(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    section: String,
+) -> Result<String, String> {
+    menus::require_main(&window)?;
+    if !["root", "projects", "materials", "spectra", "exports"].contains(&section.as_str()) {
+        return Err("不支持的数据目录".into());
+    }
+    reveal_data(app, section).await
+}
+async fn reveal_data(app: tauri::AppHandle, section: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let root = current_workspace(&app)?;
         let info = run_engine(
@@ -276,17 +286,21 @@ async fn materials_reveal(
             false,
             serde_json::json!({"action":"library_list"}),
         )?;
-        let relative = info["workspace"]["directories"]["materials"]
-            .as_str()
-            .ok_or("缺少材料目录")?;
-        let path = portable::resolve(&root, relative)?;
+        let path = if section == "root" {
+            root.clone()
+        } else {
+            let relative = info["workspace"]["directories"][&section]
+                .as_str()
+                .ok_or("缺少数据目录")?;
+            portable::resolve(&root, relative)?
+        };
         #[cfg(target_os = "macos")]
         let status = Command::new("open").arg(&path).status();
         #[cfg(windows)]
         let status = Command::new("explorer.exe").arg(&path).spawn().map(|_| ());
         #[cfg(not(any(target_os = "macos", windows)))]
         let status = Command::new("xdg-open").arg(&path).status();
-        status.map_err(|e| format!("无法打开材料文件夹：{e}"))?;
+        status.map_err(|e| format!("无法打开数据文件夹：{e}"))?;
         Ok(path.to_string_lossy().into_owned())
     })
     .await
@@ -386,7 +400,7 @@ async fn import_file(
 ) -> Result<Option<serde_json::Value>, String> {
     menus::require_main(&window)?;
     tauri::async_runtime::spawn_blocking(move || {
-        let picked = app.dialog().file().set_parent(&window).set_title("导入 TFD / JSON 项目")
+        let picked = app.dialog().file().set_parent(&window).set_title("导入 JSON 项目 / TFD 参考子集")
             .set_directory(project_folder()?)
             .add_filter("TFCalc / TFC 项目", &["tfd", "json"]).blocking_pick_file();
         let Some(file) = picked else { return Ok(None); };
@@ -475,20 +489,6 @@ fn main() {
                 window_check::watchdog(app.handle().clone());
             }
             if !menu_check && !window_ipc_check {
-                if project_folder().is_err() {
-                    if let Ok(config) = app.path().app_config_dir() {
-                        if let Ok(bytes) = std::fs::read(config.join("project-location.json")) {
-                            if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) {
-                                if let Some(path) = value["project"].as_str() {
-                                    let root = PathBuf::from(path);
-                                    if root.is_dir() && root.join(portable::MARKER).is_file() {
-                                        *PROJECT_OVERRIDE.lock().unwrap() = Some(root);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
                 tools::setup(app.handle());
             }
             if menu_check {
@@ -514,6 +514,7 @@ fn main() {
             material_check,
             project_pick,
             materials_reveal,
+            workspace_reveal,
             workspace_pick,
             workspace_copy,
             export_file,

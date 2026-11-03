@@ -1,0 +1,11 @@
+{
+  "version": "0.2.2",
+  "compiled_qa_identifier": "com.tfc.workbench.qa022",
+  "simulated_translocation_ignores_old_global_locator": true,
+  "explicit_selection_connects_correct_project": true,
+  "both_production_and_qa_locator_hashes_unchanged": true,
+  "wrong_workspace_not_created": true,
+  "unsupported_tfd_file_named_and_old_project_explicitly_identified": true,
+  "project_save_then_open_projects_folder": true,
+  "limits": "Mac UI check in an isolated workspace; not a full TFCalc importer or Windows manual UI verification."
+}

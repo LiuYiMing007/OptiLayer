@@ -26,6 +26,19 @@ class CombinedPackageTests(unittest.TestCase):
                 root=Path(d);self.sources(root,{name:'private'})
                 with self.assertRaises(ValueError):module.combine_assets(root,'0.1.5')
                 self.assertFalse((root/'TFC-0.1.5-macOS-Windows-portable.zip').exists())
+    def test_ascii_readme_merges_with_different_platform_newlines(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);self.sources(root)
+            for source in root.glob('*.zip'):
+                with zipfile.ZipFile(source) as z: entries={n:z.read(n) for n in z.namelist()}
+                entries['TFC/README.txt']=entries.pop('TFC/使用说明.txt')
+                with zipfile.ZipFile(source,'w') as z:
+                    for n,data in entries.items():z.writestr(n,data)
+                source.with_suffix('.zip.sha256').write_text(hashlib.sha256(source.read_bytes()).hexdigest()+'  '+source.name)
+            with zipfile.ZipFile(module.combine_assets(root,'0.1.5')) as z:
+                self.assertEqual(z.namelist().count('TFC/README.txt'),1)
+                self.assertNotIn('TFC/使用说明.txt',z.namelist())
+
     def test_rejects_conflicting_common_file(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);self.sources(root,{'TFC/tfc-project.json':'{"schema_version":2}'})

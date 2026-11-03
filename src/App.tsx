@@ -84,6 +84,10 @@ export default function App() {
     writers = useRef(new Map<string, string>());
   const sequence = useRef(0);
   const [details, setDetails] = useState(false);
+  const [importFailure, setImportFailure] = useState<{
+    name: string;
+    reason: string;
+  } | null>(null);
   const materialEditors = useRef(new Map<string, "materials" | "substrate">());
   const asking = useRef(false);
   const current = useRef(project);
@@ -798,6 +802,7 @@ export default function App() {
     setPersisted(saved);
     setNotice("");
     setError("");
+    setImportFailure(null);
     setModal(null);
   }
   async function openProject(id: string) {
@@ -821,20 +826,26 @@ export default function App() {
     });
   }
   async function loadImportedText(name: string, text: string) {
-    const r = name.toLowerCase().endsWith(".tfd")
-      ? await request<{ project: Project; warning?: string }>({
-          action: "import_tfd",
-          text,
-          template: current.current,
-        })
-      : await request<{ project: Project; warning?: string }>({
-          action: "validate",
-          project: JSON.parse(text),
-        });
-    replace(r.project);
-    setSavedKey("");
+    try {
+      const r = name.toLowerCase().endsWith(".tfd")
+        ? await request<{ project: Project; warning?: string }>({
+            action: "import_tfd",
+            text,
+            template: current.current,
+          })
+        : await request<{ project: Project; warning?: string }>({
+            action: "validate",
+            project: JSON.parse(text),
+          });
+      replace(r.project);
+      setSavedKey("");
 
-    if (r.warning) setNotice(r.warning);
+      if (r.warning) setNotice(r.warning);
+      setImportFailure(null);
+    } catch (e) {
+      setImportFailure({ name, reason: message(e) });
+      // Import is transactional: existing project and its spectrum stay intact.
+    }
   }
   async function importNative() {
     if (!(await canReplace())) return;
@@ -847,7 +858,10 @@ export default function App() {
   }
   async function importFile(file: File) {
     if (file.size > 2_000_000) {
-      setError("文件不能超过 2 MB");
+      setImportFailure({
+        name: file.name,
+        reason: "文件不能超过 2 MB；未替换当前项目。",
+      });
       return;
     }
     if (!(await canReplace())) return;
@@ -900,6 +914,14 @@ export default function App() {
                 {d.title}
               </button>
             ))}
+          <button
+            title={
+              workspace ? `数据保存在：${workspace.root}` : "尚未连接工作区"
+            }
+            onClick={() => setModal("workspace")}
+          >
+            数据位置…
+          </button>
         </nav>
         <div className="spectrum-actions">
           <button
@@ -927,6 +949,28 @@ export default function App() {
           )}
         </div>
       </header>
+      {importFailure && (
+        <section className="import-failure" role="alert">
+          <div>
+            <strong>未导入：{importFailure.name}</strong>
+            <span>{importFailure.reason}</span>
+            <small>
+              当前项目未被替换。下方曲线仍属于“{project.name}
+              ”，不是本次导入文件的结果。
+            </small>
+          </div>
+          <button
+            disabled={busy}
+            onClick={() => {
+              if (isTauri()) void importNative();
+              else importRef.current?.click();
+            }}
+          >
+            重新选择文件
+          </button>
+          <button onClick={() => setImportFailure(null)}>关闭提示</button>
+        </section>
+      )}
       {(error || calculationError || workspaceError) && (
         <div role="alert" className="notice error">
           <span>{error || calculationError || workspaceError}</span>
@@ -1019,7 +1063,7 @@ export default function App() {
                       ? "工作区"
                       : "使用说明"
             }
-            className={`modal ${modal === "materials" ? "wide-modal" : ""}`}
+            className={`modal ${modal === "materials" ? "wide-modal" : modal === "workspace" ? "workspace-modal" : ""}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-heading">

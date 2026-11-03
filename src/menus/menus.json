@@ -30,7 +30,7 @@
       },
       {
         "id": "file.import",
-        "label": "导入 TFD / JSON…",
+        "label": "导入 JSON / TFD 参考子集…",
         "implemented": true,
         "shortcut": "CmdOrCtrl+Shift+I"
       },

@@ -1,4 +1,6 @@
-# TFC · v0.2.1
+# TFC · v0.2.2（开发验证）
+
+0.2.2 正在验证，尚未发布正式安装包；下方下载链接仍为 0.2.1。此次改进数据位置可见性、导入失败提示和不同安装之间的定位隔离。
 
 跨平台、离线优先、可迁移 Workspace 的光学薄膜工作台。macOS 使用系统菜单，Windows 使用独立菜单小窗口；光谱主窗与工具窗口共享同一个项目和计算状态。
 
@@ -86,7 +88,7 @@ node scripts/run_python.mjs scripts/package_release.py
 node scripts/run_python.mjs scripts/validate_portable_release.py
 ```
 
-自动测试含 43 项引擎 Python、29 项 TypeScript、4 项打包 Python 与 Mac 11 项 Rust 测试（Windows 为 10 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
+自动测试含 44 项引擎 Python、29 项 TypeScript、5 项打包 Python 与 Mac 11 项 Rust 测试（Windows 为 10 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
 
 各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 默认只构建便携目录，要求目标电脑已有 WebView2；离线安装器配置另行保留，尚未验收。Windows 实测与未完成项见本版验收记录。GitHub Actions 已接入，在线构建结果以 Actions 页面为准。
 

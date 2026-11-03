@@ -26,7 +26,7 @@ def combine_assets(assets, version):
                             previous=seen[member.filename]
                             equivalent=previous==data
                             if member.filename=='TFC/tfc-project.json':equivalent=json.loads(previous)==json.loads(data)
-                            if member.filename=='TFC/使用说明.txt':equivalent=previous.replace(b'\r\n',b'\n')==data.replace(b'\r\n',b'\n')
+                            if member.filename in {'TFC/使用说明.txt','TFC/README.txt'}:equivalent=previous.replace(b'\r\n',b'\n')==data.replace(b'\r\n',b'\n')
                             if not equivalent:raise ValueError(f'Conflicting archive entry: {member.filename}')
                             continue
                         seen[member.filename]=data

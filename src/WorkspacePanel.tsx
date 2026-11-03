@@ -132,26 +132,43 @@ export default function WorkspacePanel({
       <p className="workspace-recovery-help">
         若从 Mac“应用程序”、下载隔离位置或只读目录启动，请选择固态盘上的 TFC
         项目文件夹，也可以直接选择已有
-        Workspace。数据仍保存在所选项目内，不会转移到系统磁盘。
+        Workspace。数据仍保存在所选项目内，不会转移到系统磁盘。隔离启动无法可靠辨认原程序位置时，每次启动需明确选择；不会自动连接其它安装或测试目录。
       </p>
       {workspace && (
-        <p className="workspace-material-path">
-          材料数据：
-          <code>
-            {workspace.root}/{workspace.directories.materials}
-          </code>{" "}
-          · catalogue 是原始目录快照，custom 是编辑后的材料文件。
-          <button
-            disabled={busy || !isTauri()}
-            onClick={() =>
-              void request({ action: "materials_reveal" }).catch((e) =>
-                setFailure(String(e)),
-              )
-            }
-          >
-            打开材料数据文件夹
-          </button>
-        </p>
+        <section className="workspace-data-map" aria-label="数据文件位置">
+          <h3>数据文件位置</h3>
+          {(
+            [
+              ["root", "工作区", ""],
+              ["projects", "膜系项目", workspace.directories.projects],
+              ["materials", "材料与基底", workspace.directories.materials],
+              ["spectra", "保存的光谱", workspace.directories.spectra],
+              ["exports", "导出文件", workspace.directories.exports],
+            ] as const
+          ).map(([section, label, path]) => (
+            <div key={section}>
+              <span>{label}</span>
+              <code>
+                {workspace.root}
+                {path ? "/" + path : ""}
+              </code>
+              <button
+                disabled={busy || !isTauri()}
+                onClick={() =>
+                  void request({ action: "workspace_reveal", section }).catch(
+                    (e) => setFailure(String(e)),
+                  )
+                }
+              >
+                打开
+              </button>
+            </div>
+          ))}
+          <p>
+            材料与基底共用材料库：catalogue 保存原始目录，custom
+            保存编辑副本。新膜系需要点“保存”才会生成项目文件。
+          </p>
+        </section>
       )}
       {!isTauri() && (
         <p className="small-label">

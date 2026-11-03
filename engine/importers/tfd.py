@@ -20,7 +20,7 @@ def parse_tfd(text, template):
     settings = project['settings']
     settings.update(dict(zip(['start_nm','end_nm','step_nm','reference_nm','angle_deg'], map(float, e[1:6]))))
     if e[6:8] != ['AIR', 'GLASS']:
-        raise ValueError('此导入器仅支持 AIR / GLASS 参考环境')
+        raise ValueError(f'TFD 参考子集导入未完成：当前仅支持 AIR / GLASS 环境，本文件为 {e[6]} / {e[7]}。材料库可用不代表此旧格式已完整兼容；未替换当前项目。')
     settings.update(incident_n=1.0, substrate_n=1.52)
     settings.pop('incident_material', None)
     settings.pop('substrate_material', None)
