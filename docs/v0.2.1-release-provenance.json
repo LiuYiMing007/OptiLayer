@@ -1,0 +1,60 @@
+{
+  "version": "0.2.1",
+  "source_commit": "901f9db922174a05b16f69d95f5d97268d8c017a",
+  "workflow": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/41656080391",
+  "release": {
+    "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.1",
+    "assets": [
+      {
+        "name": "TFC-0.2.1-macOS-arm64.zip",
+        "size": 37792647,
+        "digest": "sha256:8937a0bd0b6e8b4838423cff6b43b091159d5979053db562cefeb97947f941a9",
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.1/TFC-0.2.1-macOS-arm64.zip"
+      },
+      {
+        "name": "TFC-0.2.1-macOS-arm64.zip.sha256",
+        "size": 92,
+        "digest": "sha256:ee41dc4270ad374e1ff0a31c56de8f4e66fedbefd4bfd93b7fc17f96845251fc",
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.1/TFC-0.2.1-macOS-arm64.zip.sha256"
+      },
+      {
+        "name": "TFC-0.2.1-macOS-Windows-portable.zip",
+        "size": 94856428,
+        "digest": "sha256:93f6c7b4c02b5861b35329fcf2f7cf4ac64aabcda6a3f6fadb925c8787437777",
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.1/TFC-0.2.1-macOS-Windows-portable.zip"
+      },
+      {
+        "name": "TFC-0.2.1-macOS-Windows-portable.zip.sha256",
+        "size": 103,
+        "digest": "sha256:49ed6cc8beb4427b0f652b2f767f71bb06ee8cc6bf2d4d291c5857b15b1c420b",
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.1/TFC-0.2.1-macOS-Windows-portable.zip.sha256"
+      },
+      {
+        "name": "TFC-0.2.1-Windows-x64-portable.zip",
+        "size": 57073815,
+        "digest": "sha256:54a42f6ca9b9f8b9d863386516edb2b26fe92b1462756c0a0b070a2ec70e895f",
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.1/TFC-0.2.1-Windows-x64-portable.zip"
+      },
+      {
+        "name": "TFC-0.2.1-Windows-x64-portable.zip.sha256",
+        "size": 102,
+        "digest": "sha256:48afbb8cc77cd412b13fe2bc8003548c711ec1b9b8feb4a22cb66c434786deb2",
+        "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.1/TFC-0.2.1-Windows-x64-portable.zip.sha256"
+      }
+    ]
+  },
+  "all_asset_digests_match": true,
+  "no_user_workspace_in_archives": true,
+  "combined_native_payloads_identical": {
+    "macOS": 191,
+    "Windows": 200
+  },
+  "catalogue_sha256": "b9b1f343224ba98809b2873691d73fa57363bd55b6d210bece7590ab5f989036",
+  "build_origin": {
+    "macOS": "Apple Silicon local build from v0.2.1 source; full tests and packaged native verification passed",
+    "Windows": "GitHub Actions Windows runner; all checks passed"
+  },
+  "macos_ci_status": "Both attempts cancelled before execution due to hosted arm64 runner capacity; automatic Release job skipped",
+  "publication": "Published verified local Mac and CI Windows packages directly; immutable tag preserved",
+  "combined_mac_strict_signature_verified": true
+}

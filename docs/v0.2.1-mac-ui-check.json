@@ -1,0 +1,16 @@
+{
+  "version": "0.2.1",
+  "platform": "macOS Apple Silicon",
+  "isolated_workspace_copy": true,
+  "simulated_translocation_recovered_through_native_folder_picker": true,
+  "catalogue_search_1215_items": true,
+  "full_AG_editor_rows": 121,
+  "material_rename_and_save_to_custom_file": true,
+  "save_and_continue": true,
+  "pristine_new_project_no_repeat_confirmation": true,
+  "limitations": [
+    "Simulated AppTranslocation path for deterministic recovery UI check; actual old application path was observed in macOS AppTranslocation.",
+    "Windows manual visual and physical SSD round trip are not covered."
+  ],
+  "materials_folder_button_opened_correct_finder_directory": true
+}
