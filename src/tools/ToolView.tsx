@@ -28,6 +28,31 @@ export default function ToolView({
       target?.focus();
     }
   }, [s.focus?.token, id]);
+  const importInfo = s.project.import_info;
+  const showImportInfo =
+    importInfo &&
+    typeof importInfo.file_name === "string" &&
+    typeof importInfo.encoding === "string" &&
+    Array.isArray(importInfo.notes) &&
+    importInfo.notes.every((n) => typeof n === "string") &&
+    Array.isArray(importInfo.materials) &&
+    importInfo.materials.every(
+      (m) =>
+        m &&
+        [m.role, m.original, m.resolved].every((v) => typeof v === "string"),
+    );
+  const [projectSearch, setProjectSearch] = useState("");
+  const [projectPage, setProjectPage] = useState(0);
+  useEffect(() => setProjectPage(0), [projectSearch, s.workspace?.id]);
+  const projectMatches = s.projects.filter((p) =>
+    projectSearch
+      .trim()
+      .toLocaleLowerCase()
+      .split(/\s+/)
+      .every((term) => p.name.toLocaleLowerCase().includes(term)),
+  );
+  const projectPages = Math.max(1, Math.ceil(projectMatches.length / 50));
+  const visibleProjectPage = Math.min(projectPage, projectPages - 1);
   const [copyName, setCopyName] = useState(""),
     [error, setError] = useState("");
   function send(action: ToolIntent) {
@@ -143,6 +168,38 @@ export default function ToolView({
             · {s.project.layers.length} 层 · 工作区：
             {s.workspace?.name || "未选择"}
           </p>
+          {showImportInfo && s.project.import_info && (
+            <details className="tfd-import-record">
+              <summary>
+                原始 TFCalc 导入记录 · {s.project.import_info.file_name}
+              </summary>
+              <p>
+                编码：{s.project.import_info.encoding} ·{" "}
+                {s.project.layers.length} 层
+              </p>
+              {s.project.import_info.notes.map((note, i) => (
+                <p key={i}>{note}</p>
+              ))}
+              <table>
+                <thead>
+                  <tr>
+                    <th>用途</th>
+                    <th>原始名称</th>
+                    <th>采用的材料快照</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {s.project.import_info.materials.map((m, i) => (
+                    <tr key={i}>
+                      <td>{m.role}</td>
+                      <td>{m.original}</td>
+                      <td>{m.resolved}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
+          )}
           <div className="project-tool-actions">
             <button
               className="button secondary"
@@ -199,27 +256,57 @@ export default function ToolView({
               刷新
             </button>
           </div>
+          <input
+            aria-label="搜索膜系项目"
+            placeholder="搜索项目名称或原文件夹…"
+            value={projectSearch}
+            onChange={(e) => setProjectSearch(e.target.value)}
+          />
           <div className="project-list">
-            {s.projects.length ? (
-              s.projects.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    void send({ kind: "open-project", id: p.id });
-                  }}
-                >
-                  <div>
-                    <strong>{p.name}</strong>
-                    <small>
-                      {new Date(p.updated_at).toLocaleString("zh-CN")}
-                    </small>
-                  </div>
-                  <span>打开 →</span>
-                </button>
-              ))
+            {projectMatches.length ? (
+              projectMatches
+                .slice(visibleProjectPage * 50, (visibleProjectPage + 1) * 50)
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      void send({ kind: "open-project", id: p.id });
+                    }}
+                  >
+                    <div>
+                      <strong>{p.name}</strong>
+                      <small>
+                        {new Date(p.updated_at).toLocaleString("zh-CN")}
+                      </small>
+                    </div>
+                    <span>打开 →</span>
+                  </button>
+                ))
             ) : (
-              <p>此工作区尚无已保存项目。</p>
+              <p>
+                {s.projects.length
+                  ? "没有匹配的项目。"
+                  : "此工作区尚无已保存项目。"}
+              </p>
             )}
+          </div>
+          <div className="project-pagination">
+            <span>
+              {projectMatches.length} 个项目 · {visibleProjectPage + 1}/
+              {projectPages} 页
+            </span>
+            <button
+              disabled={visibleProjectPage === 0}
+              onClick={() => setProjectPage(visibleProjectPage - 1)}
+            >
+              上一页
+            </button>
+            <button
+              disabled={visibleProjectPage + 1 >= projectPages}
+              onClick={() => setProjectPage(visibleProjectPage + 1)}
+            >
+              下一页
+            </button>
           </div>
           <button
             className="text-button"

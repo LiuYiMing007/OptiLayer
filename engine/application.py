@@ -4,7 +4,7 @@ from material_edit import prepare_material
 from models import validate
 from optics import calculate_spectrum, calculate_rt
 from analysis import analyze_spectrum
-from importers.tfd import parse_tfd
+from importers.tfd import parse_tfd, decode_tfd
 from repository import storage_action, import_legacy_database
 from workspace import configured_workspace, copy_workspace
 
@@ -19,6 +19,10 @@ def calculate(project):
 
 def dispatch(request, workspace=None):
     action=request['action']
+    if action=='decode_tfd':
+        values=request['bytes']
+        if not isinstance(values,list) or len(values)>2_000_000 or any(type(v) is not int or not 0<=v<=255 for v in values):raise ValueError('文件字节无效或过大')
+        return decode_tfd(bytes(values))
     if action=='library_list':
         workspace=workspace or configured_workspace()
         custom=storage_action(workspace,request)['materials']
@@ -36,7 +40,7 @@ def dispatch(request, workspace=None):
     if action=='analyze':return analyze_spectrum(request['spectrum'],request.get('bands'))
     if action=='validate':return {'project':validate(request['project'])}
     if action=='import_tfd':
-        return {'project':parse_tfd(request['text'],request['template']),'warning':'仅读取 ENVIRON / LAYERS / LAYER；材料常数来自项目快照，未导入完整 TFCalc 设置。'}
+        return {'project':parse_tfd(request['text'],request['template'],request.get('name',''),request.get('encoding','unicode')),'warning':'TFD 已导入当前单面膜系；组系数已计入厚度。完整来源和未导入设置见项目窗口的导入记录。'}
     if action=='workspace_copy':
         import os
         target=os.environ.get('TFC_WORKSPACE_ROOT')

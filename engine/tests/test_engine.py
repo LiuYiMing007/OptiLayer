@@ -58,7 +58,7 @@ class EngineTests(unittest.TestCase):
         import copy
         project=fixture();before=copy.deepcopy(project)
         text=(ROOT/'fixtures/reference/reference_4layer_550nm.tfd').read_text(encoding='utf-8').replace('*AIR*GLASS*','*AIR*BK7*')
-        with self.assertRaisesRegex(ValueError,'AIR / BK7'):
+        with self.assertRaisesRegex(ValueError,'有限厚基底'):
             engine.parse_tfd(text,project)
         self.assertEqual(project,before)
 

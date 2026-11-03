@@ -1,36 +1,129 @@
-"""TFCalc reference-subset adapter; produces the shared project model."""
-import json
+"""TFCalc single-surface adapter. No optical formula is implemented here.
+
+Supplied Manual: layer 1 touches substrate; physical d times group factor is
+actual thickness. Bulk/back-surface semantics are rejected, never flattened.
+"""
+import copy
+import hashlib
 import uuid
-from models import validate
-
-def parse_tfd(text, template):
-    """Read the ENVIRON/LAYER subset. Other records are not round-tripped."""
-    project = json.loads(json.dumps(template))
-    lines = [line.strip().split('*') for line in text.lstrip('\ufeff').splitlines() if line.strip()]
-    envs = [a for a in lines if a[0] == 'ENVIRON']
-    declared = [a for a in lines if a[0] == 'LAYERS']
-    rows = [a for a in lines if a[0] == 'LAYER']
-    if len(envs) != 1 or len(declared) != 1:
-        raise ValueError('需要唯一的 ENVIRON 和 LAYERS 记录；仅支持参考样例子集')
-    e = envs[0]
-    if len(e) < 9 or int(declared[0][1]) != len(rows):
-        raise ValueError('TFD 环境字段不完整或膜层数量不匹配')
-    if any(a[0] == 'LAYERS2' and int(a[1]) != 0 for a in lines):
-        raise ValueError('暂不支持双面膜系')
-    settings = project['settings']
-    settings.update(dict(zip(['start_nm','end_nm','step_nm','reference_nm','angle_deg'], map(float, e[1:6]))))
-    if e[6:8] != ['AIR', 'GLASS']:
-        raise ValueError(f'TFD 参考子集导入未完成：当前仅支持 AIR / GLASS 环境，本文件为 {e[6]} / {e[7]}。材料库可用不代表此旧格式已完整兼容；未替换当前项目。')
-    settings.update(incident_n=1.0, substrate_n=1.52)
-    settings.pop('incident_material', None)
-    settings.pop('substrate_material', None)
-    project['layers'] = []
-    for i, row in enumerate(rows):
-        if len(row) < 6 or int(row[1]) != i+1:
-            raise ValueError('膜层编号必须从 1 连续递增')
-        project['layers'].append({'id': str(uuid.uuid4()), 'material': row[2], 'thickness_nm': float(row[4])})
-    project['id'] = str(uuid.uuid4())
-    project['name'] = '导入的参考膜系'
-    return validate(project)
+import numpy as np
+from catalogue import catalogue_material
+from materials import optical_constants
+from models import validate, number, BUILTIN_MATERIALS
 
 
+def decode_tfd(data):
+    if not isinstance(data, (bytes, bytearray)) or len(data)>2_000_000:
+        raise ValueError('TFD 文件需要字节数据，不能超过 2 MB')
+    for encoding in ('utf-8-sig','gb18030'):
+        try:
+            text=bytes(data).decode(encoding,errors='strict')
+            if '\x00' in text:raise ValueError('TFD 含 NUL，不能按文本导入')
+            return {'content':text,'encoding':encoding}
+        except UnicodeDecodeError:
+            pass
+    raise ValueError('TFD 无法按 UTF-8 或 GB18030 无损解码，未替换当前项目')
+
+
+def inspect_tfd(text, template, name='', encoding='unicode'):
+    report={'project':None,'issues':[],'warnings':[],'materials':[]}
+    def issue(code, message):report['issues'].append({'code':code,'message':message})
+    try:
+        if not isinstance(text,str) or '\x00' in text:raise ValueError('TFD 需要有效文本')
+        records={}
+        for line in text.lstrip('\ufeff').splitlines():
+            if not line.strip():continue
+            row=[v.strip() for v in line.split('*')]
+            records.setdefault(row[0],[]).append(row)
+        def one(kind, optional=False):
+            rows=records.get(kind,[])
+            if optional and not rows:return None
+            if len(rows)!=1:raise ValueError(f'需要唯一的 {kind} 记录')
+            return rows[0]
+        version=one('VERSION',True)
+        if version and version[1]!='1':issue('version','不支持的 TFD 版本')
+        config=one('CONFIG',True)
+        if config and config[1]!='0':issue('units','尚未验证该波长单位，不能假定为 nm')
+        e=one('ENVIRON');declared=one('LAYERS');rows=records.get('LAYER',[])
+        if len(e)<9 or len(rows)!=int(declared[1]):raise ValueError('TFD 环境字段不完整或膜层数量不匹配')
+        if any(int(r[1])!=0 for r in records.get('LAYERS2',[])) or records.get('LAYER2'):
+            issue('back_layers','含背面膜层，当前单面计算核心尚不支持；未舍弃背面膜系')
+        for kind in ('VARMATS','MIXMATS'):
+            if any(int(r[1])!=0 for r in records.get(kind,[])):
+                issue('special_material',f'含 {kind} 自定义/混合材料，尚未解析其定义')
+        e3=one('ENVIRON3',True)
+        if e3:
+            if len(e3)<6:raise ValueError('ENVIRON3 字段不完整')
+            if e3[2]!=e[7]:issue('bulk_substrate',f'基底 {e[7]} 与出射介质 {e3[2]} 不同，需要有限厚基底/背面多次反射模型，不能当半无限基底计算')
+            if e3[5]!='1':issue('reverse_incidence','从背面入射尚未支持')
+        legacy=bool(rows) and all(len(r)>2 and r[2].endswith('_REF') for r in rows)
+        snapshots={m['name']:m for m in template.get('materials',[])}
+        resolved={};mapping=[]
+        def resolve(raw, role):
+            key=(role,raw)
+            if key in resolved:return resolved[key]
+            try:
+                if raw.endswith('_REF') and raw in snapshots:
+                    m=copy.deepcopy(snapshots[raw])
+                elif legacy and role!='film' and raw in ('AIR','GLASS'):
+                    key_name='AIR' if raw=='AIR' else 'GLASS_REF'
+                    m=copy.deepcopy(next(m for m in BUILTIN_MATERIALS if m['name']==key_name))
+                else:
+                    collection='MATERIAL' if role=='film' else 'SUBSTRAT'
+                    m=catalogue_material(f'TFC/{collection}/{raw}')
+                resolved[key]=m;mapping.append({'role':role,'original':raw,'resolved':m['name']})
+                return m
+            except (ValueError,KeyError) as error:
+                issue('material',f'{role} 材料“{raw}”无法从对应原始目录解析：{error}；不使用同名其它目录或默认材料替代')
+                resolved[key]=None
+                return None
+        incident=resolve(e[6],'incident');substrate=resolve(e[7],'substrate')
+        groups={}
+        for g in records.get('GROUP',[]):
+            if len(g)<3:raise ValueError('GROUP 字段不完整')
+            key=int(g[1])
+            if key in groups:raise ValueError('GROUP 编号重复')
+            groups[key]=number(g[2],'膜层组系数',0,1e6)
+        group_count=one('GROUPS',True)
+        if group_count and int(group_count[1])!=len(groups):raise ValueError('GROUPS 数量不匹配')
+        layers=[];source_layers=[]
+        for i,row in enumerate(rows):
+            if len(row)<6 or int(row[1])!=i+1:raise ValueError('膜层编号必须从 1 连续递增，且厚度字段完整')
+            m=resolve(row[2],'film');d=number(row[4],f'第 {i+1} 层原始物理膜厚',0,1e6)
+            group=int(row[6]) if len(row)>6 and row[6] else 1
+            if groups and group not in groups:raise ValueError(f'第 {i+1} 层引用不存在的组 {group}')
+            factor=groups.get(group,1.0)
+            source_layers.append({'index':i+1,'material':row[2],'physical_nm':d,'group':group,'factor':factor})
+            if m:layers.append({'id':str(uuid.uuid4()),'material':m['name'],'thickness_nm':d*factor})
+        report['materials']=mapping
+        if report['issues']:return report
+        settings=dict(zip(['start_nm','end_nm','step_nm','reference_nm','angle_deg'],map(float,e[1:6])))
+        plot=one('TRDATA6',True);polarization=plot[3] if plot and len(plot)>3 else 'A'
+        if polarization not in ('A','S','P'):raise ValueError(f'不支持的光谱偏振 {polarization}')
+        settings['polarization']={'A':'unpolarized','S':'s','P':'p'}[polarization]
+        for role,m in [('incident',incident),('substrate',substrate)]:
+            n,k=optical_constants(m,np.array([settings['reference_nm']]))
+            if role=='incident' and k[0]!=0:raise ValueError('入射介质有吸收，当前核心不支持；不将 k 改成零')
+            settings[role+'_material']=m['name'];settings[role+'_n']=float(n[0])
+        materials={m['name']:m for (role,_),m in resolved.items() if role=='film' and m}
+        materials.update({m['name']:m for m in (incident,substrate)})
+        notes=['采用原始物理厚度 × 膜层组系数；层序从基底到入射侧。',
+               '材料使用 MATERIAL，入射介质/基底使用 SUBSTRAT 的完整原始 n/k；未模糊匹配。',
+               '仅导入当前膜系和环境；未导入优化约束、目标曲线、照明/探测器加权及其它 TFCalc 分析设置。',
+               '后续编辑采用本软件物理厚度规则，不模拟原 TFCalc 的光学厚度优先设置。']
+        if encoding=='gb18030':notes.append('文件按 GB18030 严格解码，保留中文名称。')
+        project={'schema_version':1,'id':str(uuid.uuid4()),'name':name.rsplit('.',1)[0] if name else '导入的膜系',
+                 'layer_order':'substrate_to_air','settings':settings,'materials':list(materials.values()),'layers':layers,
+                 'import_info':{'format':'TFCalc','file_name':name,'encoding':encoding,'text_sha256':hashlib.sha256(text.encode('utf-8')).hexdigest(),
+                                'materials':mapping,'source_layers':source_layers,'notes':notes}}
+        report['project']=validate(project);report['warnings']=notes
+    except (ValueError,TypeError,IndexError,KeyError,OverflowError) as error:
+        issue('structure_or_input',str(error))
+    return report
+
+
+def parse_tfd(text, template, name='', encoding='unicode'):
+    report=inspect_tfd(text,template,name,encoding)
+    if report['issues']:
+        raise ValueError('TFD 未导入：'+'；'.join(i['message'] for i in report['issues']))
+    return report['project']

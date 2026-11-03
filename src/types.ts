@@ -64,6 +64,21 @@ export interface TargetPoint {
   R_percent?: number;
 }
 export interface Project {
+  import_info?: {
+    format: "TFCalc";
+    file_name: string;
+    encoding: string;
+    text_sha256: string;
+    materials: { role: string; original: string; resolved: string }[];
+    source_layers: {
+      index: number;
+      material: string;
+      physical_nm: number;
+      group: number;
+      factor: number;
+    }[];
+    notes: string[];
+  };
   schema_version: 1;
   id: string;
   name: string;

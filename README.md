@@ -58,7 +58,7 @@ imports/ exports/ config/    数据目录；部分用途预留
 
 ## 模型边界
 
-支持各向同性、常数 n/k、逐波长 n/k 表，以及当前目录使用的 TFCalc Sellmeier / Cauchy / Hartmann 色散公式。既有无吸收常数计算路径保留；色散／吸收使用经独立对照的稳定散射递推。A=100−R−T 是膜系吸收，无吸收时是数值残差。半无限基底不包含背面反射，入射介质要求无吸收；负 k 增益、各向异性及非相干厚基底尚不支持。TFD 仍只解析 ENVIRON / LAYERS / LAYER 参考子集。
+支持各向同性、常数 n/k、逐波长 n/k 表，以及当前目录使用的 TFCalc Sellmeier / Cauchy / Hartmann 色散公式。既有无吸收常数计算路径保留；色散／吸收使用经独立对照的稳定散射递推。A=100−R−T 是膜系吸收，无吸收时是数值残差。半无限基底不包含背面反射，入射介质要求无吸收；负 k 增益、各向异性及非相干厚基底尚不支持。TFD 支持已验证的单面、半无限基底结构、分组膜厚及原始材料映射；621 个用户文件完成内部保存/复算。背面/有限厚基底及缺失材料明确拒绝，详见 [兼容验收](docs/0.2.2-TFD实际兼容验收.md)。
 
 内置 REF 条目依然是合成验证常数；导入目录来自用户提供的旧 TFCalc 数据，不等同于实际沉积工艺的实测值。范围和异常规则见 [材料与计算设计](docs/0.2.0-材料目录与计算设计.md)。本版没有实现 Rust/WASM Core、膜系优化、AI Agent、云同步、PWA 或移动端应用。
 
@@ -88,7 +88,7 @@ node scripts/run_python.mjs scripts/package_release.py
 node scripts/run_python.mjs scripts/validate_portable_release.py
 ```
 
-自动测试含 44 项引擎 Python、29 项 TypeScript、5 项打包 Python 与 Mac 11 项 Rust 测试（Windows 为 10 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
+自动测试含 52 项引擎 Python、30 项 TypeScript、7 项打包/迁移 Python 与 Mac 11 项 Rust 测试（Windows 为 10 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
 
 各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 默认只构建便携目录，要求目标电脑已有 WebView2；离线安装器配置另行保留，尚未验收。Windows 实测与未完成项见本版验收记录。GitHub Actions 已接入，在线构建结果以 Actions 页面为准。
 

@@ -1056,3 +1056,35 @@
 .workspace-modal .workspace-layout {
   display: none;
 }
+.tfd-import-record {
+  margin: 8px 0;
+  border-block: 1px solid #ddd;
+  padding: 6px 0;
+  font-size: 12px;
+}
+.tfd-import-record p {
+  margin: 5px 0;
+  line-height: 1.4;
+}
+.tfd-import-record table {
+  width: 100%;
+  font-size: 11px;
+  border-collapse: collapse;
+}
+.tfd-import-record td,
+.tfd-import-record th {
+  padding: 3px 6px;
+  border-bottom: 1px solid #e2e2e2;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.project-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin: 8px 0;
+}
+.project-pagination span {
+  margin-right: auto;
+}

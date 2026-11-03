@@ -1,3 +1,4 @@
+import { readImportFile } from "./importEncoding";
 import { applyMaterialChange } from "./applyMaterialChange";
 import UnsavedDialog from "./UnsavedDialog";
 import { projectKey, hasUnsavedChanges, dataKey } from "./projectStatus";
@@ -825,11 +826,17 @@ export default function App() {
       replace(r.project);
     });
   }
-  async function loadImportedText(name: string, text: string) {
+  async function loadImportedText(
+    name: string,
+    text: string,
+    encoding = "unicode",
+  ) {
     try {
       const r = name.toLowerCase().endsWith(".tfd")
         ? await request<{ project: Project; warning?: string }>({
             action: "import_tfd",
+            name,
+            encoding,
             text,
             template: current.current,
           })
@@ -850,10 +857,17 @@ export default function App() {
   async function importNative() {
     if (!(await canReplace())) return;
     await run(async () => {
-      const picked = await invoke<{ name: string; content: string } | null>(
-        "import_file",
-      );
-      if (picked) await loadImportedText(picked.name, picked.content);
+      try {
+        const picked = await invoke<{
+          name: string;
+          content: string;
+          encoding?: string;
+        } | null>("import_file");
+        if (picked)
+          await loadImportedText(picked.name, picked.content, picked.encoding);
+      } catch (e) {
+        setImportFailure({ name: "所选文件", reason: message(e) });
+      }
     });
   }
   async function importFile(file: File) {
@@ -866,7 +880,12 @@ export default function App() {
     }
     if (!(await canReplace())) return;
     await run(async () => {
-      await loadImportedText(file.name, await file.text());
+      try {
+        const { content, encoding } = await readImportFile(file);
+        await loadImportedText(file.name, content, encoding);
+      } catch (e) {
+        setImportFailure({ name: file.name, reason: message(e) });
+      }
     });
   }
   const browserSend = (id: string) => (intent: ToolIntent) =>
@@ -1245,7 +1264,7 @@ export default function App() {
                   <BookOpen size={18} />
                   <p>
                     当前支持各向同性常数、色散及吸收 n/k
-                    的单面相干膜层模型。尚不支持色散、吸收、基底背面及非相干厚基底；TFD
+                    的单面相干膜层模型。尚不支持各向异性、基底背面及非相干厚基底；TFD
                     只读取参考子集。A
                     为膜系吸收；无吸收时为数值残差。材料记录保留来源。
                   </p>

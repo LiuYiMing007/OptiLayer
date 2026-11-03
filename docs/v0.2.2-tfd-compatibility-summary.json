@@ -1,0 +1,18 @@
+{
+  "files": 812,
+  "tfd": 771,
+  "decoded_legacy": 16,
+  "imported": 621,
+  "blocked": 150,
+  "computed": 621,
+  "calculation_blocked": 0,
+  "saved_reloaded_exact": 621,
+  "issue_counts_nonexclusive": {
+    "bulk_substrate": 141,
+    "material": 4,
+    "back_layers": 24
+  },
+  "original_hashes_unchanged": true,
+  "limits": "Structural import and internal save/recalculation checks, not original TFCalc curve equivalence. No backside/bulk model or default-material substitution.",
+  "archived_original_files": 812
+}

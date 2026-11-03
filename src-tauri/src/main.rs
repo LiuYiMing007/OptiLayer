@@ -400,14 +400,19 @@ async fn import_file(
 ) -> Result<Option<serde_json::Value>, String> {
     menus::require_main(&window)?;
     tauri::async_runtime::spawn_blocking(move || {
-        let picked = app.dialog().file().set_parent(&window).set_title("导入 JSON 项目 / TFD 参考子集")
-            .set_directory(project_folder()?)
-            .add_filter("TFCalc / TFC 项目", &["tfd", "json"]).blocking_pick_file();
+        let mut dialog = app.dialog().file().set_parent(&window).set_title("导入 JSON 项目 / TFD 单面膜系")
+            .add_filter("TFCalc / TFC 项目", &["tfd", "json"]);
+        if let Ok(project)=project_folder() { dialog=dialog.set_directory(project); }
+        let picked=dialog.blocking_pick_file();
         let Some(file) = picked else { return Ok(None); };
         let path = file.into_path().map_err(|e| e.to_string())?;
         if std::fs::metadata(&path).map_err(|e| e.to_string())?.len() > 2_000_000 { return Err("文件不能超过 2 MB".into()); }
-        let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        Ok(Some(serde_json::json!({"name":path.file_name().and_then(|s| s.to_str()).ok_or("文件名称无效")?,"content":content})))
+        let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+        let is_tfd = path.extension().is_some_and(|e|e.to_str().is_some_and(|e| e.eq_ignore_ascii_case("tfd")));
+        let decoded = if is_tfd { run_engine(&app,None,false,serde_json::json!({"action":"decode_tfd","bytes":bytes}))? } else {
+            serde_json::json!({"content":String::from_utf8(bytes).map_err(|e|e.to_string())?,"encoding":"utf-8"})
+        };
+        Ok(Some(serde_json::json!({"name":path.file_name().and_then(|s| s.to_str()).ok_or("文件名称无效")?,"content":decoded["content"],"encoding":decoded["encoding"]})))
     }).await.map_err(|e| e.to_string())?
 }
 #[tauri::command]

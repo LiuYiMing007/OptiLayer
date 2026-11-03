@@ -133,6 +133,7 @@ export default function SpectrumPanel({
           </div>
           <div className={`spectrum-canvas ${stale ? "chart-stale" : ""}`}>
             <SpectrumChart
+              key={p.id}
               spectrum={spectrum}
               referenceNm={p.settings.reference_nm}
               options={options}
