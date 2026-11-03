@@ -1,0 +1,13 @@
+{
+  "version": "0.2.2",
+  "platform": "macOS",
+  "native_strict_gb18030_import_and_save": true,
+  "physical_layer_nm": 125,
+  "original_physical_nm": 100,
+  "group_factor": 1.25,
+  "substrate": "TFC/SUBSTRAT/K9",
+  "project_list_622_items_pagination_and_search": true,
+  "production_locator_unchanged": true,
+  "synthetic_screenshot_only_no_user_experiments_uploaded": true,
+  "limits": "UI tested with a copy of the migrated Workspace; 621 user designs tested for internal consistency, not original TFCalc curve equivalence."
+}
