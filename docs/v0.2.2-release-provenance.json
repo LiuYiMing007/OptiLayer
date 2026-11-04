@@ -1,0 +1,53 @@
+{
+  "version": "0.2.2",
+  "tag_sha": "83c3a779f26707053800054a3d67da79d7dd4bd8",
+  "sources": {
+    "macOS": {
+      "run": 41846947673,
+      "source_sha": "6696037e85bed779feaeb5be6a825baf51f497a5",
+      "successful_job": "verify (macos-latest)",
+      "tag_difference": [
+        "README.md",
+        "docs/v0.2.2-macos-ci-catalogue.json",
+        "docs/v0.2.2-macos-ci-native-menu.json",
+        "docs/v0.2.2-macos-ci-packaged-workspace.json",
+        "docs/v0.2.2-macos-ci-portable-location.json",
+        "docs/v0.2.2-macos-ci-tfd-import.json",
+        "docs/v0.2.2-macos-ci-window-ipc.json",
+        "docs/v0.2.2-macos-ci-workspace-folders.json",
+        "docs/v0.2.2-windows-ci-catalogue.json",
+        "docs/v0.2.2-windows-ci-native-menu.json",
+        "docs/v0.2.2-windows-ci-packaged-workspace.json",
+        "docs/v0.2.2-windows-ci-portable-location.json",
+        "docs/v0.2.2-windows-ci-tfd-import.json",
+        "docs/v0.2.2-windows-ci-window-ipc.json",
+        "docs/v0.2.2-windows-ci-workspace-folders.json",
+        "docs/更新报告/0.2.2更新报告.md"
+      ]
+    },
+    "Windows": {
+      "run": 41848432236,
+      "source_sha": "83c3a779f26707053800054a3d67da79d7dd4bd8",
+      "successful_job": "verify (windows-latest)",
+      "tag_difference": []
+    }
+  },
+  "asset_sha256": {
+    "TFC-0.2.2-Windows-x64-portable.zip": "8dbf49d15865ad2304104b06c45bbe46eb5e13fdee0e1093a6c3b0a0569c9a5a",
+    "TFC-0.2.2-Windows-x64-portable.zip.sha256": "f9efb3ddc034651eea60b884dd9a9517d655b527f4b60905be73cd32c8c7074f",
+    "TFC-0.2.2-macOS-Windows-portable.zip": "358eb604d24676aa510e8d79e70fceab4bd9d2bfa006005afdf7db3cc86611c8",
+    "TFC-0.2.2-macOS-Windows-portable.zip.sha256": "f0de5b3335600022136af897fc6a2f5302069a204351e9dc71cf5066e56ae771",
+    "TFC-0.2.2-macOS-arm64.zip": "c232c90f1fae89df9ee60d1f8a28c0ad04b9e68de1e3faedb71e2f295f80e6cc",
+    "TFC-0.2.2-macOS-arm64.zip.sha256": "39b3e93c57c6efb3fb25ab3a9f4b3adab32617d90168df24cab87b7bc0a1b44c"
+  },
+  "user_workspace_in_release": false,
+  "publisher_run": 41853009719,
+  "publisher_conclusion": "success",
+  "release_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.2",
+  "all_six_published_digests_match_local_archives": true,
+  "optical_core_and_golden_unchanged": true,
+  "mac_tag_first_attempt": "not acquired: hosted arm64 runner capacity; queued retry cancelled after selecting already verified CI artifacts",
+  "windows_tag_job": "success",
+  "physical_ssd_drive_letter_and_manual_display_checks": "not claimed",
+  "iphone": "separate unverified preview, not an iOS release"
+}
