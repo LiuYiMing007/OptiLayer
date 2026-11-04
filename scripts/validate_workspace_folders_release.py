@@ -30,7 +30,7 @@ with tempfile.TemporaryDirectory(prefix='tfc-folder-check-') as temp:
     assert call({'action':'calculate','project':call({'action':'load','id':project['id']})['project']})==spectrum
     explorer_confirmed = None
     if system == 'Windows':
-        expected=[str(workspace if section=='root' else workspace/info['directories'][section]).rstrip('\\').lower() for section in report['opened']]
+        expected=[str((workspace if section=='root' else workspace/info['directories'][section]).resolve()).rstrip('\\').lower() for section in report['opened']]
         script=r'''$ErrorActionPreference='Stop'
 [string[]]$expected=(ConvertFrom-Json -InputObject $env:TFC_FOLDER_CHECK_EXPECTED)
 $shell=New-Object -ComObject Shell.Application
@@ -43,13 +43,16 @@ do {
  if($matched.Count -eq $expected.Count){break}
  Start-Sleep -Milliseconds 200
 } while([DateTime]::UtcNow -lt $deadline)
-@{confirmed=$matched.Count;expected=$expected.Count;observed_windows=$windows.Count;observed_paths=$paths} | ConvertTo-Json -Compress
+@{confirmed=$matched.Count;expected=$expected.Count;observed_windows=$windows.Count;observed_paths=$paths;expected_paths=$expected} | ConvertTo-Json -Compress
 foreach($window in $windows){try {if($expected -contains ([uri]$window.LocationURL).LocalPath.TrimEnd('\').ToLowerInvariant()){$window.Quit()}}catch{}}
 '''
         env=os.environ.copy();env['TFC_FOLDER_CHECK_EXPECTED']=json.dumps(expected,ensure_ascii=False)
         process=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-EncodedCommand',base64.b64encode(script.encode('utf-16-le')).decode('ascii')],env=env,capture_output=True,encoding='utf-8',check=True,timeout=35)
         observation=json.loads(process.stdout)
-        assert observation['confirmed']==observation['expected']==8,observation
+        assert observation['expected']==8,observation
+        # Explorer expands Windows 8.3 names. Match directory identity, not spelling.
+        for target in expected:
+            assert any(Path(candidate).is_dir() and Path(candidate).samefile(target) for candidate in observation['observed_paths']),observation
         explorer_confirmed=True
 
 report={'all_pass':True,'platform':system,'directories':sorted(report['opened']),'existing_folders_after_move':True,'production_file_manager_opener_called':True,'explorer_window_paths_confirmed':explorer_confirmed,'saved_project_spectrum_database_catalogue_visible':True,'reloaded_spectrum_exact':True,'limits':'Actual directory opener launch and on-disk artifacts; does not prove physical Explorer mouse interaction, display scaling, or a physical SSD drive-letter change.'}
