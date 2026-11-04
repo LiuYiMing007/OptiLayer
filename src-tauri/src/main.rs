@@ -17,6 +17,7 @@ use tauri_plugin_dialog::DialogExt;
 struct WorkspaceSelection(Mutex<Option<PathBuf>>);
 // Explicit selection is session-only. Never restore another app installation's
 // machine-global locator; portable preferences live inside the project.
+const DATA_SECTIONS: [&str; 8] = ["root", "projects", "materials", "spectra", "exports", "database", "imports", "config"];
 static PROJECT_OVERRIDE: Mutex<Option<PathBuf>> = Mutex::new(None);
 
 fn run_engine(
@@ -265,11 +266,22 @@ async fn workspace_reveal(
     section: String,
 ) -> Result<String, String> {
     menus::require_main(&window)?;
-    if !["root", "projects", "materials", "spectra", "exports"].contains(&section.as_str()) {
+    if !DATA_SECTIONS.contains(&section.as_str()) {
         return Err("不支持的数据目录".into());
     }
     reveal_data(app, section).await
 }
+fn open_data_directory(path: &Path) -> Result<(), String> {
+    if !path.is_dir() { return Err("数据目录不存在，请重新连接工作区".into()); }
+    #[cfg(target_os = "macos")]
+    let status = Command::new("open").arg(path).status().and_then(|s| if s.success() {Ok(())} else {Err(std::io::Error::other("Finder refused directory"))});
+    #[cfg(windows)]
+    let status = Command::new("explorer.exe").arg(path).spawn().map(|_| ());
+    #[cfg(not(any(target_os = "macos", windows)))]
+    let status = Command::new("xdg-open").arg(path).status().and_then(|s| if s.success() {Ok(())} else {Err(std::io::Error::other("File manager refused directory"))});
+    status.map_err(|e| format!("无法打开数据文件夹：{e}"))
+}
+
 async fn reveal_data(app: tauri::AppHandle, section: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let root = current_workspace(&app)?;
@@ -294,13 +306,7 @@ async fn reveal_data(app: tauri::AppHandle, section: String) -> Result<String, S
                 .ok_or("缺少数据目录")?;
             portable::resolve(&root, relative)?
         };
-        #[cfg(target_os = "macos")]
-        let status = Command::new("open").arg(&path).status();
-        #[cfg(windows)]
-        let status = Command::new("explorer.exe").arg(&path).spawn().map(|_| ());
-        #[cfg(not(any(target_os = "macos", windows)))]
-        let status = Command::new("xdg-open").arg(&path).status();
-        status.map_err(|e| format!("无法打开数据文件夹：{e}"))?;
+        open_data_directory(&path)?;
         Ok(path.to_string_lossy().into_owned())
     })
     .await
@@ -449,6 +455,26 @@ async fn export_file(
     .map_err(|e| e.to_string())?
 }
 fn main() {
+    // Explicit diagnostics use a caller-created copy, without booting App or user preferences.
+    let args: Vec<_> = std::env::args_os().collect();
+    if let Some(index) = args.iter().position(|a| a == "--workspace-folder-check") {
+        let result = (|| -> Result<serde_json::Value,String> {
+            let root = PathBuf::from(args.get(index + 1).ok_or("缺少验收工作区路径")?).canonicalize().map_err(|e|e.to_string())?;
+            let manifest: serde_json::Value = serde_json::from_slice(&std::fs::read(root.join("workspace.json")).map_err(|e|e.to_string())?).map_err(|e|e.to_string())?;
+            let mut opened = serde_json::Map::new();
+            for section in DATA_SECTIONS {
+                let path = if section == "root" { root.clone() } else {
+                    portable::resolve(&root, manifest["directories"][section].as_str().ok_or("目录清单缺失")?)?
+                };
+                open_data_directory(&path)?;
+                opened.insert(section.into(),serde_json::json!(path));
+            }
+            Ok(serde_json::json!({"all_pass":true,"opened":opened,"limits":"Checks real production directory opener launch and existing paths; physical file-manager interaction is a separate check."}))
+        })();
+        match result { Ok(report)=>println!("{report}"), Err(error)=>{eprintln!("{error}");std::process::exit(1);} }
+        return;
+    }
+
     // Read-only entry-point check used by cross-platform portable package validation.
     if std::env::args_os().any(|arg| arg == "--workspace-location") {
         let result = (|| -> Result<serde_json::Value, String> {

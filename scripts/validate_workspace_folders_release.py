@@ -1,0 +1,34 @@
+"""Check all discoverable data folders using packaged host and frozen engine."""
+from pathlib import Path
+import json,os,platform,subprocess,tempfile,shutil
+root=Path(__file__).resolve().parents[1]
+system=platform.system()
+host=root/('release/TFC.app/Contents/MacOS/tfc-for-mac' if system=='Darwin' else 'release/Windows/TFC/TFC.exe')
+engine=root/('release/TFC.app/Contents/Resources/engine/tfc-engine' if system=='Darwin' else 'release/Windows/TFC/engine/tfc-engine.exe')
+with tempfile.TemporaryDirectory(prefix='tfc-folder-check-') as temp:
+    workspace=Path(temp)/'中文 固态盘'/'Workspace'
+    def call(body,create=False):
+        response=subprocess.run([str(engine),'--workspace',str(workspace)]+(['--create-workspace'] if create else []),input=json.dumps(body,ensure_ascii=False),encoding='utf-8',capture_output=True,check=True,timeout=45)
+        value=json.loads(response.stdout);assert 'error' not in value,value;return value
+    info=call({'action':'workspace_info'},True)['workspace']
+    call({'action':'library_list'})
+    project=json.loads((root/'docs/user-380nm-recovery.tfc.json').read_text(encoding='utf-8'))
+    call({'action':'save','project':project})
+    spectrum=call({'action':'calculate','project':project})
+    call({'action':'spectrum_save','project_id':project['id'],'project':project,'spectrum':spectrum})
+    moved=Path(temp)/'搬迁后'/'Workspace';moved.parent.mkdir();shutil.move(workspace,moved);workspace=moved
+    response=subprocess.run([str(host),'--workspace-folder-check',str(workspace)],encoding='utf-8',capture_output=True,check=True,timeout=60)
+    report=json.loads(response.stdout)
+    assert report['all_pass'] and set(report['opened'])=={'root',*info['directories']},report
+    for section,path in report['opened'].items():
+        expected=workspace if section=='root' else workspace/info['directories'][section]
+        assert Path(path).samefile(expected) and expected.is_dir(),section
+    assert list((workspace/'projects').glob('*.json'))
+    assert list((workspace/'spectra').rglob('*.json'))
+    assert (workspace/'database/workspace.sqlite3').is_file()
+    assert (workspace/'materials/catalogue/TFCalc-0.2.0.original.json').is_file()
+    assert call({'action':'calculate','project':call({'action':'load','id':project['id']})['project']})==spectrum
+report={'all_pass':True,'platform':system,'directories':sorted(report['opened']),'existing_folders_after_move':True,'production_file_manager_opener_called':True,'saved_project_spectrum_database_catalogue_visible':True,'reloaded_spectrum_exact':True,'limits':'Actual directory opener launch and on-disk artifacts; does not prove physical Explorer mouse interaction, display scaling, or a physical SSD drive-letter change.'}
+checks=root/'release/checks';checks.mkdir(parents=True,exist_ok=True)
+(checks/'workspace-folders.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(json.dumps(report,ensure_ascii=False))

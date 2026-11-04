@@ -144,6 +144,9 @@ export default function WorkspacePanel({
               ["materials", "材料与基底", workspace.directories.materials],
               ["spectra", "保存的光谱", workspace.directories.spectra],
               ["exports", "导出文件", workspace.directories.exports],
+              ["database", "项目数据库", workspace.directories.database],
+              ["imports", "导入与原件归档", workspace.directories.imports],
+              ["config", "工作区配置", workspace.directories.config],
             ] as const
           ).map(([section, label, path]) => (
             <div key={section}>

@@ -62,6 +62,7 @@ jobs:
       - run: node scripts/run_python.mjs scripts/validate_catalogue_release.py
       - run: node scripts/run_python.mjs scripts/validate_tfd_release.py
       - run: node scripts/run_python.mjs scripts/validate_workspace_release.py
+      - run: node scripts/run_python.mjs scripts/validate_workspace_folders_release.py
       - run: node scripts/run_python.mjs scripts/package_release.py
       - run: node scripts/run_python.mjs scripts/validate_portable_release.py
       - uses: actions/upload-artifact@v4

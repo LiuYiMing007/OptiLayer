@@ -23,13 +23,13 @@ def audit(source, output, compute=False, convert=False):
     if not source.is_dir() or output.is_relative_to(source):raise ValueError('输出目录必须在源目录之外')
     output.mkdir(parents=True,exist_ok=False)
     paths=sorted(p for p in source.rglob('*') if p.is_file() and not p.is_symlink())
-    before={str(p.relative_to(source)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+    before={p.relative_to(source).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
     files=[p for p in paths if p.suffix.lower()=='.tfd']
     workspace=Workspace(output/'Workspace',create=True) if convert else None
     template={'materials':BUILTIN_MATERIALS}
     entries=[];counts={'files':len(paths),'tfd':len(files),'decoded_legacy':0,'imported':0,'blocked':0,'computed':0,'calculation_blocked':0,'saved_reloaded_exact':0};issues={}
     for index,p in enumerate(files):
-        entry={'file':str(p.relative_to(source)),'sha256':before[str(p.relative_to(source))]}
+        entry={'file':p.relative_to(source).as_posix(),'sha256':before[p.relative_to(source).as_posix()]}
         try:
             decoded=decode_tfd(p.read_bytes());entry['encoding']=decoded['encoding']
             counts['decoded_legacy']+=decoded['encoding']=='gb18030'
@@ -72,13 +72,13 @@ def audit(source, output, compute=False, convert=False):
                 z.writestr(name,data)
         with zipfile.ZipFile(archive) as z:
             assert all(hashlib.sha256(z.read(name)).hexdigest()==digest for name,digest in before.items())
-        (workspace.directory('imports')/'TFCalc-originals.sha256.json').write_text(json.dumps(before,ensure_ascii=False,indent=2)+'\n')
+        (workspace.directory('imports')/'TFCalc-originals.sha256.json').write_text(json.dumps(before,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         summary['archived_original_files']=len(before)
-        (output/'tfc-project.json').write_text(json.dumps({'format':'tfc-portable-project','schema_version':1,'default_workspace':'Workspace'},indent=2)+'\n')
+        (output/'tfc-project.json').write_text(json.dumps({'format':'tfc-portable-project','schema_version':1,'default_workspace':'Workspace'},indent=2)+'\n',encoding='utf-8')
         (output/'README.txt').write_text('这是独立迁入工作区；原始文件未改变。通过应用的数据位置选择此文件夹或 Workspace。\n逐文件检查清单列出未导入原因；不支持的背面/有限厚基底未被删除或近似计算。\n',encoding='utf-8')
-    (output/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n')
-    (output/'source-hashes.json').write_text(json.dumps(before,ensure_ascii=False,indent=2)+'\n')
-    (output/'details.json').write_text(json.dumps(entries,ensure_ascii=False,indent=2)+'\n')
+    (output/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    (output/'source-hashes.json').write_text(json.dumps(before,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    (output/'details.json').write_text(json.dumps(entries,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     with (output/'逐文件检查清单.csv').open('w',encoding='utf-8-sig',newline='') as stream:
         writer=csv.writer(stream);writer.writerow(['文件','状态','膜层数','编码','原因'])
         for e in entries:writer.writerow([e['file'],e['status'],e.get('layers',''),e.get('encoding',''),'；'.join(i['message'] for i in e.get('issues',[])) or e.get('calculation_error','')])

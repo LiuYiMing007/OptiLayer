@@ -20,5 +20,5 @@ with tempfile.TemporaryDirectory(prefix='tfc-tfd-') as folder:
  target=Path(folder)/'搬迁后';shutil.move(workspace,target);workspace=target
  restored=call({'action':'load','id':p['id']})['project'];assert restored==p and call({'action':'calculate','project':restored})==result
 report={'all_pass':True,'platform':platform.system(),'strict_gb18030':True,'role_specific_materials':True,'group_factors_normalized':True,'bulk_backside_missing_material_blocked':True,'save_move_reload_exact':True}
-checks=root/'release/checks';checks.mkdir(exist_ok=True,parents=True);(checks/'tfd-import.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+checks=root/'release/checks';checks.mkdir(exist_ok=True,parents=True);(checks/'tfd-import.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print(json.dumps(report))
