@@ -137,8 +137,28 @@ pub fn remember(root: &Path, workspace: &Path) -> Result<(), String> {
     .map_err(|e| format!("项目文件夹不可写，无法记住工作区：{e}"))
 }
 
+
+// Explorer uses Shell paths, whereas canonical filesystem paths may carry a
+// verbatim prefix. Convert only the presentation passed to Explorer.
+#[cfg(any(windows, test))]
+pub fn explorer_path(path: &Path) -> PathBuf {
+    let text = path.to_string_lossy();
+    if let Some(unc) = text.strip_prefix(r"\\?\UNC\") {
+        PathBuf::from(format!(r"\\{unc}"))
+    } else if let Some(drive) = text.strip_prefix(r"\\?\") {
+        PathBuf::from(drive)
+    } else { path.to_path_buf() }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn explorer_receives_shell_paths_for_drives_and_unc() {
+        assert_eq!(super::explorer_path(std::path::Path::new(r"\\?\E:\中文 固态盘\Workspace")),std::path::PathBuf::from(r"E:\中文 固态盘\Workspace"));
+        assert_eq!(super::explorer_path(std::path::Path::new(r"\\?\UNC\server\共享\Workspace")),std::path::PathBuf::from(r"\\server\共享\Workspace"));
+        assert_eq!(super::explorer_path(std::path::Path::new(r"E:\正常\Workspace")),std::path::PathBuf::from(r"E:\正常\Workspace"));
+    }
+
     use super::*;
     static NEXT_FOLDER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     struct Folder(PathBuf);

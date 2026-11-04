@@ -276,7 +276,7 @@ fn open_data_directory(path: &Path) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     let status = Command::new("open").arg(path).status().and_then(|s| if s.success() {Ok(())} else {Err(std::io::Error::other("Finder refused directory"))});
     #[cfg(windows)]
-    let status = Command::new("explorer.exe").arg(path).spawn().map(|_| ());
+    let status = Command::new("explorer.exe").arg(portable::explorer_path(path)).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn().map(|_| ());
     #[cfg(not(any(target_os = "macos", windows)))]
     let status = Command::new("xdg-open").arg(path).status().and_then(|s| if s.success() {Ok(())} else {Err(std::io::Error::other("File manager refused directory"))});
     status.map_err(|e| format!("无法打开数据文件夹：{e}"))
