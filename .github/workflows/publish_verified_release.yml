@@ -58,8 +58,13 @@ jobs:
               reports={p.stem:json.loads(p.read_text()) for p in checks.glob('*.json')}
               required={'native-menu','window-ipc','catalogue','tfd-import','packaged-workspace','workspace-folders','portable-location'}
               assert required<=reports.keys(),reports.keys()
-              for name in ['native-menu','window-ipc','catalogue','tfd-import','workspace-folders']:
+              for name in ['window-ipc','catalogue','tfd-import','workspace-folders']:
                   assert reports[name]['all_pass'],(platform,name)
+              menu=reports['native-menu']
+              assert menu['command_routed_once_to_main'] and menu['disabled_command_blocked'] and menu['workspace_untouched']
+              assert menu['native_tool_windows'] and menu['tool_cannot_mutate_workspace'] and menu['tool_command_routed_once']
+              if platform=='macOS':assert menu['native_menu']
+              else:assert menu['auxiliary_cannot_mutate_workspace'] and menu['windows_auxiliary_close_hide_restore']
               assert reports['packaged-workspace']['spectrum_exact_reproduction']
               assert reports['portable-location']['actual_host_location_check']
               assert reports['workspace-folders']['saved_project_spectrum_database_catalogue_visible']
