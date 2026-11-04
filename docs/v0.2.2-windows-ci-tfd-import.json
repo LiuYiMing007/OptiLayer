@@ -1,0 +1,9 @@
+{
+  "all_pass": true,
+  "platform": "Windows",
+  "strict_gb18030": true,
+  "role_specific_materials": true,
+  "group_factors_normalized": true,
+  "bulk_backside_missing_material_blocked": true,
+  "save_move_reload_exact": true
+}

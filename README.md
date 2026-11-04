@@ -1,6 +1,6 @@
-# TFC · v0.2.2（开发验证）
+# TFC · v0.2.2
 
-0.2.2 正在验证，尚未发布正式安装包；下方下载链接仍为 0.2.1。此次改进数据位置可见性、导入失败提示和不同安装之间的定位隔离。
+0.2.2 完成 macOS 与 Windows 发布前验证，修复中文迁入报告编码，补齐全部工作区目录入口及 Windows 资源管理器路径核对，并扩展真实 TFD 膜系导入。
 
 跨平台、离线优先、可迁移 Workspace 的光学薄膜工作台。macOS 使用系统菜单，Windows 使用独立菜单小窗口；光谱主窗与工具窗口共享同一个项目和计算状态。
 
@@ -8,11 +8,11 @@
 
 材料与基底使用紧凑可搜索目录，支持来源／用途／状态筛选、50 行分页、n/k 预览与一键应用。新增原创光学图标。旧项目、便携工作区、单一 Project State 和 0.1.5 的多窗口能力继续保留。
 
-[下载双系统合并包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.1/TFC-0.2.1-macOS-Windows-portable.zip) · [全部下载](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.1) · [0.2.1 更新报告](docs/更新报告/0.2.1更新报告.md) · [材料验收及异常清单](docs/0.2.0-材料与基底导入验收.md)
+[下载双系统合并包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.2/TFC-0.2.2-macOS-Windows-portable.zip) · [全部下载](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.2) · [0.2.2 更新报告](docs/更新报告/0.2.2更新报告.md) · [材料验收及异常清单](docs/0.2.0-材料与基底导入验收.md)
 
 Mac 为 Apple Silicon / macOS 14+，Windows 为 x64 / WebView2。两个客户端使用同一套 Workspace 数据。升级只替换 `macOS` 和 `Windows` 程序子目录，保留 `Workspace`、`Workspaces`、`.tfc`，不要用空目录覆盖数据。材料目录已打入两端程序，无需原 TFCalc 文件夹或联网。
 
-正式包通常由不可变版本标签触发双平台构建。0.2.1 的 Windows 云端验收通过；Mac 云端两次因机器容量不足取消，因此采用同源代码、已通过完整本机验收的 Apple Silicon 包发布，详见更新报告。两端均验证打包内材料加载／搬迁复算、菜单、真实前端七个工具窗口 IPC 和便携路径。Windows 人工显示缩放、多显示器及物理 SSD 往返未作为自动验收冒充。Mac 使用临时签名，无 Developer ID 公证；Windows 无商业代码签名证书。
+正式包由不可变版本标签触发双平台构建。0.2.2 发布前已通过两端打包内材料、中文 TFD、搬迁复算、菜单、七个真实工具窗口 IPC 和全部数据目录验证；Windows 通过 Shell COM 核对八个资源管理器目标窗口。物理 SSD 换盘符、人工显示缩放和多显示器操作未冒充自动验收。Mac 使用临时签名，未作 Developer ID 公证；Windows 未作商业代码签名。详细结果见 [0.2.2 更新报告](docs/更新报告/0.2.2更新报告.md)。
 
 0.2.1 修复 Mac 隔离启动时的工作区定位与目录不可见问题，提供显式选择便携项目入口。材料和基底支持常数、完整 n/k 表及色散系数编辑，原始记录保留；“打开数据文件夹”可查看原始目录及自定义恢复文件。只在丢弃实际修改前提示保存，支持保存并继续。
 
