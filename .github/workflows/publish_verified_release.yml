@@ -50,7 +50,7 @@ jobs:
               source=json.loads(run('gh','run','view',run_id,'--json','headSha,jobs,workflowName'))
               assert source['workflowName']=='Cross-platform verification and releases'
               assert any(j['name']==job and j['conclusion']=='success' for j in source['jobs']),source
-              changed=run('git','diff','--name-only',tag_sha,source['headSha']).splitlines()
+              changed=[p for p in run('git','diff','--name-only','-z',tag_sha,source['headSha']).split('\0') if p]
               assert all(p=='README.md' or p.startswith('docs/') for p in changed),changed
               folder=Path('inputs')/platform;checks=Path('checks')/platform
               subprocess.run(['gh','run','download',run_id,'-n','release-'+platform,'-D',str(folder)],check=True)
