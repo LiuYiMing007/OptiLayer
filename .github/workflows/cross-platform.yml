@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+    paths-ignore: ['docs/**', 'README.md']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -28,6 +29,13 @@ jobs:
         with:
           python-version: '3.13'
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache/restore@v4
+        id: rust-build-cache
+        with:
+          path: src-tauri/target
+          key: tfc-rust-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src-tauri/Cargo.lock') }}-${{ hashFiles('src-tauri/src/**', 'src-tauri/build.rs', 'src-tauri/tauri*.json') }}
+          restore-keys: tfc-rust-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src-tauri/Cargo.lock') }}-
+
       - run: python -m venv .venv
       - run: node scripts/run_python.mjs -m pip install -r engine/requirements-dev.txt
       - run: npm ci
@@ -51,6 +59,11 @@ jobs:
       - run: npm run tauri -- build --config src-tauri/tauri.release.conf.json --no-bundle
       - if: runner.os == 'macOS'
         run: npm run tauri -- bundle --config src-tauri/tauri.release.conf.json --bundles app
+      - uses: actions/cache/save@v4
+        if: steps.rust-build-cache.outputs.cache-hit != 'true'
+        with:
+          path: src-tauri/target
+          key: ${{ steps.rust-build-cache.outputs.cache-primary-key }}
       - run: node scripts/run_python.mjs scripts/stage_release.py
       - name: Seal and verify macOS application
         if: runner.os == 'macOS'

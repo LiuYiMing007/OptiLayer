@@ -32,7 +32,7 @@ with tempfile.TemporaryDirectory(prefix='tfc-folder-check-') as temp:
     if system == 'Windows':
         expected=[str(workspace if section=='root' else workspace/info['directories'][section]).rstrip('\\').lower() for section in report['opened']]
         script=r'''$ErrorActionPreference='Stop'
-$expected=@(ConvertFrom-Json $env:TFC_FOLDER_CHECK_EXPECTED)
+[string[]]$expected=(ConvertFrom-Json -InputObject $env:TFC_FOLDER_CHECK_EXPECTED)
 $shell=New-Object -ComObject Shell.Application
 $deadline=[DateTime]::UtcNow.AddSeconds(20)
 $windows=@();$paths=@()
@@ -43,7 +43,7 @@ do {
  if($matched.Count -eq $expected.Count){break}
  Start-Sleep -Milliseconds 200
 } while([DateTime]::UtcNow -lt $deadline)
-@{confirmed=$matched.Count;expected=$expected.Count} | ConvertTo-Json -Compress
+@{confirmed=$matched.Count;expected=$expected.Count;observed_windows=$windows.Count;observed_paths=$paths} | ConvertTo-Json -Compress
 foreach($window in $windows){try {if($expected -contains ([uri]$window.LocationURL).LocalPath.TrimEnd('\').ToLowerInvariant()){$window.Quit()}}catch{}}
 '''
         env=os.environ.copy();env['TFC_FOLDER_CHECK_EXPECTED']=json.dumps(expected,ensure_ascii=False)
