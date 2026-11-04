@@ -1,0 +1,102 @@
+name: Publish verified immutable release artifacts
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing immutable numeric version tag (without v)
+        required: true
+        type: string
+      mac_run:
+        description: Run with successful macOS verification and program artifact
+        required: true
+        type: string
+      windows_run:
+        description: Run with successful Windows verification and program artifact
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ inputs.version }}
+      MAC_RUN: ${{ inputs.mac_run }}
+      WINDOWS_RUN: ${{ inputs.windows_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ inputs.version }}
+          fetch-depth: 0
+      - name: Verify sources, reports and program hashes before publishing
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,re,shutil,subprocess,zipfile
+          from pathlib import Path
+          def run(*args):
+              return subprocess.check_output(args,text=True).strip()
+          version=os.environ['VERSION'];tag='v'+version
+          assert re.fullmatch(r'\d+\.\d+\.\d+',version)
+          assert json.loads(Path('package.json').read_text())['version']==version
+          tag_sha=run('git','rev-parse','HEAD')
+          assets=Path('release-assets');assets.mkdir()
+          sources={}
+          for platform,key,job in [('macOS','MAC_RUN','verify (macos-latest)'),('Windows','WINDOWS_RUN','verify (windows-latest)')]:
+              run_id=os.environ[key];assert re.fullmatch(r'\d+',run_id)
+              source=json.loads(run('gh','run','view',run_id,'--json','headSha,jobs,workflowName'))
+              assert source['workflowName']=='Cross-platform verification and releases'
+              assert any(j['name']==job and j['conclusion']=='success' for j in source['jobs']),source
+              changed=run('git','diff','--name-only',tag_sha,source['headSha']).splitlines()
+              assert all(p=='README.md' or p.startswith('docs/') for p in changed),changed
+              folder=Path('inputs')/platform;checks=Path('checks')/platform
+              subprocess.run(['gh','run','download',run_id,'-n','release-'+platform,'-D',str(folder)],check=True)
+              subprocess.run(['gh','run','download',run_id,'-n','checks-'+platform,'-D',str(checks)],check=True)
+              reports={p.stem:json.loads(p.read_text()) for p in checks.glob('*.json')}
+              required={'native-menu','window-ipc','catalogue','tfd-import','packaged-workspace','workspace-folders','portable-location'}
+              assert required<=reports.keys(),reports.keys()
+              for name in ['native-menu','window-ipc','catalogue','tfd-import','workspace-folders']:
+                  assert reports[name]['all_pass'],(platform,name)
+              assert reports['packaged-workspace']['spectrum_exact_reproduction']
+              assert reports['portable-location']['actual_host_location_check']
+              assert reports['workspace-folders']['saved_project_spectrum_database_catalogue_visible']
+              if platform=='Windows':assert reports['workspace-folders']['explorer_window_paths_confirmed']
+              expected=f'TFC-{version}-macOS-arm64.zip' if platform=='macOS' else f'TFC-{version}-Windows-x64-portable.zip'
+              assert {p.name for p in folder.iterdir()}=={expected,expected+'.sha256'}
+              archive=folder/expected
+              digest,name=(folder/(expected+'.sha256')).read_text().strip().split(maxsplit=1)
+              assert name==expected and hashlib.sha256(archive.read_bytes()).hexdigest()==digest
+              with zipfile.ZipFile(archive) as z:
+                  assert z.testzip() is None
+                  assert not any(set(Path(n).parts)&{'Workspace','Workspaces','.tfc'} for n in z.namelist())
+              for file in folder.iterdir():shutil.copy2(file,assets/file.name)
+              sources[platform]={'run':int(run_id),'source_sha':source['headSha'],'successful_job':job,'tag_difference':changed}
+          subprocess.run(['python','scripts/package_combined_release.py','--assets',str(assets),'--version',version],check=True)
+          files=sorted(assets.iterdir());assert len(files)==6
+          repo=os.environ['GITHUB_REPOSITORY']
+          prefix=f'发布源码：`{tag_sha}`。两端均采用已通过完整验收的 CI 程序包，逐一核对其构建源码与标签只有 README/docs 差异、检查报告及 SHA256。\n\n'
+          prefix+='Mac 标签构建首次因云端 arm64 机器容量不足未能启动；本次采用已成功验收的 Mac CI 包，不将排队或取消写成通过。\n\n'
+          for platform,source in sources.items():
+              prefix+=f'- {platform}：[{source["successful_job"]}](https://github.com/{repo}/actions/runs/{source["run"]})，构建源码 `{source["source_sha"]}`。\n'
+          notes=prefix+'\n'+run('python','scripts/release_notes.py',tag)+'\n'
+          Path('release-notes.md').write_text(notes,encoding='utf-8')
+          exists=subprocess.run(['gh','release','view',tag],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+          assert not exists,'Release already exists; preserving all existing assets without replacement'
+          subprocess.run(['gh','release','create',tag,*map(str,files),'--verify-tag','--latest','--title','TFC '+tag,'--notes-file','release-notes.md'],check=True)
+          published=json.loads(run('gh','api',f'repos/{repo}/releases/tags/{tag}'))
+          remote={a['name']:a for a in published['assets']}
+          assert set(remote)=={p.name for p in files}
+          hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+          for name,digest in hashes.items():
+              assert remote[name]['state']=='uploaded' and remote[name]['digest']=='sha256:'+digest,name
+          Path('release-evidence.json').write_text(json.dumps({'version':version,'tag_sha':tag_sha,'sources':sources,'asset_sha256':hashes,'user_workspace_in_release':False},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: immutable-release-evidence
+          path: release-evidence.json
+          if-no-files-found: error
+          retention-days: 30
