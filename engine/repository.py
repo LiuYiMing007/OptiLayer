@@ -1,13 +1,14 @@
 """SQLite authoritative storage; UTF-8 JSON files are portable recovery exports."""
-import hashlib
 import json
 from pathlib import Path
 import re
 import sqlite3
 import uuid
+from datetime import datetime, timezone
 from models import BUILTIN_MATERIALS, validate, validate_material
 from workspace import atomic_json
 from catalogue import catalogue
+from file_exports import named_export, export_catalogue, file_label
 
 SCHEMA_VERSION = 3
 
@@ -25,6 +26,7 @@ def connect_db(workspace):
     conn.execute('CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, document TEXT NOT NULL, updated_at TEXT NOT NULL)')
     conn.execute('CREATE TABLE IF NOT EXISTS materials (name TEXT PRIMARY KEY, document TEXT NOT NULL, updated_at TEXT NOT NULL)')
     conn.execute('CREATE TABLE IF NOT EXISTS spectra (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, relative_path TEXT NOT NULL, created_at TEXT NOT NULL)')
+    conn.execute('CREATE TABLE IF NOT EXISTS file_exports (kind TEXT NOT NULL, item_key TEXT NOT NULL, relative_path TEXT NOT NULL UNIQUE, PRIMARY KEY(kind,item_key))')
     for material in BUILTIN_MATERIALS:
         conn.execute("INSERT OR IGNORE INTO materials VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))", (material['name'], json.dumps(material, ensure_ascii=False)))
     conn.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
@@ -36,6 +38,18 @@ def connect_db(workspace):
             atomic_json(catalogue_file,catalogue())
         except OSError:
             pass  # Database operations remain usable on export failure.
+    try:
+        export_catalogue(workspace, catalogue()['materials'])
+        # Existing projects acquire readable exports lazily without changing their IDs.
+        for key, name, document in conn.execute("SELECT id,name,document FROM projects WHERE id NOT IN (SELECT item_key FROM file_exports WHERE kind='project')").fetchall():
+            named_export(workspace, conn, 'project', key, workspace.manifest['directories']['projects'], name, '.tfc.json', json.loads(document))
+        for key, document in conn.execute("SELECT name,document FROM materials WHERE name NOT IN (SELECT item_key FROM file_exports WHERE kind='material')").fetchall():
+            material = json.loads(document)
+            category = ('substrates/' if material.get('role') in ('substrate','medium') else '') + ('builtins' if material['name'] in {m['name'] for m in BUILTIN_MATERIALS} else 'custom')
+            named_export(workspace, conn, 'material', key, workspace.manifest['directories']['materials']+'/'+category, material.get('display_name') or key.split('/')[-1], '.material.json', material)
+        conn.commit()
+    except OSError:
+        pass
     return conn
 
 
@@ -66,9 +80,8 @@ def storage_action(workspace, request):
                 warnings=[]
                 for material in materials:
                     try:
-                        key=hashlib.sha256(material['name'].encode('utf-8')).hexdigest()
-                        label=re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', material.get('display_name',material['name'])).strip(' .')[:60] or 'material'
-                        atomic_json(workspace.resolve(workspace.manifest['directories']['materials']+f'/custom/{label}-{key[:12]}.material.json'), material)
+                        category = ('substrates/' if material.get('role') in ('substrate','medium') else '') + ('builtins' if material['name'] in {m['name'] for m in BUILTIN_MATERIALS} else 'custom')
+                        named_export(workspace, conn, 'material', material['name'], workspace.manifest['directories']['materials']+'/'+category, material.get('display_name') or material['name'].split('/')[-1], '.material.json', material)
                     except (OSError, ValueError) as error:
                         warnings.append(f'材料已入库，但恢复副本未写入：{error}')
                 return {'saved': True, 'warnings': warnings}
@@ -78,13 +91,14 @@ def storage_action(workspace, request):
                 conn.execute("INSERT INTO projects VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now')) ON CONFLICT(id) DO UPDATE SET name=excluded.name, document=excluded.document, updated_at=excluded.updated_at", (key, p['name'], json.dumps(p, ensure_ascii=False, allow_nan=False)))
                 conn.commit()
                 warnings=[]
+                relative_path=None
                 try:
-                    atomic_json(workspace.directory('projects')/f'{key}.tfc.json', p)
+                    relative_path=named_export(workspace, conn, 'project', key, workspace.manifest['directories']['projects'], p['name'], '.tfc.json', p)
                 except OSError as error:
                     warnings.append(f'项目已入库，但恢复副本未写入：{error}')
-                return {'saved': True, 'project': p, 'warnings': warnings}
+                return {'saved': True, 'project': p, 'relative_path':relative_path, 'warnings': warnings}
             if action == 'list':
-                return {'projects': [dict(zip(('id','name','updated_at'), row)) for row in conn.execute('SELECT id,name,updated_at FROM projects ORDER BY updated_at DESC')]}
+                return {'projects': [dict(zip(('id','name','updated_at','relative_path'), row)) for row in conn.execute("SELECT p.id,p.name,p.updated_at,f.relative_path FROM projects p LEFT JOIN file_exports f ON f.kind='project' AND f.item_key=p.id ORDER BY p.updated_at DESC")]}
             if action == 'load':
                 row = conn.execute('SELECT document FROM projects WHERE id=?', (request['id'],)).fetchone()
                 if row is None:
@@ -104,7 +118,7 @@ def storage_action(workspace, request):
                 if validate(spectrum['input_snapshot']) != validate(request['project']):
                     raise ValueError('光谱输入与保存项目不一致，未保存过期光谱')
                 spectrum_id=str(uuid.uuid4())
-                relative=f"{workspace.manifest['directories']['spectra']}/{key}/{spectrum_id}.spectrum.json"
+                relative=f"{workspace.manifest['directories']['spectra']}/{file_label(json.loads(stored[0])['name'])}--{key[:8]}/光谱-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')}.spectrum.json"
                 atomic_json(workspace.resolve(relative), {'schema_version':1,'engine':'python-tmm-v1','units':workspace.manifest['units'],'result':spectrum})
                 conn.execute("INSERT INTO spectra VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))",(spectrum_id,key,relative))
                 return {'saved':True,'relative_path':relative}

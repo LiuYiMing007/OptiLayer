@@ -1088,3 +1088,106 @@
 .project-pagination span {
   margin-right: auto;
 }
+
+.save-project-dialog {
+  width: min(480px, calc(100vw - 32px));
+  border: 1px solid var(--border, #d8d8d8);
+  border-radius: 4px;
+  padding: 20px;
+  color: #242424;
+  background: white;
+}
+.save-project-dialog::backdrop {
+  background: #0004;
+}
+.save-project-dialog h2 {
+  font-size: 15px;
+  margin: 0 0 18px;
+}
+.save-project-dialog label {
+  display: grid;
+  gap: 8px;
+}
+.save-project-dialog input {
+  width: 100%;
+  height: 30px;
+}
+.save-project-dialog p {
+  color: #666;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.save-project-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+.interactive-analysis {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.interactive-analysis label {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.interactive-analysis dl {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.interactive-analysis dd {
+  margin: 0;
+  text-align: right;
+}
+.interactive-analysis form {
+  display: grid;
+  gap: 8px;
+}
+.interactive-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.interactive-analysis input[type="range"] {
+  width: 100%;
+}
+.interactive-analysis button {
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 1px solid #d8d8d8;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+}
+.interactive-analysis input:not([type="range"]),
+.interactive-analysis select {
+  height: 28px;
+  min-height: 28px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.interactive-analysis .panel-heading {
+  margin: 0;
+  padding: 0;
+}
+.interactive-analysis p {
+  margin: 0;
+}
+.browser-tool.tool-interactive {
+  width: min(480px, calc(100vw - 40px));
+}
+.tool-interactive .tool-notice {
+  display: none;
+}
+.tool-interactive .tool-content {
+  padding: 0;
+}
+.interactive-analysis .panel-heading {
+  height: 28px;
+}

@@ -1,3 +1,4 @@
+import type { InteractiveTarget } from "../interactiveModel.ts";
 import type {
   Material,
   Project,
@@ -15,7 +16,8 @@ export type ToolId =
   | "settings"
   | "project"
   | "analysis"
-  | "targets";
+  | "targets"
+  | "interactive";
 export interface ToolSnapshot {
   focus?: { id: string; label: string; token: string };
   sequence: number;
@@ -64,6 +66,13 @@ export type Patch =
     };
 export type ToolAction = { scope: string; requestId: string } & (
   | { kind: "patch"; patches: Patch[] }
+  | {
+      kind: "interactive";
+      session: string;
+      phase: "preview" | "finish" | "undo";
+      target: InteractiveTarget;
+      value: number;
+    }
   | { kind: "command"; id: string }
   | { kind: "select"; layerId: string }
   | {

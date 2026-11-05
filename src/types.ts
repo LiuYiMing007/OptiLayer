@@ -156,6 +156,7 @@ export interface Spectrum {
   reference_point: RTPoint;
 }
 export interface SavedProject {
+  relative_path?: string;
   id: string;
   name: string;
   updated_at: string;

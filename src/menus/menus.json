@@ -183,6 +183,11 @@
         "implemented": true
       },
       {
+        "id": "analysis.interactive",
+        "label": "交互式调膜…",
+        "implemented": true
+      },
+      {
         "id": "analysis.details",
         "label": "波段、边缘与峰谷分析…",
         "implemented": true
@@ -238,6 +243,12 @@
       {
         "id": "view.analysis",
         "label": "光谱分析",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.interactive",
+        "label": "交互式调膜",
         "implemented": true,
         "check": true
       },

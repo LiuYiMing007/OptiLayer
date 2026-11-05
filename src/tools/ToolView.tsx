@@ -1,3 +1,4 @@
+import InteractiveAnalysis from "../InteractiveAnalysis";
 import { useEffect, useRef, useState } from "react";
 import TextInput from "../TextInput";
 import LayerEditor from "../LayerEditor";
@@ -82,6 +83,9 @@ export default function ToolView({
         <p className="tool-notice" role="status">
           {s.notice}
         </p>
+      )}
+      {id === "interactive" && (
+        <InteractiveAnalysis snapshot={s} send={dispatch} />
       )}
       {id === "layers" && (
         <LayerEditor
@@ -275,6 +279,7 @@ export default function ToolView({
                   >
                     <div>
                       <strong>{p.name}</strong>
+                      {p.relative_path && <small>{p.relative_path}</small>}
                       <small>
                         {new Date(p.updated_at).toLocaleString("zh-CN")}
                       </small>

@@ -80,7 +80,7 @@ class WorkspaceTests(unittest.TestCase):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as folder:
             w=Workspace(folder,create=True);p=fixture()
-            with patch('repository.atomic_json',side_effect=OSError('模拟只读或磁盘写入失败')):
+            with patch('file_exports.atomic_json',side_effect=OSError('模拟只读或磁盘写入失败')):
                 saved=storage_action(w,{'action':'save','project':p})
             self.assertTrue(saved['saved']);self.assertTrue(saved['warnings'])
             self.assertEqual(storage_action(w,{'action':'load','id':p['id']})['project'],engine.validate(p))

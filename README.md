@@ -109,3 +109,7 @@ node scripts/run_python.mjs scripts/validate_portable_release.py
 ## iPhone 随行框架（预览）
 
 `npm run mobile:dev` 启动手机界面开发服务，`npm run mobile:build` 构建独立静态包，`npm run mobile:preview` 预览 `/mobile.html`。含完整 1,211 条材料/基底记录、n/k 查询、只读项目 JSON 导入、IndexedDB 本机保存及主屏幕光学图标。离线安装需 HTTPS；未发布 iOS 原生安装包，也未进行 iPhone 真机验收。详见 [使用与开发说明](docs/iPhone随行框架.md)。
+
+### 0.2.3 开发验证
+
+当前分支正在开发 `0.2.3-dev.1`，已加入命名保存、材料/基底逐项文件和交互式调膜窗口。完整出射环境与有限厚基底计算仍待实现，尚未发布 0.2.3 正式版。范围与文件位置见 [0.2.3 开发更新报告](docs/更新报告/0.2.3更新报告.md)；正式下载继续使用上方 0.2.2 Release。

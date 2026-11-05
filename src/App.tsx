@@ -1,3 +1,5 @@
+import { interactiveProject } from "./interactiveModel";
+import SaveProjectDialog from "./SaveProjectDialog";
 import { readImportFile } from "./importEncoding";
 import { applyMaterialChange } from "./applyMaterialChange";
 import UnsavedDialog from "./UnsavedDialog";
@@ -57,6 +59,22 @@ type Modal =
   "projects" | "materials" | "about" | "workspace" | "shortcuts" | null;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export default function App() {
+  const [savePrompt, setSavePrompt] = useState<{
+    initial: string;
+    copy: boolean;
+  } | null>(null);
+  const saveResolver = useRef<((value: string | null) => void) | null>(null);
+  async function chooseSaveName(copy: boolean): Promise<string | null> {
+    if (saveResolver.current) return null;
+    await focusMain();
+    return new Promise((resolve) => {
+      saveResolver.current = resolve;
+      setSavePrompt({
+        initial: current.current.name + (copy ? " 副本" : ""),
+        copy,
+      });
+    });
+  }
   const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
   const [workspaceError, setWorkspaceError] = useState("");
   const [project, setProject] = useState<Project>(referenceProject);
@@ -128,6 +146,14 @@ export default function App() {
       (e) => receiverRef.current.error(e),
       (v) => receiverRef.current.activity(v),
     );
+  const interaction = useRef<{
+    session: string;
+    source: string;
+    scope: string;
+    target: string;
+    baseline: Project;
+    last: string;
+  } | null>(null);
   function commit(next: Project, clearWriters = true) {
     const previous = clone(current.current);
     if (physicalSignature(previous) !== physicalSignature(next))
@@ -212,18 +238,27 @@ export default function App() {
       queue.current!.invalidate();
     };
   }, [physicalKey, scope]);
-  async function save(copyName?: string) {
-    const snapshot = clone(current.current);
-    if (copyName) {
-      snapshot.id = crypto.randomUUID();
-      snapshot.name = copyName;
+  async function save(copyName?: string, forceCopy = false) {
+    if (saveResolver.current || working.current) return false;
+    let name = copyName;
+    if ((!persisted && !copyName) || forceCopy) {
+      const chosen = await chooseSaveName(forceCopy);
+      if (chosen === null) return false;
+      name = chosen;
     }
+    const snapshot = clone(current.current);
+    if (copyName || forceCopy) snapshot.id = crypto.randomUUID();
+    if (name) snapshot.name = name;
     return await run(async () => {
-      const r = await request<{ project: Project; warnings?: string[] }>({
+      const r = await request<{
+        project: Project;
+        relative_path?: string;
+        warnings?: string[];
+      }>({
         action: "save",
         project: snapshot,
       });
-      if (copyName) {
+      if (copyName || forceCopy) {
         epoch.current++;
         scopeRef.current = `${workspace?.id || "unavailable"}:${r.project.id}:${epoch.current}`;
         writers.current.clear();
@@ -252,7 +287,7 @@ export default function App() {
         }
       }
       setNotice(
-        `项目已保存到当前工作区${r.warnings?.length ? "；" + r.warnings.join("；") : ""}${spectrumWarning}`,
+        `项目已保存${r.relative_path ? "：" + r.relative_path : "到当前工作区"}${r.warnings?.length ? "；" + r.warnings.join("；") : ""}${spectrumWarning}`,
       );
       await refreshProjects();
     });
@@ -335,8 +370,73 @@ export default function App() {
     }
     if (action.scope !== scopeRef.current)
       throw new Error("项目或工作区已切换，请使用最新窗口内容");
-    if (working.current || asking.current || (modal && source !== "main"))
+    if (
+      working.current ||
+      asking.current ||
+      saveResolver.current ||
+      (modal && source !== "main")
+    )
       throw new Error("主工作台正在处理，请稍后重试");
+    if (action.kind === "interactive") {
+      if (action.phase === "undo") {
+        const session = interaction.current;
+        if (
+          !session ||
+          session.session !== action.session ||
+          session.source !== source ||
+          session.scope !== action.scope ||
+          session.last !== projectKey(current.current)
+        )
+          throw new Error(
+            "当前修改已不属于这一轮调膜，请使用常规撤销或重新载入原值",
+          );
+        interaction.current = null;
+        undo();
+        return;
+      }
+      if (action.phase === "finish") {
+        if (
+          interaction.current?.session === action.session &&
+          interaction.current.source === source
+        )
+          interaction.current = null;
+        return;
+      }
+      let session = interaction.current;
+      if (
+        session &&
+        session.session === action.session &&
+        (session.source !== source ||
+          session.scope !== action.scope ||
+          session.last !== projectKey(current.current) ||
+          session.target !== JSON.stringify(action.target))
+      )
+        throw new Error("膜系已被其他操作修改，请重新载入原值后继续");
+      const continuing = !!session && session.session === action.session;
+      if (!continuing)
+        session = {
+          session: action.session,
+          source,
+          scope: action.scope,
+          target: JSON.stringify(action.target),
+          baseline: clone(current.current),
+          last: projectKey(current.current),
+        };
+      const next = interactiveProject(
+        session!.baseline,
+        action.target,
+        action.value,
+      );
+      if (!continuing) commit(next);
+      else {
+        queue.current!.invalidate();
+        writers.current.clear();
+        current.current = next;
+        setProject(next);
+      }
+      interaction.current = { ...session!, last: projectKey(next) };
+      return;
+    }
     if (action.kind === "patch") {
       const next = applyPatches(
         current.current,
@@ -483,7 +583,13 @@ export default function App() {
     panels,
   });
   async function executeCommand(id: string) {
-    if (!states[id]?.enabled || working.current || asking.current) return;
+    if (
+      !states[id]?.enabled ||
+      working.current ||
+      asking.current ||
+      saveResolver.current
+    )
+      return;
     if (
       id.startsWith("layer.") &&
       ["add", "copy", "delete", "up", "down"].includes(id.slice(6))
@@ -516,7 +622,7 @@ export default function App() {
         await showTool("project");
         break;
       case "file.saveAs":
-        await showTool("project");
+        await save(undefined, true);
         break;
       case "file.save":
         await save();
@@ -580,6 +686,9 @@ export default function App() {
         break;
       case "analysis.spectrum":
         await focusPanel("spectrum");
+        break;
+      case "analysis.interactive":
+        await showTool("interactive");
         break;
       case "analysis.details":
         await showTool("analysis");
@@ -745,7 +854,7 @@ export default function App() {
     let unlisten: (() => void) | undefined;
     void getCurrentWindow()
       .onCloseRequested(async (event) => {
-        if (working.current) {
+        if (working.current || saveResolver.current) {
           event.preventDefault();
           setNotice("正在处理，请完成后再关闭工作台");
           return;
@@ -1273,6 +1382,19 @@ export default function App() {
             )}
           </section>
         </div>
+      )}
+      {savePrompt && (
+        <SaveProjectDialog
+          initial={savePrompt.initial}
+          copy={savePrompt.copy}
+          folder={workspace?.root || "Workspace"}
+          finish={(name) => {
+            const resolve = saveResolver.current;
+            saveResolver.current = null;
+            setSavePrompt(null);
+            resolve?.(name);
+          }}
+        />
       )}
       {confirmation && (
         <UnsavedDialog

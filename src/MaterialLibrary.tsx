@@ -702,6 +702,11 @@ export default function MaterialLibrary({
           )}
         </aside>
       </div>
+      <p className="catalogue-hint">
+        每种材料独立保存为 .material.json；基底位于
+        materials/substrates。外部修改文件后，请用“导入
+        JSON”校验并载入，再保存到共享库。原始目录保持只读，修改时创建自定义副本。
+      </p>
       <footer className="catalogue-footer">
         ¹ 列表 n 为数据预览值。选入项目后，计算使用完整
         n/k，光学膜厚按参考波长求值。↑↓ 选择 · Enter / 双击应用

@@ -20,8 +20,8 @@ function engineDevBridge(): Plugin {
         const origin = req.headers.origin;
         if (
           origin &&
-          origin !== "http://127.0.0.1:1420" &&
-          origin !== "http://localhost:1420"
+          origin !== `http://127.0.0.1:${server.config.server.port}` &&
+          origin !== `http://localhost:${server.config.server.port}`
         ) {
           res.statusCode = 403;
           res.end();
