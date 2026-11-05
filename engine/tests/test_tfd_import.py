@@ -73,3 +73,9 @@ class RealTFDAdapterTests(unittest.TestCase):
         self.assertEqual(backwards['settings']['first_surface'],'back')
         self.assertIn('背面照射',engine.calculate(backwards)['model'])
         with self.assertRaises(ValueError):parse_tfd(source.replace('*WHITE*IDEAL*1*','*D65*IDEAL*1*'),fixture())
+
+    def test_backside_without_bulk_environment_is_never_defaulted(self):
+        source=text(exit_medium='AIR').replace('LAYERS2*0*','LAYERS2*1*\nLAYER2*1*SIO2*1*80*0*1*')
+        source='\n'.join(line for line in source.splitlines() if not line.startswith('ENVIRON3*'))
+        with self.assertRaisesRegex(ValueError,'不能默认补造'):
+            parse_tfd(source,fixture())

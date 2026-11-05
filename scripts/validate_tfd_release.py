@@ -20,7 +20,7 @@ with tempfile.TemporaryDirectory(prefix='tfc-tfd-') as folder:
  rear=call({'action':'import_tfd','text':rear_source,'template':{'materials':[]}})['project']
  assert rear['back_layers'][0]['thickness_nm']==100 and rear['settings']['substrate_model']=='incoherent'
  call({'action':'calculate','project':rear})
- for text in [source.replace('ENVIRON3*1*K9','ENVIRON3*1*UNKNOWN'),source.replace('LAYERS2*0','LAYERS2*1'),source.replace('LAYER*1*SIO2','LAYER*1*UNKNOWN')]:
+ for text in [source.replace('ENVIRON3*1*K9','ENVIRON3*1*UNKNOWN'),source.replace('LAYERS2*0','LAYERS2*1'),source.replace('LAYER*1*SIO2','LAYER*1*UNKNOWN'),'\n'.join(line for line in rear_source.splitlines() if not line.startswith('ENVIRON3*'))]:
   assert 'error' in call({'action':'import_tfd','text':text,'template':{'materials':[]}})
  call({'action':'workspace_info'},True);call({'action':'save','project':p})
  target=Path(folder)/'搬迁后';shutil.move(workspace,target);workspace=target

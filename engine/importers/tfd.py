@@ -54,6 +54,8 @@ def inspect_tfd(text, template, name='', encoding='unicode'):
             if len(e3)<6:raise ValueError('ENVIRON3 字段不完整')
             if e3[5] not in ('1','2'):issue('first_surface','第一表面字段必须为 1（Front）或 2（Back）')
             if e3[3]!='WHITE' or e3[4]!='IDEAL':issue('response_data','需要原文件光源/探测器的完整响应数据，不能自动替换为 WHITE/IDEAL')
+        if not e3 and records.get('LAYER2'):
+            issue('environment','背面膜系缺少 ENVIRON3 中的基底厚度和出射介质；不能默认补造有限基底环境')
         legacy=bool(rows) and all(len(r)>2 and r[2].endswith('_REF') for r in rows)
         snapshots={m['name']:m for m in template.get('materials',[])}
         resolved={};mapping=[]
