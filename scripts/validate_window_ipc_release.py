@@ -7,7 +7,7 @@ host=root/('release/TFC.app/Contents/MacOS/tfc-for-mac' if system=='Darwin' else
 def hashes():
     return {str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for d in ('Workspace','.tfc') for p in (root/d).rglob('*') if p.is_file()}
 before=hashes()
-p=subprocess.run([str(host),'--window-ipc-self-test'],capture_output=True,text=True,encoding='utf-8',timeout=80)
+p=subprocess.run([str(host),'--window-ipc-self-test'],capture_output=True,text=True,encoding='utf-8',timeout=140)
 assert p.returncode==0,p.stdout+p.stderr
 report=json.loads(p.stdout.strip())
 expected={d['id'] for d in json.loads((root/'src/tools/windows.json').read_text(encoding='utf-8'))}

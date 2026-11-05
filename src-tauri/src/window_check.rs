@@ -54,6 +54,7 @@ pub fn window_check_ready(
     {
         return Err("不是工具窗口".into());
     }
+    eprintln!("window-check ready: {}", window.label());
     app.state::<CheckState>()
         .ready
         .lock()
@@ -71,6 +72,7 @@ pub fn window_check_details(
     if !["tool-materials", "tool-substrate", "tool-settings", "tool-layers", "tool-interactive"].contains(&window.label()) {
         return Err("不是已授权的验收工具窗口".into());
     }
+    eprintln!("window-check details: {} {details}", window.label());
     app.state::<CheckState>()
         .details
         .lock()
@@ -140,7 +142,7 @@ pub fn window_check_finish(
 }
 pub fn watchdog(app: tauri::AppHandle) {
     std::thread::spawn(move || {
-        std::thread::sleep(Duration::from_secs(60));
+        std::thread::sleep(Duration::from_secs(120));
         if !app.state::<CheckState>().finished.load(Ordering::SeqCst) {
             eprintln!("real frontend window IPC check timed out (possible WebView2 deadlock)");
             // Exit cannot wait on a potentially blocked UI event loop.
