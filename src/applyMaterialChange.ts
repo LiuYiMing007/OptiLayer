@@ -17,9 +17,9 @@ export function applyMaterialChange(
   replaceMaterial(next, material);
   if (next.materials.length > 300) throw Error("单个项目最多 300 种材料");
   if (replaces !== material.name) {
-    for (const l of next.layers)
+    for (const l of [...next.layers, ...(next.back_layers || [])])
       if (l.material === replaces) l.material = material.name;
-    for (const kind of ["incident", "substrate"] as const)
+    for (const kind of ["incident", "substrate", "exit"] as const)
       if (next.settings[`${kind}_material`] === replaces)
         next.settings[`${kind}_material`] = material.name;
   }

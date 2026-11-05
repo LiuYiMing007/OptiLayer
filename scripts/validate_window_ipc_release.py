@@ -13,6 +13,7 @@ report=json.loads(p.stdout.strip())
 expected={d['id'] for d in json.loads((root/'src/tools/windows.json').read_text(encoding='utf-8'))}
 assert report['all_pass'] and set(report['main_button_ipc'])==expected and set(report['menu_command_ipc'])==expected,report
 assert report['catalogue_without_workspace'] and report['material_and_substrate_editors'],report
+assert report['environment_controls_shared_state'] and report['back_layer_controls_shared_state'] and report['interactive_controls_shared_state'],report
 assert report['shared_project_rendered'] and report['close_hide_reopen'] and not report['workspace_used'],report
 assert before==hashes(),'window IPC check touched Workspace/layout'
 report.update(version=json.loads((root/'package.json').read_text())['version'],limits='Real frontend IPC and React tool rendering; does not simulate physical mouse clicks on native OS menus or validate display scaling.')

@@ -10,7 +10,14 @@ export default function InteractiveAnalysis({
   send: (a: ToolIntent) => Promise<void>;
 }) {
   const [kind, setKind] = useState<InteractiveTarget["kind"]>("physical");
-  const [layerId, setLayer] = useState(s.project.layers[s.selected]?.id || "");
+  const [layerId, setLayer] = useState(
+    (s.layerSide === "back" ? s.project.back_layers : s.project.layers)?.[
+      s.selected
+    ]?.id ||
+      s.project.layers[0]?.id ||
+      s.project.back_layers?.[0]?.id ||
+      "",
+  );
   const [step, setStep] = useState(1);
   const [value, setValue] = useState(0);
   const [original, setOriginal] = useState(0);
@@ -79,9 +86,11 @@ export default function InteractiveAnalysis({
     pending ||
     s.busy ||
     ((kind === "physical" || kind === "qwot") &&
-      !s.project.layers.some((l) => l.id === layerId));
+      ![...s.project.layers, ...(s.project.back_layers || [])].some(
+        (l) => l.id === layerId,
+      ));
   return (
-    <div className="interactive-analysis">
+    <div className="interactive-analysis" data-target-kind={kind}>
       <div className="panel-heading">
         <h2>交互式调膜</h2>
         <span>
@@ -108,7 +117,7 @@ export default function InteractiveAnalysis({
         >
           <option value="physical">膜层物理厚度（nm）</option>
           <option value="qwot">膜层 ¼ 波光学厚度（QWOT）</option>
-          <option value="scale">整组膜系厚度系数</option>
+          <option value="scale">正背面整体厚度系数</option>
           <option value="angle">入射角（°）</option>
         </select>
       </label>
@@ -120,12 +129,17 @@ export default function InteractiveAnalysis({
             value={layerId}
             onChange={(e) => setLayer(e.target.value)}
           >
-            {s.project.layers.map((l, i) => (
-              <option key={l.id} value={l.id}>
-                第 {i + 1} 层 · {l.material} · {l.thickness_nm.toPrecision(7)}{" "}
-                nm
-              </option>
-            ))}
+            {[...s.project.layers, ...(s.project.back_layers || [])].map(
+              (l, i) => (
+                <option key={l.id} value={l.id}>
+                  {i < s.project.layers.length ? "正面" : "背面"}第{" "}
+                  {i < s.project.layers.length
+                    ? i + 1
+                    : i - s.project.layers.length + 1}{" "}
+                  层 · {l.material} · {l.thickness_nm.toPrecision(7)} nm
+                </option>
+              ),
+            )}
           </select>
         </label>
       )}
@@ -199,7 +213,9 @@ export default function InteractiveAnalysis({
         disabled={
           s.busy ||
           ((kind === "physical" || kind === "qwot") &&
-            !s.project.layers.some((l) => l.id === layerId))
+            ![...s.project.layers, ...(s.project.back_layers || [])].some(
+              (l) => l.id === layerId,
+            ))
         }
         onChange={(e) => void preview(Number(e.target.value))}
       />

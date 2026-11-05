@@ -1,0 +1,28 @@
+{
+  "version": "0.2.3-dev.2",
+  "files": 812,
+  "tfd": 771,
+  "decoded_legacy": 16,
+  "imported": 767,
+  "blocked": 4,
+  "computed": 767,
+  "calculation_blocked": 0,
+  "saved_reloaded_exact": 767,
+  "issue_counts_nonexclusive": {
+    "material": 4
+  },
+  "original_hashes_unchanged": true,
+  "limits": "Private isolated-copy migration and exact recalculation; independent formula validation is separate. Not original TFCalc per-design output equivalence. No original designs or database are published.",
+  "archived_original_files": 812,
+  "project_format_counts": {
+    "1": 621,
+    "2": 146
+  },
+  "model_counts": {
+    "semi_infinite": 621,
+    "incoherent": 146
+  },
+  "spectral_points_checked": 537707,
+  "max_energy_error_fraction": 8.060219158778636e-14,
+  "original_archive_entries_identical": true
+}

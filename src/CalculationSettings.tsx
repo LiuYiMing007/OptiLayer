@@ -1,3 +1,4 @@
+import EnvironmentSettings from "./EnvironmentSettings";
 import CommitNumber from "./CommitNumber";
 import { synchronizeBoundaries } from "./model";
 import type { Polarization, Project, Settings } from "./types";
@@ -22,7 +23,8 @@ export default function CalculationSettings({
     p.materials.filter(
       (m) =>
         m.role === "all" ||
-        m.role === (kind === "incident" ? "medium" : "substrate") ||
+        m.role === "medium" ||
+        m.role === "substrate" ||
         m.name === p.settings[`${kind}_material`],
     );
   return (
@@ -103,6 +105,7 @@ export default function CalculationSettings({
           <span />
         </div>
       </fieldset>
+      <EnvironmentSettings project={p} update={update} busy={busy} />
       <p className="engineering-help">
         Enter / Tab 提交，Esc
         取消。有效参数提交后自动更新光谱。修改参考波长保持物理膜厚。

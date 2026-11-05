@@ -1,9 +1,11 @@
+import { materialAt } from "./materials";
 import { useLayoutEffect, useRef, useState } from "react";
 import type { LayerCommand } from "./layerCommands";
 import { gridValue, moveCell, pasteGrid, type GridCell } from "./layerGrid";
 import type { Project } from "./types";
 let restoreGridFocus: GridCell | null = null;
 interface Props {
+  surface?: "front" | "back";
   command: (id: LayerCommand, index?: number) => void;
   project: Project;
   busy: boolean;
@@ -17,6 +19,7 @@ interface Props {
 }
 export default function LayerEditor({
   project: p,
+  surface = "front",
   busy,
   selected,
   setSelected,
@@ -46,6 +49,14 @@ export default function LayerEditor({
   const originalDraft = useRef("");
   const selectDraft = useRef(true);
   const root = useRef<HTMLDivElement>(null);
+  const outsideName =
+    surface === "back"
+      ? p.settings.exit_material || p.settings.substrate_material
+      : p.settings.incident_material;
+  const outside = p.materials.find((m) => m.name === outsideName);
+  const outsideN = outside
+    ? materialAt(outside, p.settings.reference_nm)[0]
+    : NaN;
   const rows = p.layers.length;
   const structure = p.layers.map((l) => l.id).join("|");
   const previousStructure = useRef(structure);
@@ -250,8 +261,9 @@ export default function LayerEditor({
         <span className="toolbar-meta">{rows} 层</span>
       </div>
       <div className="engineering-boundary">
-        入射：{p.settings.incident_material}{" "}
-        <span>n = {p.settings.incident_n}　↓ 光入射方向</span>
+        {surface === "back" ? "背面外侧" : "正面外侧"}：
+        {outside?.display_name || outsideName}{" "}
+        <span>n = {Number(outsideN.toPrecision(7))}　↓ 朝向基底</span>
       </div>
       {error && (
         <div role="alert" className="grid-error">
@@ -452,7 +464,12 @@ export default function LayerEditor({
         基底：
         {p.materials.find((m) => m.name === p.settings.substrate_material)
           ?.display_name || p.settings.substrate_material}
-        <span>n = {p.settings.substrate_n}　不含背面反射</span>
+        <span>
+          n = {p.settings.substrate_n}　
+          {(p.settings.substrate_model || "semi_infinite") === "semi_infinite"
+            ? "半无限基底"
+            : `${p.settings.substrate_thickness_mm} mm · ${p.settings.substrate_model === "coherent" ? "相干" : "非相干"}`}
+        </span>
       </div>
       <footer className="engineering-grid-status">
         <span>

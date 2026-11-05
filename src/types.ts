@@ -38,7 +38,17 @@ export interface Layer {
   material: string;
   thickness_nm: number;
 }
+export interface SpectralResponse {
+  name: string;
+  samples: [number, number][];
+}
 export interface Settings {
+  substrate_model?: "semi_infinite" | "incoherent" | "coherent";
+  substrate_thickness_mm?: number;
+  exit_material?: string;
+  first_surface?: "front" | "back";
+  illuminant?: string;
+  detector?: string;
   start_nm: number;
   end_nm: number;
   step_nm: number;
@@ -64,6 +74,11 @@ export interface TargetPoint {
   R_percent?: number;
 }
 export interface Project {
+  back_layers?: Layer[];
+  response_data?: {
+    illuminants?: SpectralResponse[];
+    detectors?: SpectralResponse[];
+  };
   import_info?: {
     format: "TFCalc";
     file_name: string;
@@ -71,6 +86,7 @@ export interface Project {
     text_sha256: string;
     materials: { role: string; original: string; resolved: string }[];
     source_layers: {
+      side?: "front" | "back";
       index: number;
       material: string;
       physical_nm: number;
@@ -79,7 +95,7 @@ export interface Project {
     }[];
     notes: string[];
   };
-  schema_version: 1;
+  schema_version: 1 | 2;
   id: string;
   name: string;
   layer_order: "substrate_to_air";
@@ -136,6 +152,11 @@ export interface RTPoint {
   energy_error: number;
 }
 export interface Spectrum {
+  response_weight?: number[];
+  weighted_T_percent?: number[];
+  weighted_R_percent?: number[];
+  weighted_A_percent?: number[];
+  response_label?: string;
   wavelength_nm: number[];
   R_percent: number[];
   T_percent: number[];

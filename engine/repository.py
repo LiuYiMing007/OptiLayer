@@ -112,7 +112,7 @@ def storage_action(workspace, request):
                 spectrum=request['spectrum']
                 def optical_input(p):
                     p=validate(p)
-                    return {field:p[field] for field in ('settings','materials','layers','layer_order')}
+                    return {**{field:p[field] for field in ('settings','materials','layers','layer_order')},'back_layers':p.get('back_layers',[]),'response_data':p.get('response_data',{})}
                 if optical_input(json.loads(stored[0])) != optical_input(spectrum['input_snapshot']):
                     raise ValueError('数据库项目已修改，未保存过期光谱')
                 if validate(spectrum['input_snapshot']) != validate(request['project']):

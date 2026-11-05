@@ -47,3 +47,15 @@ test("invalid inputs, stale layers and overflowing thicknesses are rejected", ()
   );
   assert.throws(() => interactiveProject(project(), { kind: "scale" }, 1e308));
 });
+
+test("back-face tuning and whole-stack scale keep both surfaces attached", () => {
+  const p = project();
+  p.back_layers = [{ id: "rear", material: "H", thickness_nm: 80 }];
+  const next = interactiveProject(p, { kind: "physical", layerId: "rear" }, 90);
+  assert.equal(next.back_layers![0].thickness_nm, 90);
+  assert.deepEqual(next.layers, p.layers);
+  assert.equal(
+    interactiveProject(p, { kind: "scale" }, 1.5).back_layers![0].thickness_nm,
+    120,
+  );
+});

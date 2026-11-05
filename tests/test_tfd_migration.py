@@ -16,7 +16,7 @@ class TFDMigrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             source=Path(t)/'original';source.mkdir();output=Path(t)/'converted'
             (source/'good.tfd').write_bytes(SOURCE.encode())
-            (source/'blocked.tfd').write_bytes(SOURCE.replace('ENVIRON3*1*K9','ENVIRON3*1*AIR').encode())
+            (source/'blocked.tfd').write_bytes(SOURCE.replace('ENVIRON3*1*K9','ENVIRON3*1*MISSING').encode())
             (source/'notes.txt').write_bytes(b'original notes')
             before={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in source.iterdir()}
             summary=module.audit(source,output,compute=True,convert=True)

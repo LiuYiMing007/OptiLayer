@@ -40,7 +40,7 @@ def dispatch(request, workspace=None):
     if action=='analyze':return analyze_spectrum(request['spectrum'],request.get('bands'))
     if action=='validate':return {'project':validate(request['project'])}
     if action=='import_tfd':
-        return {'project':parse_tfd(request['text'],request['template'],request.get('name',''),request.get('encoding','unicode')),'warning':'TFD 已导入当前单面膜系；组系数已计入厚度。完整来源和未导入设置见项目窗口的导入记录。'}
+        return {'project':parse_tfd(request['text'],request['template'],request.get('name',''),request.get('encoding','unicode')),'warning':'TFD 已导入正面/背面膜系和计算环境；组系数已计入厚度。完整来源和未导入设置见项目窗口的导入记录。'}
     if action=='workspace_copy':
         import os
         target=os.environ.get('TFC_WORKSPACE_ROOT')

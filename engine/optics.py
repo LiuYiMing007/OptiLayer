@@ -52,12 +52,17 @@ def _constant_lossless_rt(project, wavelengths, polarization):
 
 
 def active_materials(project):
-    names={layer['material'] for layer in project['layers']}
+    names={layer['material'] for layer in project['layers']+project.get('back_layers',[])}
+    if project['settings'].get('substrate_model','semi_infinite') != 'semi_infinite':
+        names.add(project['settings'].get('exit_material',project['settings']['substrate_material']))
     names.update(project['settings'][kind+'_material'] for kind in ('incident','substrate'))
     return [m for m in project['materials'] if m['name'] in names]
 
 
 def _polarized_rt(project, wavelengths, polarization):
+    if project['settings'].get('substrate_model','semi_infinite') != 'semi_infinite' or project['settings'].get('first_surface','front') == 'back':
+        from finite_substrate import environment_rt
+        return environment_rt(project,wavelengths,polarization)
     active=active_materials(project)
     if all(m.get('model','constant')=='constant' and m.get('k',0)==0 for m in active):
         return _constant_lossless_rt(project,wavelengths,polarization)
@@ -107,7 +112,17 @@ def material_notes(project,wavelengths):
             if np.min(wavelengths)<lo or np.max(wavelengths)>hi:
                 notes.append(f"{m['name']}：表范围 {lo:g}–{hi:g} nm，范围外采用最近端点（TFCalc 规则）")
         notes.extend(f"{m['name']}：{issue}" for issue in m.get('issues',[]))
+    if project['settings'].get('substrate_model') == 'coherent':
+        notes.append('相干基底可能产生窄干涉条纹；采样步长须能解析条纹，厚度不能单独决定相干性。')
     return notes
+
+
+def environment_label(project):
+    s=project['settings']; mode=s.get('substrate_model','semi_infinite')
+    if mode=='semi_infinite':
+        return '半无限基底，不含背面' + (' · 背面照射' if s.get('first_surface')=='back' else '')
+    label='非相干厚基底，含背面多次反射' if mode=='incoherent' else '相干基底，含基底干涉'
+    return f"{label} · {float(s['substrate_thickness_mm']):g} mm · {'背面' if s.get('first_surface')=='back' else '正面'}照射"
 
 
 def calculate_spectrum(project):
@@ -123,13 +138,18 @@ def calculate_spectrum(project):
     absorbing = any(np.any(optical_constants(m,wavelengths)[1] > 0) for m in active_materials(p))
     errors = np.maximum(-absorption, 0) if absorbing else np.abs(absorption)
     label = {'s':'S', 'p':'P', 'unpolarized':'非偏振 (S/P 平均)'}[pol]
-    return {'wavelength_nm': wavelengths.tolist(), 'R_percent':(100*r).tolist(), 'T_percent':(100*t).tolist(),
+    result = {'wavelength_nm': wavelengths.tolist(), 'R_percent':(100*r).tolist(), 'T_percent':(100*t).tolist(),
             'A_percent':(100*absorption).tolist(), 'Rs_percent':(100*rs).tolist(), 'Rp_percent':(100*rp).tolist(),
             'Ts_percent':(100*ts).tolist(), 'Tp_percent':(100*tp).tolist(),
             'energy_error':errors.tolist(), 'max_energy_error':float(np.max(errors)),
             'absorbing':bool(absorbing), 'warnings':material_notes(p,wavelengths),
             'energy_check':'passivity_violation' if absorbing else 'lossless_residual',
-            'model':f"{s['angle_deg']:g}° · {label} · {'色散 / 吸收 n,k' if any(m.get('model') != 'constant' or m.get('k',0) != 0 for m in active_materials(p)) else '常数 n / k=0'} · 半无限基底，不含背面", 'input_snapshot':p}
+            'model':f"{s['angle_deg']:g}° · {label} · {'色散 / 吸收 n,k' if any(m.get('model') != 'constant' or m.get('k',0) != 0 for m in active_materials(p)) else '常数 n / k=0'} · {environment_label(p)}", 'input_snapshot':p}
+    if s.get('illuminant','WHITE') != 'WHITE' or s.get('detector','IDEAL') != 'IDEAL':
+        from responses import response_weights
+        weights = response_weights(p,wavelengths)
+        result.update(response_weight=weights.tolist(), weighted_R_percent=(100*r*weights).tolist(), weighted_T_percent=(100*t*weights).tolist(), weighted_A_percent=(100*absorption*weights).tolist(), response_label=f"{s.get('illuminant','WHITE')} × {s.get('detector','IDEAL')}")
+    return result
 
 
 def calculate_rt(project, wavelength_nm, polarization=None):

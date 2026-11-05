@@ -24,6 +24,7 @@ export interface ToolSnapshot {
   scope: string;
   project: Project;
   selected: number;
+  layerSide?: "front" | "back";
   busy: boolean;
   calculating: boolean;
   dirty: boolean;
@@ -41,6 +42,7 @@ export interface ToolSnapshot {
 export type Patch =
   | {
       kind: "layer";
+      side?: "front" | "back";
       id: string;
       field: "material" | "thickness_nm";
       expected: unknown;
@@ -60,7 +62,7 @@ export type Patch =
     }
   | {
       kind: "property";
-      field: "name" | "analysis_bands" | "target_points";
+      field: "name" | "analysis_bands" | "target_points" | "response_data";
       expected: unknown;
       value: unknown;
     };
@@ -75,6 +77,7 @@ export type ToolAction = { scope: string; requestId: string } & (
     }
   | { kind: "command"; id: string }
   | { kind: "select"; layerId: string }
+  | { kind: "layer-side"; side: "front" | "back" }
   | {
       kind: "layer";
       command:
@@ -148,30 +151,37 @@ function mergeIntent(
 }
 export const patchKey = (p: Patch) =>
   p.kind === "layer"
-    ? `layer:${p.id}:${p.field}`
+    ? `layer:${p.side || "front"}:${p.id}:${p.field}`
     : p.kind === "material"
       ? `material:${p.name}`
       : `${p.kind}:${p.field}`;
 export function patchesBetween(before: Project, after: Project): Patch[] {
   const patches: Patch[] = [];
-  if (
-    !equal(
-      before.layers.map((l) => l.id),
-      after.layers.map((l) => l.id),
+  for (const side of ["front", "back"] as const) {
+    const previousLayers =
+      side === "front" ? before.layers : before.back_layers || [];
+    const nextLayers =
+      side === "front" ? after.layers : after.back_layers || [];
+    if (
+      !equal(
+        previousLayers.map((l) => l.id),
+        nextLayers.map((l) => l.id),
+      )
     )
-  )
-    throw new Error("膜层增删排序请使用膜层命令");
-  for (const layer of after.layers) {
-    const previous = before.layers.find((l) => l.id === layer.id)!;
-    for (const field of ["material", "thickness_nm"] as const)
-      if (!equal(previous[field], layer[field]))
-        patches.push({
-          kind: "layer",
-          id: layer.id,
-          field,
-          expected: previous[field],
-          value: layer[field],
-        });
+      throw new Error("膜层增删排序请使用膜层命令");
+    for (const layer of nextLayers) {
+      const previous = previousLayers.find((l) => l.id === layer.id)!;
+      for (const field of ["material", "thickness_nm"] as const)
+        if (!equal(previous[field], layer[field]))
+          patches.push({
+            kind: "layer",
+            ...(side === "back" ? { side } : {}),
+            id: layer.id,
+            field,
+            expected: previous[field],
+            value: layer[field],
+          });
+    }
   }
   for (const material of after.materials) {
     const previous = before.materials.find((m) => m.name === material.name);
@@ -193,7 +203,12 @@ export function patchesBetween(before: Project, after: Project): Patch[] {
         expected: before.settings[field],
         value: after.settings[field],
       });
-  for (const field of ["name", "analysis_bands", "target_points"] as const)
+  for (const field of [
+    "name",
+    "analysis_bands",
+    "target_points",
+    "response_data",
+  ] as const)
     if (!equal(before[field], after[field]))
       patches.push({
         kind: "property",
@@ -218,14 +233,24 @@ export function applyPatches(
     throw new Error("编辑命令为空或过大");
   if (patches.some((p) => hasNonFinite(p.value)))
     throw new Error("编辑值必须是有效数值");
-  const allowedSettings = new Set(Object.keys(project.settings));
+  const allowedSettings = new Set([
+    ...Object.keys(project.settings),
+    "substrate_model",
+    "substrate_thickness_mm",
+    "exit_material",
+    "first_surface",
+    "illuminant",
+    "detector",
+  ]);
   // Check every precondition against the original state before changing anything.
   for (const patch of patches) {
     let actual: unknown;
     if (patch.kind === "layer") {
       if (!["material", "thickness_nm"].includes(patch.field))
         throw new Error("膜层字段无效");
-      const layer = project.layers.find((l) => l.id === patch.id);
+      const layer = (
+        patch.side === "back" ? project.back_layers || [] : project.layers
+      ).find((l) => l.id === patch.id);
       if (!layer) throw new Error("该膜层已删除，请使用最新内容");
       actual = layer[patch.field];
       if (
@@ -263,7 +288,9 @@ export function applyPatches(
         throw new Error("计算参数必须是有效数值");
     } else if (
       patch.kind === "property" &&
-      ["name", "analysis_bands", "target_points"].includes(patch.field)
+      ["name", "analysis_bands", "target_points", "response_data"].includes(
+        patch.field,
+      )
     )
       actual = project[patch.field] ?? null;
     else throw new Error("不支持的编辑命令");
@@ -274,7 +301,9 @@ export function applyPatches(
   for (const patch of patches) {
     if (patch.kind === "layer")
       Object.assign(
-        next.layers.find((l) => l.id === patch.id)!,
+        (patch.side === "back" ? next.back_layers || [] : next.layers).find(
+          (l) => l.id === patch.id,
+        )!,
         { [patch.field]: patch.value },
       );
     else if (patch.kind === "material") {

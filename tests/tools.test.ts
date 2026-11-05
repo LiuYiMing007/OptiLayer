@@ -220,3 +220,40 @@ test("queued material metadata and band edits preserve earlier edits from the sa
     { passband: { start_nm: 450, end_nm: 650 } },
   );
 });
+
+test("back-side patches preserve the front face and conflict independently", () => {
+  const p = project();
+  p.back_layers = [
+    { id: "rear", material: p.layers[0].material, thickness_nm: 80 },
+  ];
+  const next = structuredClone(p);
+  next.back_layers![0].thickness_nm = 85;
+  const changes = patchesBetween(p, next);
+  assert.equal(changes[0].kind, "layer");
+  const result = applyPatches(p, changes);
+  assert.equal(result.back_layers![0].thickness_nm, 85);
+  assert.deepEqual(result.layers, p.layers);
+  assert.throws(() => applyPatches(result, changes), /已被其他操作/);
+});
+test("new environment settings and full response data travel through shared patches", () => {
+  const p = project(),
+    next = structuredClone(p);
+  next.settings.substrate_model = "incoherent";
+  next.settings.exit_material = p.settings.incident_material;
+  next.settings.substrate_thickness_mm = 1;
+  next.response_data = {
+    illuminants: [
+      {
+        name: "Lamp",
+        samples: [
+          [400, 50],
+          [700, 100],
+        ],
+      },
+    ],
+  };
+  next.settings.illuminant = "Lamp";
+  const result = applyPatches(p, patchesBetween(p, next));
+  assert.equal(result.settings.substrate_model, "incoherent");
+  assert.deepEqual(result.response_data, next.response_data);
+});

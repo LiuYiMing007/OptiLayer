@@ -91,6 +91,9 @@ export default function App() {
   const [confirmation, setConfirmation] = useState<
     ((answer: boolean) => void) | null
   >(null);
+  const [layerSide, setLayerSide] = useState<"front" | "back">("front");
+  const editingLayers =
+    layerSide === "front" ? project.layers : project.back_layers || [];
   const [past, setPast] = useState<Project[]>([]),
     [future, setFuture] = useState<Project[]>([]);
   const [focus, setFocus] = useState<
@@ -181,7 +184,16 @@ export default function App() {
     current.current = past.at(-1)!;
     setProject(current.current);
     setSelected((i) =>
-      Math.min(i, Math.max(0, current.current.layers.length - 1)),
+      Math.min(
+        i,
+        Math.max(
+          0,
+          (layerSide === "front"
+            ? current.current.layers
+            : current.current.back_layers || []
+          ).length - 1,
+        ),
+      ),
     );
     setPast((p) => p.slice(0, -1));
   }
@@ -196,7 +208,16 @@ export default function App() {
     current.current = future[0];
     setProject(current.current);
     setSelected((i) =>
-      Math.min(i, Math.max(0, current.current.layers.length - 1)),
+      Math.min(
+        i,
+        Math.max(
+          0,
+          (layerSide === "front"
+            ? current.current.layers
+            : current.current.back_layers || []
+          ).length - 1,
+        ),
+      ),
     );
     setFuture((f) => f.slice(1));
   }
@@ -303,7 +324,18 @@ export default function App() {
     if (working.current || confirmation) return;
     let nextSelected = index;
     update((next) => {
-      nextSelected = changeLayer(next, index, id, () => crypto.randomUUID());
+      if (layerSide === "back") {
+        if (
+          (next.settings.substrate_model || "semi_infinite") === "semi_infinite"
+        )
+          throw new Error("请先在计算参数中启用有限厚基底，再编辑背面膜层");
+        const projection = { ...next, layers: next.back_layers || [] };
+        nextSelected = changeLayer(projection, index, id, () =>
+          crypto.randomUUID(),
+        );
+        next.back_layers = projection.layers;
+      } else
+        nextSelected = changeLayer(next, index, id, () => crypto.randomUUID());
     });
     setSelected(nextSelected);
   }
@@ -313,6 +345,7 @@ export default function App() {
     scope,
     project,
     selected,
+    layerSide,
     busy: busy || !!confirmation || !!modal,
     calculating,
     dirty,
@@ -504,16 +537,26 @@ export default function App() {
       commit(next, false);
       return;
     }
+    if (action.kind === "layer-side") {
+      setLayerSide(action.side);
+      setSelected(0);
+      return;
+    }
     if (action.kind === "select") {
-      const index = current.current.layers.findIndex(
-        (l) => l.id === action.layerId,
-      );
+      const index = (
+        layerSide === "front"
+          ? current.current.layers
+          : current.current.back_layers || []
+      ).findIndex((l) => l.id === action.layerId);
       if (index >= 0) setSelected(index);
       return;
     }
     if (action.kind === "layer") {
       const index = action.layerId
-        ? current.current.layers.findIndex((l) => l.id === action.layerId)
+        ? (layerSide === "front"
+            ? current.current.layers
+            : current.current.back_layers || []
+          ).findIndex((l) => l.id === action.layerId)
         : selected;
       if (index < 0 && action.command !== "layer.add")
         throw new Error("该膜层已删除");
@@ -574,11 +617,10 @@ export default function App() {
     workspace: !!workspace && !workspaceError,
     canUndo: !!past.length,
     canRedo: !!future.length,
-    hasLayer: !!project.layers[selected],
-    canAdd: project.layers.length < 500,
-    canMoveUp:
-      !!project.layers[selected] && selected < project.layers.length - 1,
-    canMoveDown: !!project.layers[selected] && selected > 0,
+    hasLayer: !!editingLayers[selected],
+    canAdd: editingLayers.length < 500,
+    canMoveUp: !!editingLayers[selected] && selected < editingLayers.length - 1,
+    canMoveDown: !!editingLayers[selected] && selected > 0,
     validSpectrum: !!spectrum && !stale,
     panels,
   });
@@ -904,6 +946,7 @@ export default function App() {
     current.current = p;
     setProject(p);
     setSelected(0);
+    setLayerSide("front");
     setPast([]);
     setFuture([]);
     setSpectrum(null);
@@ -1022,7 +1065,11 @@ export default function App() {
             <strong title={project.name}>{project.name}</strong>
             <small>
               {dirty ? "未保存" : persisted ? "已保存" : "新项目 · 未修改"} ·{" "}
-              {workspace?.name || "未选择工作区"} · {project.layers.length} 层
+              {workspace?.name || "未选择工作区"} · 正面 {project.layers.length}{" "}
+              层
+              {project.back_layers?.length
+                ? ` / 背面 ${project.back_layers.length} 层`
+                : ""}
             </small>
           </div>
         </div>
@@ -1373,9 +1420,11 @@ export default function App() {
                   <BookOpen size={18} />
                   <p>
                     当前支持各向同性常数、色散及吸收 n/k
-                    的单面相干膜层模型。尚不支持各向异性、基底背面及非相干厚基底；TFD
-                    只读取参考子集。A
-                    为膜系吸收；无吸收时为数值残差。材料记录保留来源。
+                    计算，支持半无限基底、有限厚非相干基底和相干基底；正背面膜层可分别编辑。照射方向由第一表面指定。
+                    A
+                    为薄膜及有限基底的吸收，无吸收时为数值残差。光源/探测器响应与本征
+                    T/R/A 分离。 尚不支持各向异性、增益和缺少完整定义的 TFCalc
+                    混合/可变材料。
                   </p>
                 </div>
               </div>

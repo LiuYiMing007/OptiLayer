@@ -7,6 +7,7 @@ export interface ChartOptions {
   R: boolean;
   A: boolean;
   sp: boolean;
+  weighted?: boolean;
   yMode: "auto" | "full";
 }
 export default function SpectrumChart({
@@ -64,18 +65,31 @@ export default function SpectrumChart({
       });
       values = values.concat(y);
     }
+    const weighted = !!options.weighted && !!spectrum?.response_weight;
     if (spectrum) {
       const x = spectrum.wavelength_nm;
-      if (options.T) trace("T", x, spectrum.T_percent, curveStyle("T"));
-      if (options.R) trace("R", x, spectrum.R_percent, curveStyle("R"));
+      if (options.T)
+        trace(
+          weighted ? "T 响应" : "T",
+          x,
+          weighted ? spectrum.weighted_T_percent! : spectrum.T_percent,
+          curveStyle("T"),
+        );
+      if (options.R)
+        trace(
+          weighted ? "R 响应" : "R",
+          x,
+          weighted ? spectrum.weighted_R_percent! : spectrum.R_percent,
+          curveStyle("R"),
+        );
       if (options.A)
         trace(
           spectrum.absorbing ? "A（吸收）" : "A（数值残差）",
           x,
-          spectrum.A_percent,
+          weighted ? spectrum.weighted_A_percent! : spectrum.A_percent,
           curveStyle("A"),
         );
-      if (options.sp) {
+      if (options.sp && !weighted) {
         if (options.T) {
           trace("Ts", x, spectrum.Ts_percent, curveStyle("T", "computed", "s"));
           trace("Tp", x, spectrum.Tp_percent, curveStyle("T", "computed", "p"));
@@ -86,7 +100,7 @@ export default function SpectrumChart({
         }
       }
     }
-    if (targets.length) {
+    if (targets.length && !weighted) {
       const ts = targets.filter((p) => p.T_percent !== undefined),
         rs = targets.filter((p) => p.R_percent !== undefined);
       if (options.T && ts.length)
@@ -148,7 +162,10 @@ export default function SpectrumChart({
             : [400, 700],
         },
         yaxis: {
-          title: { text: "光谱 / %", font: { size: 12 } },
+          title: {
+            text: weighted ? "响应 / %" : "光谱 / %",
+            font: { size: 12 },
+          },
           range,
           gridcolor: chartTheme.grid,
           zeroline: false,

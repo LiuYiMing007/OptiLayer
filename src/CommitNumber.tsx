@@ -6,7 +6,9 @@ export default function CommitNumber({
   min,
   max,
   onChange,
+  disabled,
 }: {
+  disabled?: boolean;
   value: number;
   label: string;
   min?: number;
@@ -42,6 +44,7 @@ export default function CommitNumber({
   }
   return (
     <input
+      disabled={disabled}
       type="text"
       inputMode="decimal"
       aria-label={label}

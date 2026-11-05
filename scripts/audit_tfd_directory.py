@@ -63,7 +63,7 @@ def audit(source, output, compute=False, convert=False):
         entries.append(entry)
         if (index+1)%100==0:print(json.dumps({'checked':index+1,'total':len(files)}),flush=True)
     assert all(hashlib.sha256((source/p).read_bytes()).hexdigest()==h for p,h in before.items()),'Original files changed'
-    summary={**counts,'issue_counts_nonexclusive':issues,'original_hashes_unchanged':True,'limits':'Structural import and internal save/recalculation checks, not original TFCalc curve equivalence. No backside/bulk model or default-material substitution.'}
+    summary={**counts,'issue_counts_nonexclusive':issues,'original_hashes_unchanged':True,'limits':'Structural import and internal save/recalculation checks, not original TFCalc curve equivalence. Finite bulk and front/back coatings are retained; no default-material substitution. Unsupported materials, response data and special definitions stay blocked.'}
     if convert:
         archive=workspace.directory('imports')/'TFCalc-originals.zip'
         with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:

@@ -27,6 +27,20 @@ export function physicalThickness(
       : (value * reference) / (4 * n);
 }
 export function synchronizeBoundaries(p: Project): void {
+  if (
+    (p.settings.substrate_model || "semi_infinite") !== "semi_infinite" ||
+    p.back_layers?.length ||
+    p.settings.first_surface === "back" ||
+    (p.settings.illuminant && p.settings.illuminant !== "WHITE") ||
+    (p.settings.detector && p.settings.detector !== "IDEAL") ||
+    p.response_data
+  )
+    p.schema_version = 2;
+  if (
+    (p.settings.substrate_model || "semi_infinite") === "semi_infinite" &&
+    p.settings.exit_material !== undefined
+  )
+    p.settings.exit_material = p.settings.substrate_material;
   for (const kind of ["incident", "substrate"] as const) {
     const m = p.materials.find(
       (m) => m.name === p.settings[`${kind}_material`],
@@ -60,6 +74,8 @@ export const physicalSignature = (p: Project) =>
       settings: p.settings,
       materials: p.materials,
       layers: p.layers,
+      back_layers: p.back_layers || [],
+      response_data: p.response_data || {},
       layer_order: p.layer_order,
     }),
   );

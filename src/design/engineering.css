@@ -1191,3 +1191,59 @@
 .interactive-analysis .panel-heading {
   height: 28px;
 }
+.layer-face-workbench {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.layer-face-toolbar {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--eng-border);
+  align-items: center;
+}
+.layer-face-toolbar button {
+  border: 1px solid var(--eng-border);
+  border-radius: 3px;
+  padding: 3px 8px;
+  background: #fff;
+}
+.layer-face-toolbar button[aria-pressed="true"] {
+  background: #dceaf8;
+  border-color: #3978b8;
+}
+.layer-face-toolbar span {
+  color: #666;
+  font-size: 11px;
+  margin-left: auto;
+}
+.response-editor {
+  font-size: 12px;
+  margin: 8px 10px;
+}
+.response-editor label {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+.response-editor textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  font-family: monospace;
+  border: 1px solid #d8d8d8;
+}
+.response-mode-note {
+  margin: 0;
+  flex: none;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: #666;
+  border-bottom: 1px solid #d8d8d8;
+}

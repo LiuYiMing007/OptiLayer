@@ -1,3 +1,5 @@
+import { changeLayer } from "../layerCommands";
+import { interactiveProject } from "../interactiveModel";
 import { flushSync } from "react-dom";
 import { request } from "../api";
 import type { Material } from "../types";
@@ -5,12 +7,24 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { referenceProject } from "../defaults";
 import { useDesktopMenus } from "../menus/useDesktopMenus";
-import { toolDefinitions, type ToolId, type ToolSnapshot } from "./state";
+import {
+  applyPatches,
+  toolDefinitions,
+  type ToolId,
+  type ToolSnapshot,
+} from "./state";
 import { useToolHost } from "./useToolHost";
 interface Status {
   details?: Record<
     string,
-    { editor?: boolean; catalogue?: boolean; error?: string }
+    {
+      editor?: boolean;
+      catalogue?: boolean;
+      environment?: boolean;
+      interactive?: boolean;
+      back_layers?: boolean;
+      error?: string;
+    }
   >;
   ready: Record<string, string>;
   visible: Record<string, boolean>;
@@ -20,8 +34,11 @@ interface Status {
 // Reuses production IPC hooks and child React windows, with pure catalogue reads; never mounts App or opens a Workspace.
 export default function WindowIpcCheck() {
   const [library, setLibrary] = useState<Material[]>([]);
-  const [project] = useState(referenceProject),
+  const [project, setProject] = useState(referenceProject),
     [error, setError] = useState("");
+  const [layerSide, setLayerSide] = useState<"front" | "back">("front");
+  const currentProject = useRef(project);
+  currentProject.current = project;
   const sequence = useRef(0),
     started = useRef(false);
   const snapshot: ToolSnapshot = {
@@ -29,6 +46,7 @@ export default function WindowIpcCheck() {
     scope: "isolated-window-ipc-check",
     project,
     selected: 0,
+    layerSide,
     busy: false,
     calculating: false,
     dirty: false,
@@ -42,7 +60,30 @@ export default function WindowIpcCheck() {
     error: "",
     notice: "",
   };
-  const host = useToolHost(snapshot, async () => {}, setError);
+  const host = useToolHost(
+    snapshot,
+    async (_source, action) => {
+      let next = currentProject.current;
+      if (action.kind === "patch") next = applyPatches(next, action.patches);
+      if (action.kind === "layer-side") {
+        setLayerSide(action.side);
+        return;
+      }
+      if (action.kind === "layer") {
+        next = structuredClone(next);
+        if (layerSide === "back") {
+          const proxy = { ...next, layers: next.back_layers || [] };
+          changeLayer(proxy, 0, action.command, () => crypto.randomUUID());
+          next.back_layers = proxy.layers;
+        } else changeLayer(next, 0, action.command, () => crypto.randomUUID());
+      }
+      if (action.kind === "interactive" && action.phase === "preview")
+        next = interactiveProject(next, action.target, action.value);
+      currentProject.current = next;
+      setProject(next);
+    },
+    setError,
+  );
   const commands = Object.fromEntries(
     toolDefinitions.map((d) => [
       `view.${d.id}`,
@@ -81,16 +122,21 @@ export default function WindowIpcCheck() {
       material_and_substrate_editors: false,
     };
     async function until(predicate: (s: Status) => boolean) {
-      const end = Date.now() + 12000;
+      const end = Date.now() + 25000;
+      let last: Status | undefined;
       while (Date.now() < end) {
         if (latest.current.error) throw new Error(latest.current.error);
         const s = await invoke<Status>("window_check_status");
+        last = s;
         for (const d of Object.values(s.details || {}))
           if (d.error) throw new Error(d.error);
         if (predicate(s)) return s;
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
-      throw new Error("frontend IPC/render acknowledgement timed out");
+      throw new Error(
+        "frontend IPC/render acknowledgement timed out: " +
+          JSON.stringify(last),
+      );
     }
     void (async () => {
       const catalogue = await request<{ materials: Material[] }>({
@@ -130,6 +176,12 @@ export default function WindowIpcCheck() {
         );
         (report.menu_command_ipc as string[]).push(id);
       }
+      await until((s) => !!s.details?.["tool-settings"]?.environment);
+      report.environment_controls_shared_state = true;
+      await until((s) => !!s.details?.["tool-layers"]?.back_layers);
+      report.back_layer_controls_shared_state = true;
+      await until((s) => !!s.details?.["tool-interactive"]?.interactive);
+      report.interactive_controls_shared_state = true;
       // Exercise the native CloseRequested handler, not only the host's hide command.
       await invoke("window_check_close", { id: "layers" });
       await until((s) => !s.visible.layers && s.visible.settings);

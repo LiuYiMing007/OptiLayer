@@ -29,6 +29,10 @@ export default function ToolView({
       target?.focus();
     }
   }, [s.focus?.token, id]);
+  const layerProject =
+    s.layerSide === "back"
+      ? { ...s.project, layers: s.project.back_layers || [] }
+      : s.project;
   const importInfo = s.project.import_info;
   const showImportInfo =
     importInfo &&
@@ -88,27 +92,63 @@ export default function ToolView({
         <InteractiveAnalysis snapshot={s} send={dispatch} />
       )}
       {id === "layers" && (
-        <LayerEditor
-          project={s.project}
-          busy={s.busy}
-          selected={s.selected}
-          setSelected={(index) => {
-            const layer = s.project.layers[index];
-            if (layer) void send({ kind: "select", layerId: layer.id });
-          }}
-          update={update}
-          command={(command, index = s.selected) => {
-            void send({
-              kind: "layer",
-              command,
-              layerId: s.project.layers[index]?.id,
-            });
-          }}
-          undo={() => command("edit.undo")}
-          redo={() => command("edit.redo")}
-          canUndo={s.canUndo}
-          canRedo={s.canRedo}
-        />
+        <div className="layer-face-workbench">
+          <div className="layer-face-toolbar">
+            <button
+              aria-label="选择正面膜层"
+              aria-pressed={s.layerSide !== "back"}
+              onClick={() => void send({ kind: "layer-side", side: "front" })}
+            >
+              正面 · {s.project.layers.length} 层
+            </button>
+            <button
+              aria-label="选择背面膜层"
+              aria-pressed={s.layerSide === "back"}
+              onClick={() => void send({ kind: "layer-side", side: "back" })}
+            >
+              背面 · {s.project.back_layers?.length || 0} 层
+            </button>
+            <span>两侧均从基底向外编号</span>
+          </div>
+          {s.layerSide === "back" &&
+            (s.project.settings.substrate_model || "semi_infinite") ===
+              "semi_infinite" && (
+              <p className="catalogue-hint">
+                请在计算参数中选择有限厚基底后编辑背面膜层。
+              </p>
+            )}
+          <LayerEditor
+            project={layerProject}
+            surface={s.layerSide || "front"}
+            busy={s.busy}
+            selected={s.selected}
+            setSelected={(index) => {
+              const layer = layerProject.layers[index];
+              if (layer) void send({ kind: "select", layerId: layer.id });
+            }}
+            update={
+              s.layerSide === "back"
+                ? (mutator) =>
+                    update((p) => {
+                      const projection = { ...p, layers: p.back_layers || [] };
+                      mutator(projection);
+                      p.back_layers = projection.layers;
+                    })
+                : update
+            }
+            command={(command, index = s.selected) => {
+              void send({
+                kind: "layer",
+                command,
+                layerId: layerProject.layers[index]?.id,
+              });
+            }}
+            undo={() => command("edit.undo")}
+            redo={() => command("edit.redo")}
+            canUndo={s.canUndo}
+            canRedo={s.canRedo}
+          />
+        </div>
       )}
       {(id === "materials" || id === "substrate") && (
         <MaterialLibrary
@@ -169,7 +209,8 @@ export default function ToolView({
               : s.persisted
                 ? "已保存到工作区"
                 : "新项目，尚未写入工作区"}{" "}
-            · {s.project.layers.length} 层 · 工作区：
+            · 正面 {s.project.layers.length} 层 / 背面{" "}
+            {s.project.back_layers?.length || 0} 层 · 工作区：
             {s.workspace?.name || "未选择"}
           </p>
           {showImportInfo && s.project.import_info && (
@@ -178,8 +219,9 @@ export default function ToolView({
                 原始 TFCalc 导入记录 · {s.project.import_info.file_name}
               </summary>
               <p>
-                编码：{s.project.import_info.encoding} ·{" "}
-                {s.project.layers.length} 层
+                编码：{s.project.import_info.encoding} · 正面{" "}
+                {s.project.layers.length} 层 / 背面{" "}
+                {s.project.back_layers?.length || 0} 层
               </p>
               {s.project.import_info.notes.map((note, i) => (
                 <p key={i}>{note}</p>

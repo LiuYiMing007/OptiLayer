@@ -115,11 +115,23 @@ export default function SpectrumPanel({
               </select>
               <button
                 className={!options.sp ? "muted" : ""}
+                disabled={!!options.weighted && !!spectrum?.response_weight}
                 aria-pressed={options.sp}
                 onClick={() => setOptions((o) => ({ ...o, sp: !o.sp }))}
               >
                 S/P
               </button>
+              {!!spectrum?.response_weight && (
+                <button
+                  aria-pressed={!!options.weighted}
+                  onClick={() =>
+                    setOptions((o) => ({ ...o, weighted: !o.weighted }))
+                  }
+                  title={`${spectrum.response_label}；统计和分析保持本征 T/R/A`}
+                >
+                  响应加权{options.weighted ? " ✓" : ""}
+                </button>
+              )}
               <button onClick={openAnalysis}>分析…</button>
               <button onClick={openTargets}>目标…</button>
               <button
@@ -140,6 +152,12 @@ export default function SpectrumPanel({
               targets={p.target_points}
             />
           </div>
+          {options.weighted && spectrum?.response_weight && (
+            <p className="response-mode-note">
+              显示 {spectrum.response_label} 加权响应；下方统计与分析为本征
+              T/R/A。
+            </p>
+          )}
           <div className="spectrum-summary">
             <div>
               <span>最大透过率 T</span>

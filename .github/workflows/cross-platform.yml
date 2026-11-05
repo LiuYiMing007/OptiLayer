@@ -34,7 +34,9 @@ jobs:
         with:
           path: src-tauri/target
           key: tfc-rust-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src-tauri/Cargo.lock') }}-${{ hashFiles('src-tauri/src/**', 'src-tauri/build.rs', 'src-tauri/tauri*.json') }}
-          restore-keys: tfc-rust-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src-tauri/Cargo.lock') }}-
+          restore-keys: |
+            tfc-rust-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src-tauri/Cargo.lock') }}-
+            tfc-rust-${{ runner.os }}-${{ runner.arch }}-
 
       - run: python -m venv .venv
       - run: node scripts/run_python.mjs -m pip install -r engine/requirements-dev.txt
@@ -74,6 +76,7 @@ jobs:
       - run: node scripts/run_python.mjs scripts/validate_window_ipc_release.py
       - run: node scripts/run_python.mjs scripts/validate_catalogue_release.py
       - run: node scripts/run_python.mjs scripts/validate_tfd_release.py
+      - run: node scripts/run_python.mjs scripts/validate_environment_release.py
       - run: node scripts/run_python.mjs scripts/validate_workspace_release.py
       - run: node scripts/run_python.mjs scripts/validate_workspace_folders_release.py
       - run: node scripts/run_python.mjs scripts/package_release.py

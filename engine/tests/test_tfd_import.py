@@ -27,11 +27,11 @@ class RealTFDAdapterTests(unittest.TestCase):
         self.assertEqual(p['settings']['substrate_material'],'TFC/SUBSTRAT/BF33')
         self.assertNotEqual(catalogue_material('TFC/SUBSTRAT/BF33')['samples'],catalogue_material('TFC/MATERIAL/BF33')['samples'])
 
-    def test_backside_bulk_and_missing_materials_are_reported_together(self):
+    def test_missing_material_is_not_hidden_by_supported_backside_environment(self):
         original=fixture();before=copy.deepcopy(original)
-        source=text(material='100',exit_medium='AIR').replace('LAYERS2*0*','LAYERS2*1*\nLAYER2*1*SIO2*1*100*')
+        source=text(material='100',exit_medium='AIR').replace('LAYERS2*0*','LAYERS2*1*\nLAYER2*1*SIO2*1*100*0*1*')
         r=inspect_tfd(source,original)
-        self.assertEqual({i['code'] for i in r['issues']},{'bulk_substrate','back_layers','material'})
+        self.assertEqual({i['code'] for i in r['issues']},{'material'})
         self.assertIsNone(r['project']);self.assertEqual(original,before)
 
     def test_zero_group_and_zero_thickness_are_preserved(self):
@@ -59,3 +59,17 @@ class RealTFDAdapterTests(unittest.TestCase):
         self.assertEqual(engine.dispatch({'action':'decode_tfd','bytes':list(text().encode())})['content'],text())
         for payload in [[True],[-1],[256],['3']]:
             with self.assertRaises(ValueError):engine.dispatch({'action':'decode_tfd','bytes':payload})
+
+    def test_finite_exit_and_back_layers_preserve_environment(self):
+        source=text(exit_medium='AIR').replace('LAYERS2*0*','LAYERS2*1*\nLAYER2*1*SIO2*1*80*0*1*')
+        p=parse_tfd(source,fixture())
+        self.assertEqual(p['settings']['substrate_model'],'incoherent')
+        self.assertEqual(p['settings']['exit_material'],'TFC/SUBSTRAT/AIR')
+        self.assertEqual(p['settings']['substrate_thickness_mm'],1)
+        self.assertEqual(p['back_layers'][0]['thickness_nm'],100)
+        self.assertTrue(all(x['side'] in ('front','back') for x in p['import_info']['source_layers']))
+        self.assertIn('多次反射',engine.calculate(p)['model'])
+        backwards=parse_tfd(source.replace('*WHITE*IDEAL*1*','*WHITE*IDEAL*2*'),fixture())
+        self.assertEqual(backwards['settings']['first_surface'],'back')
+        self.assertIn('背面照射',engine.calculate(backwards)['model'])
+        with self.assertRaises(ValueError):parse_tfd(source.replace('*WHITE*IDEAL*1*','*D65*IDEAL*1*'),fixture())

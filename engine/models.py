@@ -62,8 +62,8 @@ def validate_material(material):
 def normalize_project(project):
     """Migrate old n-only boundaries to named material snapshots without changing n."""
     p = copy.deepcopy(project)
-    if not isinstance(p, dict) or p.get('schema_version') != 1:
-        raise ValueError('不支持的项目格式，需要 schema_version = 1')
+    if not isinstance(p, dict) or p.get('schema_version') not in (1,2):
+        raise ValueError('不支持的项目格式，需要 schema_version = 1 或 2')
     if not isinstance(p.get('materials'), list):
         raise ValueError('项目缺少材料列表')
     s = p['settings']
@@ -92,6 +92,10 @@ def normalize_project(project):
         if material is None:
             raise ValueError(f'{kind} 所选材料不存在')
         s[f'{kind}_n'] = float(optical_constants(material, np.array([s['reference_nm']]))[0][0])
+    # v2 prevents older clients from silently treating finite/back-side designs
+    # as the v1 semi-infinite model. Plain legacy projects remain v1.
+    if (s.get('substrate_model','semi_infinite') != 'semi_infinite' or p.get('back_layers') or s.get('first_surface','front') == 'back' or s.get('illuminant','WHITE') != 'WHITE' or s.get('detector','IDEAL') != 'IDEAL' or p.get('response_data')):
+        p['schema_version'] = 2
     return p
 
 
@@ -119,17 +123,31 @@ def validate(project):
         if m['name'] in names:
             raise ValueError('材料名称不能重复')
         names.add(m['name'])
-    layers = p['layers']
-    if not isinstance(layers, list) or len(layers) > 500:
-        raise ValueError('膜层数量不能超过 500')
+    mode = s.get('substrate_model', 'semi_infinite')
+    if mode not in ('semi_infinite','incoherent','coherent'):
+        raise ValueError('基底模型必须为半无限、非相干或相干')
+    if s.get('first_surface','front') not in ('front','back'):
+        raise ValueError('第一表面必须为 front 或 back')
+    exit_name = s.get('exit_material',s['substrate_material'])
+    if exit_name not in names:
+        raise ValueError('出射介质材料不存在')
+    if mode != 'semi_infinite':
+        number(s.get('substrate_thickness_mm'), '基底厚度 mm', 0, 1e5, strict=True)
+    elif exit_name != s['substrate_material'] or p.get('back_layers'):
+        raise ValueError('半无限基底不含背面；独立出射介质或背面膜层需要有限厚基底模型')
     ids = set()
-    for i, layer in enumerate(layers):
-        if not isinstance(layer.get('id'), str) or layer['id'] in ids:
-            raise ValueError('膜层 ID 缺失或重复')
-        ids.add(layer['id'])
-        if layer['material'] not in names:
-            raise ValueError(f'第 {i+1} 层的材料不存在')
-        number(layer['thickness_nm'], f'第 {i+1} 层厚度', 0, 1e6)
+    for side, layers in [('正面',p['layers']), ('背面',p.get('back_layers',[]))]:
+        if not isinstance(layers,list) or len(layers)>500:
+            raise ValueError(f'{side}膜层数量不能超过 500')
+        for i, layer in enumerate(layers):
+            if not isinstance(layer.get('id'), str) or layer['id'] in ids:
+                raise ValueError('膜层 ID 缺失或重复')
+            ids.add(layer['id'])
+            if layer['material'] not in names:
+                raise ValueError(f'{side}第 {i+1} 层的材料不存在')
+            number(layer['thickness_nm'],f'{side}第 {i+1} 层厚度',0,1e6)
+    from responses import validate_responses
+    validate_responses(p)
     targets = p.get('target_points')
     if targets is not None:
         if not isinstance(targets, list) or not 2 <= len(targets) <= 10001:

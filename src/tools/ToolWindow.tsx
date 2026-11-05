@@ -92,6 +92,130 @@ export default function ToolWindow() {
     void result.catch((e) => setError(String(e)));
     return result;
   }
+  const controlsChecked = useRef(false);
+  useEffect(() => {
+    if (
+      !new URLSearchParams(location.search).has("window-ipc-check") ||
+      !snapshot ||
+      controlsChecked.current ||
+      !["settings", "layers", "interactive"].includes(id)
+    )
+      return;
+    if (
+      id === "layers" &&
+      snapshot.project.settings.substrate_model !== "incoherent"
+    )
+      return;
+    controlsChecked.current = true;
+    void (async () => {
+      const until = async (test: () => boolean) => {
+        const end = Date.now() + 10000;
+        while (Date.now() < end) {
+          if (test()) return;
+          await new Promise((r) => setTimeout(r, 30));
+        }
+        throw new Error(`${id} 控件没有同步到主窗口`);
+      };
+      const select = (label: string, value: string) => {
+        const node = document.querySelector<HTMLSelectElement>(
+          `select[aria-label="${label}"]`,
+        );
+        if (!node) throw new Error(`缺少 ${label}`);
+        node.value = value;
+        node.dispatchEvent(new Event("change", { bubbles: true }));
+      };
+      if (id === "settings") {
+        await invoke("window_check_details", {
+          details: { phase: "select-model" },
+        });
+        select("基底模型", "incoherent");
+        await until(
+          () =>
+            latest.current?.project.settings.substrate_model === "incoherent",
+        );
+        await invoke("window_check_details", {
+          details: { phase: "set-thickness" },
+        });
+        const thickness = document.querySelector<HTMLInputElement>(
+          'input[aria-label="基底厚度"]',
+        );
+        if (!thickness) throw new Error("缺少基底厚度");
+        thickness.focus();
+        Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          "value",
+        )!.set!.call(thickness, "2");
+        thickness.dispatchEvent(new Event("input", { bubbles: true }));
+        await new Promise((r) => setTimeout(r, 30));
+        thickness.blur();
+        await until(
+          () => latest.current?.project.settings.substrate_thickness_mm === 2,
+        );
+        await invoke("window_check_details", {
+          details: { phase: "set-direction" },
+        });
+        select("出射介质", "AIR");
+        select("第一表面", "back");
+        await until(
+          () =>
+            latest.current?.project.settings.first_surface === "back" &&
+            latest.current.project.settings.exit_material === "AIR",
+        );
+        await invoke("window_check_details", {
+          details: { environment: true },
+        });
+      } else if (id === "layers") {
+        const button = document.querySelector<HTMLButtonElement>(
+          '[aria-label="选择背面膜层"]',
+        );
+        if (!button) throw new Error("缺少背面膜层入口");
+        button.click();
+        await until(() => latest.current?.layerSide === "back");
+        const add = [
+          ...document.querySelectorAll<HTMLButtonElement>(
+            ".engineering-toolbar button",
+          ),
+        ].find((b) => b.textContent?.trim() === "添加");
+        if (!add) throw new Error("缺少添加背面膜层按钮");
+        add.click();
+        await until(() => latest.current?.project.back_layers?.length === 1);
+        await invoke("window_check_details", {
+          details: { back_layers: true },
+        });
+      } else {
+        const target = [
+          ...document.querySelectorAll<HTMLSelectElement>("select"),
+        ].find((n) => n.closest("label")?.textContent?.includes("调节变量"));
+        if (!target) throw new Error("缺少调膜变量选择");
+        target.value = "angle";
+        target.dispatchEvent(new Event("change", { bubbles: true }));
+        await until(
+          () =>
+            !!document.querySelector(
+              '.interactive-analysis[data-target-kind="angle"]',
+            ) &&
+            document.querySelector<HTMLInputElement>(
+              '[aria-label="交互式调节新值"]',
+            )?.value === String(latest.current?.project.settings.angle_deg),
+        );
+        const original = latest.current!.project.settings.angle_deg;
+        const plus = [
+          ...document.querySelectorAll<HTMLButtonElement>("button"),
+        ].find((b) => b.textContent?.includes("增大"));
+        if (!plus) throw new Error("缺少调膜增大按钮");
+        plus.click();
+        await until(
+          () => latest.current?.project.settings.angle_deg === original + 1,
+        );
+        await invoke("window_check_details", {
+          details: { interactive: true },
+        });
+      }
+    })().catch(
+      (e) =>
+        void invoke("window_check_details", { details: { error: String(e) } }),
+    );
+  }, [id, snapshot]);
   const sendRef = useRef(send);
   sendRef.current = send;
   useEffect(() => {
