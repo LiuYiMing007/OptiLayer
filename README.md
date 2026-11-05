@@ -92,7 +92,7 @@ node scripts/run_python.mjs scripts/package_release.py
 node scripts/run_python.mjs scripts/validate_portable_release.py
 ```
 
-自动测试含 52 项引擎 Python、30 项 TypeScript、7 项打包/迁移 Python 与 Mac 11 项 Rust 测试（Windows 为 10 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
+当前开发版本自动测试含 63 项引擎 Python、42 项 TypeScript、8 项打包/迁移 Python 与 Mac 12 项 Rust 测试（Windows 为 11 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
 
 各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 默认只构建便携目录，要求目标电脑已有 WebView2；离线安装器配置另行保留，尚未验收。Windows 实测与未完成项见本版验收记录。GitHub Actions 已接入，在线构建结果以 Actions 页面为准。
 
@@ -116,4 +116,4 @@ node scripts/run_python.mjs scripts/validate_portable_release.py
 
 ### 0.2.3 开发验证
 
-当前分支为 `0.2.3-dev.2`，已加入命名保存、材料/基底逐项文件、交互式调膜和完整出射环境计算。Mac 本机验收已通过；Windows 正在按同一套冻结程序与真实窗口检查验证，尚未发布 0.2.3 正式版。范围与文件位置见 [0.2.3 开发更新报告](docs/更新报告/0.2.3更新报告.md)；正式下载继续使用上方 0.2.2 Release。
+当前分支为 `0.2.3-dev.2`，已加入命名保存、材料/基底逐项文件、交互式调膜和完整出射环境计算。Mac 本机验收已通过；Windows 同一源码的冻结程序、8 个真实工具窗口、材料/TFD、环境计算、文件夹入口和便携搬迁检查已通过；两端 24 个参考 R/T/S/P 数值最大差异为 7.105427357601002e-14 个百分点。尚未发布 0.2.3 正式版。范围与文件位置见 [0.2.3 开发更新报告](docs/更新报告/0.2.3更新报告.md)；正式下载继续使用上方 0.2.2 Release。

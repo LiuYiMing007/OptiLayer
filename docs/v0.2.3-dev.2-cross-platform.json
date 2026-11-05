@@ -1,0 +1,17 @@
+{
+  "version": "0.2.3-dev.2",
+  "source_commit": "654cc3606370e3e8108e8021f416c14d17be284e",
+  "windows_job": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42086568416/job/127453154063",
+  "windows_job_conclusion": "success",
+  "mac_verification": "local Apple Silicon native application; GitHub macOS job not claimed",
+  "cross_platform_reference_fields": 24,
+  "max_mac_windows_error_pp": 7.105427357601002e-14,
+  "windows_independent_max_error_pp": 6.288303211476887e-13,
+  "all_eight_windows_reports_checked": true,
+  "checksums": {
+    "TFC-0.2.3-dev.2-Windows-x64-portable.zip": "8bcfedb6288cb65b117c2c8f4cb209e922ca4eefea55e06193457c69efa86b2f",
+    "TFC-0.2.3-dev.2-macOS-Windows-portable.zip": "6d0b07eec24734b0ba537590388bf90cc440e57788191ddf57c44aaa15a3c69c",
+    "TFC-0.2.3-dev.2-macOS-arm64.zip": "dfadea088399c09555ec30a6246e392c90e1b6a1199788ee6e018aec653333e9"
+  },
+  "limits": "No formal release/tag. Earlier Windows window sweep timed out; this run passed in 35 seconds with diagnostics and a 120-second overall deadline. Physical SSD drive-letter changes, physical offline use and manual display scaling not verified."
+}
