@@ -9,6 +9,7 @@ let lastSelection: {
   kind: InteractiveTarget["kind"];
   layerId: string;
   group: number;
+  step: number;
 } | null = null;
 export default function InteractiveAnalysis({
   snapshot: s,
@@ -32,9 +33,6 @@ export default function InteractiveAnalysis({
       "",
   );
   const [group, setGroup] = useState(remembered?.group || 1);
-  useEffect(() => {
-    lastSelection = { projectId: s.project.id, kind, layerId, group };
-  }, [s.project.id, kind, layerId, group]);
   const groups = [
     ...new Set(
       [...s.project.layers, ...(s.project.back_layers || [])]
@@ -45,7 +43,12 @@ export default function InteractiveAnalysis({
   useEffect(() => {
     if (groups.length && !groups.includes(group)) setGroup(groups[0]);
   }, [groups.join(","), group]);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(
+    remembered?.step ?? (kind === "physical" || kind === "angle" ? 1 : 0.01),
+  );
+  useEffect(() => {
+    lastSelection = { projectId: s.project.id, kind, layerId, group, step };
+  }, [s.project.id, kind, layerId, group, step]);
   const [draft, setDraft] = useState("0");
   const focused = useRef(false);
   const [value, setValue] = useState(0);
