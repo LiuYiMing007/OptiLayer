@@ -49,6 +49,9 @@ export class CalculationQueue {
     ++this.revision;
     this.pending = null;
   }
+  private queuedJob() {
+    return this.pending;
+  }
   private async pump() {
     this.running = true;
     this.activity(true);
@@ -57,10 +60,11 @@ export class CalculationQueue {
       this.pending = null;
       try {
         const result = await this.compute(job.project);
+        const newer = this.queuedJob();
         if (job.revision === this.revision) this.result(result, job.project);
         else if (
-          this.pending &&
-          this.pending.project.id === job.project.id &&
+          newer &&
+          newer.project.id === job.project.id &&
           job.scopeRevision === this.scopeRevision
         )
           this.preview?.(result, job.project);
