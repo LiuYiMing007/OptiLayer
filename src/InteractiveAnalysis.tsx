@@ -311,7 +311,16 @@ export default function InteractiveAnalysis({
               phase: "undo",
               target,
               value,
-            }).catch((e) => setError(String(e)))
+            })
+              .then(() => {
+                session.current = crypto.randomUUID();
+                confirmed.current = original;
+                setValue(original);
+                setDraft(String(original));
+                setChanged(false);
+                setError("");
+              })
+              .catch((e) => setError(String(e)))
           }
         >
           撤销本轮
