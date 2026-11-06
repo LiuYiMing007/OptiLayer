@@ -41,6 +41,7 @@ export function interactiveProject(
   if (!Number.isFinite(value) || value < 0)
     throw new Error("调节值必须是非负有限数");
   const next = structuredClone(baseline);
+  if (value === interactiveValue(baseline, target)) return next;
   if (target.kind === "group") {
     const previous = interactiveValue(baseline, target);
     if (value <= 0) throw new Error("组系数必须大于零");

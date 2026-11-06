@@ -168,7 +168,7 @@
     "items": [
       {
         "id": "calculate.spectrum",
-        "label": "计算光谱",
+        "label": "单纯分析",
         "implemented": true,
         "shortcut": "CmdOrCtrl+Enter"
       }
@@ -184,7 +184,7 @@
       },
       {
         "id": "analysis.interactive",
-        "label": "交互式调膜…",
+        "label": "交互式分析…",
         "implemented": true
       },
       {
@@ -248,7 +248,7 @@
       },
       {
         "id": "view.interactive",
-        "label": "交互式调膜",
+        "label": "交互式分析",
         "implemented": true,
         "check": true
       },

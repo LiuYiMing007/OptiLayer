@@ -194,9 +194,9 @@ export default function ToolWindow() {
           details: { back_layers: true },
         });
       } else {
-        const target = [
-          ...document.querySelectorAll<HTMLSelectElement>("select"),
-        ].find((n) => n.closest("label")?.textContent?.includes("调节变量"));
+        const target = document.querySelector<HTMLSelectElement>(
+          'select[aria-label="分析变量"]',
+        );
         if (!target) throw new Error("缺少调膜变量选择");
         target.value = "angle";
         target.dispatchEvent(new Event("change", { bubbles: true }));
@@ -210,9 +210,9 @@ export default function ToolWindow() {
             )?.value === String(latest.current?.project.settings.angle_deg),
         );
         const original = latest.current!.project.settings.angle_deg;
-        const plus = [
-          ...document.querySelectorAll<HTMLButtonElement>("button"),
-        ].find((b) => b.textContent?.includes("增大"));
+        const plus = document.querySelector<HTMLButtonElement>(
+          '.digit-step[data-place="0"][data-direction="up"]',
+        );
         if (!plus) throw new Error("缺少调膜增大按钮");
         plus.click();
         await until(

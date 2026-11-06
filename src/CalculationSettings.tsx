@@ -99,7 +99,7 @@ export default function CalculationSettings({
           材料管理…
         </button>
         <button disabled={busy} onClick={calculate}>
-          计算光谱
+          单纯分析
         </button>
       </footer>
     </section>

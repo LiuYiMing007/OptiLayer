@@ -1129,7 +1129,7 @@ export default function App() {
             disabled={busy}
             onClick={() => void calculate()}
           >
-            {calculating ? "更新中…" : "计算光谱"}
+            单纯分析
           </button>
           {platform === "windows" && (
             <button

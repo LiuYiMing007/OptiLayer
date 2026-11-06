@@ -92,7 +92,7 @@ node scripts/run_python.mjs scripts/package_release.py
 node scripts/run_python.mjs scripts/validate_portable_release.py
 ```
 
-当前开发版本自动测试含 63 项引擎 Python、42 项 TypeScript、8 项打包/迁移 Python 与 Mac 12 项 Rust 测试（Windows 为 11 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
+当前开发版本自动测试含 64 项引擎 Python、50 项 TypeScript、8 项打包/迁移 Python 与 Mac 12 项 Rust 测试（Windows 为 11 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
 
 各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 默认只构建便携目录，要求目标电脑已有 WebView2；离线安装器配置另行保留，尚未验收。Windows 实测与未完成项见本版验收记录。GitHub Actions 已接入，在线构建结果以 Actions 页面为准。
 
@@ -120,4 +120,4 @@ node scripts/run_python.mjs scripts/validate_portable_release.py
 
 ### 0.2.3-dev.3
 
-新增可手填介质名称/常数折射率、380×360 紧凑调膜、膜层组号和组系数，以及复用 Python 的实时计算服务。原模型及验证数据保持；[使用与验收范围](docs/0.2.3-dev.3-实时调膜与分组.md)。本次仍为开发验证版，未发布正式标签。
+新增可手填介质名称/常数折射率、420×300 TFC 式交互式分析、膜层组号和组系数，以及复用 Python 的实时计算服务。原模型及验证数据保持；[使用与验收范围](docs/0.2.3-dev.3-实时调膜与分组.md)。本次仍为开发验证版，未发布正式标签。

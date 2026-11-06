@@ -1261,3 +1261,24 @@
 .medium-input input { width: 100%; box-sizing: border-box; }
 .medium-input small { display: block; white-space: normal; }
 .browser-tool.tool-interactive { height: 380px; min-height: 300px; max-height: calc(100vh - 100px); }
+/* TFC analysis palette: variable/index, original value, decimal columns, two actions. */
+.tfc-analysis { gap: 10px; padding: 12px 14px; }
+.analysis-property-row { display: grid; grid-template-columns: 42px minmax(0,1fr); align-items: center; gap: 10px; }
+.analysis-variable { grid-template-columns: 42px minmax(0,1fr) 58px; }
+.analysis-property-row > output { font-variant-numeric: tabular-nums; padding: 0 5px; }
+.analysis-new-value > span { align-self: center; }
+.decimal-editor { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.decimal-column { display: grid; grid-template-rows: 18px 26px 18px; width: 24px; flex: 0 1 24px; min-width: 15px; }
+.tfc-analysis .decimal-column .digit-step { height: 18px; min-height: 18px; padding: 0; line-height: 14px; font-size: 14px; border-radius: 2px; color: #444; }
+.tfc-analysis .decimal-column input { width: 100%; min-width: 0; height: 26px; min-height: 26px; text-align: center; padding: 0; font-family: ui-monospace, monospace; font-size: 15px; border-radius: 0; font-variant-numeric: tabular-nums; }
+.decimal-dot { align-self: center; font: 16px ui-monospace, monospace; }
+.analysis-primary-actions { display: flex; justify-content: space-between; gap: 36px; padding-left: 52px; }
+.analysis-primary-actions button { flex: 1; }
+.analysis-records > summary { display: flex; align-items: center; justify-content: space-between; border: 1px solid #d8d8d8; border-radius: 2px; background: white; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+.analysis-records > summary small { color: #777; font-size: 11px; }
+.analysis-records[open] { display: grid; gap: 8px; }
+.tfc-analysis .analysis-records label { margin-top: 8px; grid-template-columns: 60px minmax(0,1fr); }
+.tfc-analysis .analysis-records .interactive-actions { margin-top: 8px; }
+.browser-tool.tool-interactive { width: min(420px,calc(100vw - 24px)); height: 300px; min-height: 240px; }
+.browser-tool.tool-interactive:has(.analysis-records[open]) { height: min(600px,calc(100vh - 100px)); }
+.browser-tool.tool-interactive { min-height: 280px; min-width: min(380px,calc(100vw - 24px)); }
