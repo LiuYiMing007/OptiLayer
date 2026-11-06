@@ -1,0 +1,12 @@
+{
+  "all_pass": true,
+  "version": "0.2.3-dev.3",
+  "platform": "local macOS frozen engine",
+  "tfd_group_retained": 1,
+  "imported_group_factor": 1.25,
+  "source_physical_nm": 100,
+  "actual_physical_nm": 125,
+  "coefficient_not_applied_twice": true,
+  "named_json_and_database_roundtrip_after_move": true,
+  "scope": "Synthetic fixture only; no original user Workspace touched."
+}

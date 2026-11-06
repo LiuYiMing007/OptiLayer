@@ -1,0 +1,14 @@
+{
+  "version": "0.2.3-dev.3",
+  "platform": "macOS Apple Silicon local frozen engine",
+  "synthetic_layers": 59,
+  "wavelength_points": 601,
+  "environment": "incoherent finite glass to air",
+  "cold_one_shot_median_ms": 905.3363753482699,
+  "persistent_first_request_ms": 766.2778748199344,
+  "warm_request_median_ms": 33.81662513129413,
+  "warm_request_max_ms": 46.44154105335474,
+  "identical_full_results": 21,
+  "storage_actions_rejected": true,
+  "limits": "Local synthetic repeat-request benchmark includes JSON pipes, not frontend IPC/chart rendering or all hardware/designs; no universal latency guarantee."
+}

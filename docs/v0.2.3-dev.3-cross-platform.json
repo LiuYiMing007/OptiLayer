@@ -1,0 +1,30 @@
+{
+  "all_pass": true,
+  "version": "0.2.3-dev.3",
+  "source_commit": "12409e8cb8b8c5dc4532d1ee43590ec1f2e09427",
+  "run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42240591525",
+  "macos_job": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42240591525/job/127969530061",
+  "windows_job": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42240591525/job/127969530192",
+  "both_platforms_native_verification_passed": true,
+  "mac_verification": "local native Apple Silicon application; macOS CI reports not used",
+  "windows_verification": "GitHub native Windows job",
+  "all_sixteen_native_reports_checked": true,
+  "same_source_on_both_platforms": true,
+  "ui_names": [
+    "交互式分析",
+    "单纯分析"
+  ],
+  "tfc_decimal_palette": true,
+  "cross_platform_reference_fields": 24,
+  "max_mac_windows_error_pp": 7.105427357601002e-14,
+  "warm_native_calculation_ms": {
+    "macos": 5,
+    "windows": 11.79999999993015
+  },
+  "checksums": {
+    "TFC-0.2.3-dev.3-macOS-arm64.zip": "4f662a24f4e64bc0ff2246ad7a578b745d2dbf7957b8b1b7939fc40a3c86203b",
+    "TFC-0.2.3-dev.3-macOS-Windows-portable.zip": "b7d13572922de20dffaf91b3241e4f92ed3709490f2fab0fd4496f51f4719eb0",
+    "TFC-0.2.3-dev.3-Windows-x64-portable.zip": "3cb4c16e8d2788d13866e0ee81a21bb00502a8902d552c28e52c7182d90e94ab"
+  },
+  "limits": "Development packages, no formal tag/Release. Warm timings are a single synthetic small-stack sample, not universal performance. Physical SSD drive-letter changes, manual OS menu clicks and display scaling not verified. Earlier Windows test attempts failed on locale decoding and a window-hide/input-commit test race; latest Windows native job and local Mac native checks passed. macOS verification here uses the local app, not CI status."
+}
