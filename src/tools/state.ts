@@ -44,7 +44,7 @@ export type Patch =
       kind: "layer";
       side?: "front" | "back";
       id: string;
-      field: "material" | "thickness_nm";
+      field: "material" | "thickness_nm" | "group";
       expected: unknown;
       value: unknown;
     }
@@ -62,7 +62,12 @@ export type Patch =
     }
   | {
       kind: "property";
-      field: "name" | "analysis_bands" | "target_points" | "response_data";
+      field:
+        | "name"
+        | "analysis_bands"
+        | "target_points"
+        | "response_data"
+        | "group_factors";
       expected: unknown;
       value: unknown;
     };
@@ -171,7 +176,7 @@ export function patchesBetween(before: Project, after: Project): Patch[] {
       throw new Error("膜层增删排序请使用膜层命令");
     for (const layer of nextLayers) {
       const previous = previousLayers.find((l) => l.id === layer.id)!;
-      for (const field of ["material", "thickness_nm"] as const)
+      for (const field of ["material", "thickness_nm", "group"] as const)
         if (!equal(previous[field], layer[field]))
           patches.push({
             kind: "layer",
@@ -208,6 +213,7 @@ export function patchesBetween(before: Project, after: Project): Patch[] {
     "analysis_bands",
     "target_points",
     "response_data",
+    "group_factors",
   ] as const)
     if (!equal(before[field], after[field]))
       patches.push({
@@ -246,12 +252,19 @@ export function applyPatches(
   for (const patch of patches) {
     let actual: unknown;
     if (patch.kind === "layer") {
-      if (!["material", "thickness_nm"].includes(patch.field))
+      if (!["material", "thickness_nm", "group"].includes(patch.field))
         throw new Error("膜层字段无效");
       const layer = (
         patch.side === "back" ? project.back_layers || [] : project.layers
       ).find((l) => l.id === patch.id);
       if (!layer) throw new Error("该膜层已删除，请使用最新内容");
+      if (
+        patch.field === "group" &&
+        (!Number.isInteger(patch.value) ||
+          Number(patch.value) < 0 ||
+          Number(patch.value) > 999)
+      )
+        throw new Error("组号须为 0–999 的整数");
       actual = layer[patch.field];
       if (
         patch.field === "thickness_nm" &&
@@ -288,9 +301,13 @@ export function applyPatches(
         throw new Error("计算参数必须是有效数值");
     } else if (
       patch.kind === "property" &&
-      ["name", "analysis_bands", "target_points", "response_data"].includes(
-        patch.field,
-      )
+      [
+        "name",
+        "analysis_bands",
+        "target_points",
+        "response_data",
+        "group_factors",
+      ].includes(patch.field)
     )
       actual = project[patch.field] ?? null;
     else throw new Error("不支持的编辑命令");

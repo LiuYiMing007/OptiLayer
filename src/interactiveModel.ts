@@ -2,11 +2,24 @@ import type { Project } from "./types.ts";
 import { materialAt } from "./materials.ts";
 import { physicalThickness, thicknessValue } from "./model.ts";
 export type InteractiveTarget =
-  { kind: "physical" | "qwot"; layerId: string } | { kind: "angle" | "scale" };
+  | { kind: "physical" | "qwot"; layerId: string }
+  | { kind: "angle" | "scale" }
+  | { kind: "group"; group: number };
 export function interactiveValue(
   p: Project,
   target: InteractiveTarget,
 ): number {
+  if (target.kind === "group") {
+    if (
+      !Number.isInteger(target.group) ||
+      target.group < 1 ||
+      ![...p.layers, ...(p.back_layers || [])].some(
+        (l) => l.group === target.group,
+      )
+    )
+      throw new Error("所选组不存在");
+    return p.group_factors?.[String(target.group)] ?? 1;
+  }
   if (target.kind === "angle") return p.settings.angle_deg;
   if (target.kind === "scale") return 1;
   if (!("layerId" in target)) throw new Error("调节变量无效");
@@ -28,7 +41,21 @@ export function interactiveProject(
   if (!Number.isFinite(value) || value < 0)
     throw new Error("调节值必须是非负有限数");
   const next = structuredClone(baseline);
-  if (target.kind === "angle") {
+  if (target.kind === "group") {
+    const previous = interactiveValue(baseline, target);
+    if (value <= 0) throw new Error("组系数必须大于零");
+    if (previous <= 0)
+      throw new Error("原组系数为零，无法从零厚度恢复；请先设置该组实际膜厚");
+    [...next.layers, ...(next.back_layers || [])]
+      .filter((l) => l.group === target.group)
+      .forEach((l) => {
+        l.thickness_nm *= value / previous;
+      });
+    next.group_factors = {
+      ...next.group_factors,
+      [String(target.group)]: value,
+    };
+  } else if (target.kind === "angle") {
     if (value > 89.9) throw new Error("入射角须为 0–89.9°");
     next.settings.angle_deg = value;
   } else if (target.kind === "scale") {

@@ -145,7 +145,14 @@ def validate(project):
             ids.add(layer['id'])
             if layer['material'] not in names:
                 raise ValueError(f'{side}第 {i+1} 层的材料不存在')
+            group=layer.get('group',0)
+            if type(group) is not int or not 0<=group<=999:raise ValueError('组号须为 0–999 的整数')
             number(layer['thickness_nm'],f'{side}第 {i+1} 层厚度',0,1e6)
+    factors=p.get('group_factors',{})
+    if not isinstance(factors,dict) or len(factors)>999:raise ValueError('组系数格式无效')
+    for key,value in factors.items():
+        if not isinstance(key,str) or not key.isdecimal() or str(int(key))!=key or not 1<=int(key)<=999:raise ValueError('组系数编号无效')
+        number(value,'组系数',0,1e6)
     from responses import validate_responses
     validate_responses(p)
     targets = p.get('target_points')

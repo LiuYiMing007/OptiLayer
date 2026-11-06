@@ -58,9 +58,9 @@
   {
     "id": "interactive",
     "title": "交互式调膜",
-    "width": 480,
-    "height": 560,
-    "minWidth": 400,
-    "minHeight": 460
+    "width": 380,
+    "height": 360,
+    "minWidth": 340,
+    "minHeight": 300
   }
 ]

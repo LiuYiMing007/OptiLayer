@@ -18,7 +18,20 @@ export default function InteractiveAnalysis({
       s.project.back_layers?.[0]?.id ||
       "",
   );
+  const [group, setGroup] = useState(1);
+  const groups = [
+    ...new Set(
+      [...s.project.layers, ...(s.project.back_layers || [])]
+        .map((l) => l.group || 0)
+        .filter((g) => g > 0),
+    ),
+  ].sort((a, b) => a - b);
+  useEffect(() => {
+    if (groups.length && !groups.includes(group)) setGroup(groups[0]);
+  }, [groups.join(","), group]);
   const [step, setStep] = useState(1);
+  const [draft, setDraft] = useState("0");
+  const focused = useRef(false);
   const [value, setValue] = useState(0);
   const [original, setOriginal] = useState(0);
   const [error, setError] = useState("");
@@ -29,7 +42,14 @@ export default function InteractiveAnalysis({
   const queued = useRef<number | null>(null);
   const confirmed = useRef(0);
   const target =
-    kind === "physical" || kind === "qwot" ? { kind, layerId } : { kind };
+    kind === "group"
+      ? { kind, group }
+      : kind === "physical" || kind === "qwot"
+        ? { kind, layerId }
+        : { kind };
+  useEffect(() => {
+    if (!focused.current) setDraft(String(value));
+  }, [value]);
   function reset() {
     session.current = crypto.randomUUID();
     setChanged(false);
@@ -38,13 +58,14 @@ export default function InteractiveAnalysis({
       const v = interactiveValue(s.project, target);
       confirmed.current = v;
       setValue(v);
+      setDraft(String(v));
       setOriginal(v);
       setError("");
     } catch (e) {
       setError(String(e));
     }
   }
-  useEffect(reset, [kind, layerId, s.scope]);
+  useEffect(reset, [kind, layerId, group, s.scope]);
   async function preview(next: number) {
     setValue(next);
     if (locked.current) {
@@ -83,7 +104,6 @@ export default function InteractiveAnalysis({
     }
   }
   const disabled =
-    pending ||
     s.busy ||
     ((kind === "physical" || kind === "qwot") &&
       ![...s.project.layers, ...(s.project.back_layers || [])].some(
@@ -91,16 +111,6 @@ export default function InteractiveAnalysis({
       ));
   return (
     <div className="interactive-analysis" data-target-kind={kind}>
-      <div className="panel-heading">
-        <h2>交互式调膜</h2>
-        <span>
-          {s.calculating
-            ? "正在计算…"
-            : s.stale
-              ? "等待光谱更新"
-              : "光谱已同步"}
-        </span>
-      </div>
       <label>
         调节变量
         <select
@@ -117,6 +127,16 @@ export default function InteractiveAnalysis({
         >
           <option value="physical">膜层物理厚度（nm）</option>
           <option value="qwot">膜层 ¼ 波光学厚度（QWOT）</option>
+          <option
+            disabled={
+              ![...s.project.layers, ...(s.project.back_layers || [])].some(
+                (l) => l.group,
+              )
+            }
+            value="group"
+          >
+            组系数
+          </option>
           <option value="scale">正背面整体厚度系数</option>
           <option value="angle">入射角（°）</option>
         </select>
@@ -143,11 +163,33 @@ export default function InteractiveAnalysis({
           </select>
         </label>
       )}
+      {kind === "group" && (
+        <label>
+          组号
+          <select
+            aria-label="调膜组号"
+            value={group}
+            onChange={(e) => setGroup(Number(e.target.value))}
+          >
+            {[
+              ...new Set(
+                [...s.project.layers, ...(s.project.back_layers || [])]
+                  .map((l) => l.group || 0)
+                  .filter((g) => g > 0),
+              ),
+            ]
+              .sort((a, b) => a - b)
+              .map((g) => (
+                <option key={g} value={g}>
+                  组 {g}
+                </option>
+              ))}
+          </select>
+        </label>
+      )}
       <dl>
         <dt>本轮原值</dt>
         <dd>{original.toPrecision(9)}</dd>
-        <dt>当前值</dt>
-        <dd>{value.toPrecision(9)}</dd>
       </dl>
       <form
         onSubmit={(e) => {
@@ -161,16 +203,37 @@ export default function InteractiveAnalysis({
         <label>
           新值
           <input
-            key={`${session.current}:${value}`}
             name="value"
             aria-label="交互式调节新值"
-            type="number"
-            step="any"
-            defaultValue={value}
+            type="text"
+            inputMode="decimal"
+            value={draft}
+            onFocus={() => {
+              focused.current = true;
+            }}
+            onBlur={() => {
+              focused.current = false;
+              setDraft(String(confirmed.current));
+            }}
+            onChange={(e) => {
+              const text = e.target.value;
+              setDraft(text);
+              if (text.trim() && Number.isFinite(Number(text)))
+                void preview(Number(text));
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                e.preventDefault();
+                void preview(value + (e.key === "ArrowUp" ? step : -step));
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                void preview(original);
+              }
+            }}
             required
           />
         </label>
-        <button disabled={disabled}>应用并重算</button>
       </form>
       <label>
         增减步长
@@ -237,7 +300,7 @@ export default function InteractiveAnalysis({
             }
           }}
         >
-          保留修改，开始下一轮
+          完成本轮
         </button>
         <button
           disabled={!s.canUndo || pending || !changed}
@@ -259,11 +322,17 @@ export default function InteractiveAnalysis({
           {error}
         </p>
       )}
-      <p className="catalogue-hint">
-        调整直接作用于当前膜系。每轮连续调整合并为一次撤销；项目切换或其他窗口修改后，请重新载入原值。关闭此窗口保留当前修改，项目需另行保存。
-      </p>
-      <button disabled={pending} onClick={reset}>
-        以当前膜系重新载入原值
+      <details className="interactive-help">
+        <summary>
+          说明 · {s.calculating ? "更新中" : s.stale ? "待更新" : "已同步"}
+        </summary>
+        <p>
+          数值、方向键及滑块直接更新光谱。一轮操作共用一次撤销；组系数仅调整同组膜层，0
+          为未分组。其他窗口修改后请载入当前值。关闭保留修改，项目需另行保存。
+        </p>
+      </details>
+      <button disabled={pending} onClick={reset} style={{ display: "block" }}>
+        载入当前值
       </button>
     </div>
   );

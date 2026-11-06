@@ -347,7 +347,7 @@ export default function LayerEditor({
           role="grid"
           aria-label="膜层结构表格"
           aria-rowcount={rows + 1}
-          aria-colcount={5}
+          aria-colcount={6}
         >
           <thead>
             <tr>
@@ -362,6 +362,7 @@ export default function LayerEditor({
               <th>
                 QWOT <span>λ₀/4</span>
               </th>
+              <th title="0 为未分组，相同组号通过组系数同步调整">组</th>
             </tr>
           </thead>
           <tbody>
@@ -371,7 +372,7 @@ export default function LayerEditor({
                 className={selected === rows - 1 - r ? "selected" : ""}
               >
                 <th scope="row">{rows - r}</th>
-                {[0, 1, 2, 3].map((c) => {
+                {[0, 1, 2, 3, 4].map((c) => {
                   const cell = { row: r, col: c },
                     isActive = active.row === r && active.col === c;
                   const inRange =
@@ -387,7 +388,7 @@ export default function LayerEditor({
                       data-row={r}
                       data-col={c}
                       tabIndex={isActive ? 0 : -1}
-                      aria-label={`第 ${rows - r} 层${["材料", "物理厚度", "光学厚度", "QWOT"][c]}`}
+                      aria-label={`第 ${rows - r} 层${["材料", "物理厚度", "光学厚度", "QWOT", "分组"][c]}`}
                       aria-selected={inRange}
                       className={`${c ? "numeric" : ""} ${isActive ? "active-cell" : ""}`}
                       onClick={(e) => {
@@ -399,7 +400,7 @@ export default function LayerEditor({
                         <input
                           autoFocus
                           list={c === 0 ? "film-materials" : undefined}
-                          aria-label={`编辑第 ${rows - r} 层${["材料", "物理厚度", "光学厚度", "QWOT"][c]}`}
+                          aria-label={`编辑第 ${rows - r} 层${["材料", "物理厚度", "光学厚度", "QWOT", "分组"][c]}`}
                           value={draft}
                           onFocus={(e) => {
                             if (selectDraft.current) e.currentTarget.select();

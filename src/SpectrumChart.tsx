@@ -186,7 +186,9 @@ export default function SpectrumChart({
         },
         dragmode: "zoom",
         uirevision: JSON.stringify([
-          spectrum?.input_snapshot,
+          spectrum?.input_snapshot.id,
+          spectrum?.wavelength_nm[0],
+          spectrum?.wavelength_nm.at(-1),
           options.yMode,
           options.T,
           options.R,

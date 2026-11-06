@@ -100,7 +100,7 @@ def inspect_tfd(text, template, name='', encoding='unicode'):
                 if groups and group not in groups:raise ValueError(f'{side}第 {i+1} 层引用不存在的组 {group}')
                 factor=groups.get(group,1.0)
                 source_layers.append({'side':side,'index':i+1,'material':row[2],'physical_nm':d,'group':group,'factor':factor})
-                if m:target.append({'id':str(uuid.uuid4()),'material':m['name'],'thickness_nm':d*factor})
+                if m:target.append({'id':str(uuid.uuid4()),'material':m['name'],'thickness_nm':d*factor,'group':group})
         report['materials']=mapping
         if report['issues']:return report
         settings=dict(zip(['start_nm','end_nm','step_nm','reference_nm','angle_deg'],map(float,e[1:6])))
@@ -121,7 +121,7 @@ def inspect_tfd(text, template, name='', encoding='unicode'):
                '后续编辑采用本软件物理厚度规则，不模拟原 TFCalc 的光学厚度优先设置。']
         if encoding=='gb18030':notes.append('文件按 GB18030 严格解码，保留中文名称。')
         project={'schema_version':1,'id':str(uuid.uuid4()),'name':name.rsplit('.',1)[0] if name else '导入的膜系',
-                 'layer_order':'substrate_to_air','settings':settings,'materials':list(materials.values()),'layers':layers,
+                 'layer_order':'substrate_to_air','group_factors':{str(g):f for g,f in groups.items() if g>0},'settings':settings,'materials':list(materials.values()),'layers':layers,
                  **({'back_layers':back_layers} if back_layers else {}),
                  'import_info':{'format':'TFCalc','file_name':name,'encoding':encoding,'text_sha256':hashlib.sha256(text.encode('utf-8')).hexdigest(),
                                 'materials':mapping,'source_layers':source_layers,'notes':notes}}

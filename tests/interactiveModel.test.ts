@@ -59,3 +59,22 @@ test("back-face tuning and whole-stack scale keep both surfaces attached", () =>
     120,
   );
 });
+test("group factor scales only members across both faces using the stored factor once",()=>{
+ const p=project();p.layers[0].group=2;p.back_layers=[{...p.layers[1],id:'rear',group:2}];p.group_factors={'2':2};
+ const target={kind:'group',group:2} as const;
+ assert.equal(interactiveValue(p,target),2);
+ const next=interactiveProject(p,target,3);
+ assert.equal(next.layers[0].thickness_nm,150);assert.equal(next.layers[1].thickness_nm,200);assert.equal(next.back_layers![0].thickness_nm,300);
+ assert.equal(next.group_factors!['2'],3);assert.equal(p.layers[0].thickness_nm,100);
+ assert.deepEqual(interactiveProject(p,target,2),p);
+ assert.throws(()=>interactiveProject(p,{kind:'group',group:9},2));
+});
+test("group membership paste and patches round trip without changing thickness",async()=>{
+ const {pasteGrid,gridValue}=await import('../src/layerGrid.ts');
+ const {patchesBetween,applyPatches}=await import('../src/tools/state.ts');
+ const p=project(),q=pasteGrid(p,{row:0,col:4},'3\n3');
+ assert.equal(gridValue(q,{row:0,col:4}),'3');assert.equal(q.layers[0].thickness_nm,100);
+ const next=applyPatches(p,patchesBetween(p,q));assert.deepEqual(next,q);
+ assert.throws(()=>pasteGrid(p,{row:0,col:4},'1.5'));
+ assert.throws(()=>pasteGrid(p,{row:0,col:4},'-1'));
+});

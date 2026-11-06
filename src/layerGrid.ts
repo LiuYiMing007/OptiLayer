@@ -12,12 +12,12 @@ export function moveCell(
   let { row, col } = cell;
   if (key === "Tab") {
     col += backwards ? -1 : 1;
-    if (col > 3) {
+    if (col > 4) {
       col = 0;
       row++;
     }
     if (col < 0) {
-      col = 3;
+      col = 4;
       row--;
     }
   }
@@ -28,13 +28,14 @@ export function moveCell(
   if (key === "ArrowRight") col++;
   return {
     row: Math.max(0, Math.min(rows - 1, row)),
-    col: Math.max(0, Math.min(3, col)),
+    col: Math.max(0, Math.min(4, col)),
   };
 }
 export function gridValue(p: Project, cell: GridCell): string {
   const l = p.layers[p.layers.length - 1 - cell.row];
   if (!l) return "";
   if (!cell.col) return l.material;
+  if (cell.col === 4) return String(l.group ?? 0);
   const n = materialAt(
     p.materials.find((m) => m.name === l.material)!,
     p.settings.reference_nm,
@@ -58,7 +59,7 @@ export function pasteGrid(p: Project, start: GridCell, text: string): Project {
   if (
     !text.trim() ||
     start.row + lines.length > p.layers.length ||
-    lines.some((l) => start.col + l.length > 4)
+    lines.some((l) => start.col + l.length > 5)
   )
     throw new Error("粘贴范围超出已有膜层或可编辑列。");
   const next = structuredClone(p);
@@ -92,6 +93,18 @@ export function pasteGrid(p: Project, start: GridCell, text: string): Project {
     cells.forEach((text, c) => {
       const col = start.col + c;
       if (!col) return;
+      if (col === 4) {
+        const group = Number(text.trim());
+        if (
+          !text.trim() ||
+          !Number.isInteger(group) ||
+          group < 0 ||
+          group > 999
+        )
+          throw new Error("组号须为 0–999 的整数；0 为未分组");
+        layer.group = group;
+        return;
+      }
       const v = Number(text.trim());
       if (!text.trim() || !Number.isFinite(v) || v < 0)
         throw new Error("厚度必须是有限的非负数。");

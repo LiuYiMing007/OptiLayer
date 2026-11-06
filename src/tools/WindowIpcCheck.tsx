@@ -191,6 +191,26 @@ export default function WindowIpcCheck() {
       await until(
         (s) => s.visible.layers && s.ready["tool-layers"] === project.id,
       );
+      // Exercise the production Rust -> persistent frozen Python service, not a mock.
+      const base = structuredClone(currentProject.current);
+      const compute = (p: typeof base) =>
+        invoke<{ T_percent: number[] }>("engine_request", {
+          request: { action: "calculate", project: p },
+        });
+      const originalSpectrum = await compute(base);
+      const changed = structuredClone(base);
+      changed.settings.angle_deg = 32;
+      const startedAt = performance.now();
+      const adjusted = await compute(changed);
+      report.warm_calculation_ms = performance.now() - startedAt;
+      const restored = await compute(base);
+      if (
+        JSON.stringify(originalSpectrum) !== JSON.stringify(restored) ||
+        JSON.stringify(adjusted.T_percent) ===
+          JSON.stringify(originalSpectrum.T_percent)
+      )
+        throw new Error("常驻计算服务结果或无状态恢复失败");
+      report.warm_calculation_service = true;
       report.material_and_substrate_editors = true;
       report.shared_project_rendered = true;
       report.close_hide_reopen = true;

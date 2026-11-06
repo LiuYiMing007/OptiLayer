@@ -1,7 +1,7 @@
+import MediumInput from "./MediumInput";
 import { useState } from "react";
 import type { Project } from "./types";
 import CommitNumber from "./CommitNumber";
-import { synchronizeBoundaries } from "./model";
 import { parseResponse } from "./responseEditing";
 export default function EnvironmentSettings({
   project: p,
@@ -20,11 +20,6 @@ export default function EnvironmentSettings({
   const [name, setName] = useState("");
   const [data, setData] = useState("");
   const [error, setError] = useState("");
-  const media = p.materials.filter(
-    (m) =>
-      m.role !== "film" ||
-      [s.substrate_material, s.exit_material].includes(m.name),
-  );
   return (
     <>
       <fieldset disabled={busy}>
@@ -60,24 +55,12 @@ export default function EnvironmentSettings({
         </label>
         <label className="property-row">
           <span>基底材料</span>
-          <select
-            aria-label="环境基底材料"
-            value={s.substrate_material}
-            onChange={(e) =>
-              update((next) => {
-                next.settings.substrate_material = e.target.value;
-                if (mode === "semi_infinite")
-                  next.settings.exit_material = e.target.value;
-                synchronizeBoundaries(next);
-              })
-            }
-          >
-            {media.map((m) => (
-              <option key={m.name} value={m.name}>
-                {m.display_name || m.name}
-              </option>
-            ))}
-          </select>
+          <MediumInput
+            project={p}
+            field="substrate_material"
+            label="环境基底材料"
+            update={update}
+          />
           <span />
         </label>
         <label className="property-row">
@@ -87,10 +70,16 @@ export default function EnvironmentSettings({
             value={s.substrate_thickness_mm || 1}
             min={0.000001}
             max={1e5}
-            disabled={mode === "semi_infinite"}
             onChange={(v) =>
               update((next) => {
                 next.settings.substrate_thickness_mm = v;
+                if (
+                  (next.settings.substrate_model || "semi_infinite") ===
+                  "semi_infinite"
+                ) {
+                  next.settings.substrate_model = "incoherent";
+                  next.settings.exit_material = next.settings.incident_material;
+                }
               })
             }
           />
@@ -98,26 +87,12 @@ export default function EnvironmentSettings({
         </label>
         <label className="property-row">
           <span>出射介质</span>
-          <select
-            aria-label="出射介质"
-            disabled={mode === "semi_infinite"}
-            value={
-              mode === "semi_infinite"
-                ? s.substrate_material
-                : s.exit_material || s.substrate_material
-            }
-            onChange={(e) =>
-              update((next) => {
-                next.settings.exit_material = e.target.value;
-              })
-            }
-          >
-            {media.map((m) => (
-              <option key={m.name} value={m.name}>
-                {m.display_name || m.name}
-              </option>
-            ))}
-          </select>
+          <MediumInput
+            project={p}
+            field="exit_material"
+            label="出射介质"
+            update={update}
+          />
           <span />
         </label>
         <label className="property-row">
@@ -140,8 +115,8 @@ export default function EnvironmentSettings({
         <p className="engineering-help">
           Front 从入射介质照射，Back
           从出射介质照射；角度相对于所选表面的法线。半无限模型的 T
-          表示进入基底，有限模型的 T
-          表示穿出整个元件。相干模型需足够细的波长采样。
+          表示进入基底。输入独立出射介质或基底厚度会切换为有限基底；数值可直接输入常数
+          n。有限模型的 T 表示穿出整个元件。相干模型需足够细的波长采样。
         </p>
       </fieldset>
       <fieldset disabled={busy}>

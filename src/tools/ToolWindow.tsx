@@ -116,19 +116,30 @@ export default function ToolWindow() {
         }
         throw new Error(`${id} 控件没有同步到主窗口`);
       };
-      const select = (label: string, value: string) => {
-        const node = document.querySelector<HTMLSelectElement>(
-          `select[aria-label="${label}"]`,
-        );
+      const select = async (label: string, value: string) => {
+        const node = document.querySelector<
+          HTMLSelectElement | HTMLInputElement
+        >(`select[aria-label="${label}"], input[aria-label="${label}"]`);
         if (!node) throw new Error(`缺少 ${label}`);
-        node.value = value;
-        node.dispatchEvent(new Event("change", { bubbles: true }));
+        if (node instanceof HTMLInputElement) {
+          node.focus();
+          Object.getOwnPropertyDescriptor(
+            HTMLInputElement.prototype,
+            "value",
+          )!.set!.call(node, value);
+          node.dispatchEvent(new Event("input", { bubbles: true }));
+          await new Promise((r) => setTimeout(r, 30));
+          node.blur();
+        } else {
+          node.value = value;
+          node.dispatchEvent(new Event("change", { bubbles: true }));
+        }
       };
       if (id === "settings") {
         await invoke("window_check_details", {
           details: { phase: "select-model" },
         });
-        select("基底模型", "incoherent");
+        await select("基底模型", "incoherent");
         await until(
           () =>
             latest.current?.project.settings.substrate_model === "incoherent",
@@ -154,8 +165,8 @@ export default function ToolWindow() {
         await invoke("window_check_details", {
           details: { phase: "set-direction" },
         });
-        select("出射介质", "AIR");
-        select("第一表面", "back");
+        await select("出射介质", "AIR");
+        await select("第一表面", "back");
         await until(
           () =>
             latest.current?.project.settings.first_surface === "back" &&

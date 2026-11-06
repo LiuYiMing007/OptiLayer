@@ -1247,3 +1247,16 @@
   color: #666;
   border-bottom: 1px solid #d8d8d8;
 }
+/* Compact live tuning palette: the spectrum remains the visual focus. */
+.interactive-analysis { gap: 6px; padding: 8px; }
+.interactive-analysis label, .interactive-analysis dl { grid-template-columns: 62px minmax(0,1fr); gap: 6px; }
+.interactive-analysis form { gap: 0; }
+.interactive-analysis .interactive-actions { gap: 5px; }
+.interactive-analysis .interactive-actions button { flex: 1; white-space: nowrap; }
+.interactive-analysis .interactive-help { font-size: 11px; color: #666; }
+.interactive-analysis .interactive-help p { padding: 5px 0; line-height: 1.5; }
+.interactive-analysis > button:last-child { justify-self: end; min-height: 24px; font-size: 11px; }
+.browser-tool.tool-interactive { width: min(380px, calc(100vw - 24px)); }
+.medium-input { min-width: 0; }
+.medium-input input { width: 100%; box-sizing: border-box; }
+.medium-input small { display: block; white-space: normal; }

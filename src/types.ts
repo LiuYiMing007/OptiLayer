@@ -34,6 +34,7 @@ export interface Material {
   source: string;
 }
 export interface Layer {
+  group?: number;
   id: string;
   material: string;
   thickness_nm: number;
@@ -74,6 +75,7 @@ export interface TargetPoint {
   R_percent?: number;
 }
 export interface Project {
+  group_factors?: Record<string, number>;
   back_layers?: Layer[];
   response_data?: {
     illuminants?: SpectralResponse[];

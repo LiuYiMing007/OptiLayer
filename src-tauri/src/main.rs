@@ -5,6 +5,7 @@ use std::{
     process::{Command, Stdio},
     sync::Mutex,
 };
+mod calculation_worker;
 mod menu_check;
 mod menus;
 mod portable;
@@ -20,12 +21,7 @@ struct WorkspaceSelection(Mutex<Option<PathBuf>>);
 const DATA_SECTIONS: [&str; 8] = ["root", "projects", "materials", "spectra", "exports", "database", "imports", "config"];
 static PROJECT_OVERRIDE: Mutex<Option<PathBuf>> = Mutex::new(None);
 
-fn run_engine(
-    app: &tauri::AppHandle,
-    root: Option<&Path>,
-    create: bool,
-    request: serde_json::Value,
-) -> Result<serde_json::Value, String> {
+fn engine_command(app: &tauri::AppHandle) -> Result<Command, String> {
     let mut command = if cfg!(debug_assertions) {
         let project = Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
@@ -52,6 +48,20 @@ fn run_engine(
                 .join(executable),
         )
     };
+    #[cfg(windows)] { use std::os::windows::process::CommandExt; command.creation_flags(0x08000000); }
+    Ok(command)
+}
+
+fn run_engine(
+    app: &tauri::AppHandle,
+    root: Option<&Path>,
+    create: bool,
+    request: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    if request["action"] == "calculate" {
+        return app.state::<calculation_worker::CalculationWorker>().calculate(app, request);
+    }
+    let mut command = engine_command(app)?;
     // The frontend cannot choose arbitrary roots inside a business request.
     command
         .env_remove("TFC_WORKSPACE_ROOT")
@@ -508,6 +518,7 @@ fn main() {
     }
     tauri::Builder::default()
         .manage(WorkspaceSelection::default())
+        .manage(calculation_worker::CalculationWorker::default())
         .manage(menus::MenuState::default())
         .manage(tools::ToolsState::default())
         .manage(window_check::CheckState::new(window_ipc_check))
@@ -534,6 +545,7 @@ fn main() {
                 let _ = tools::save_layout(window.app_handle());
             }
             if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                window.app_handle().state::<calculation_worker::CalculationWorker>().stop();
                 tools::shutdown(window.app_handle());
                 window.app_handle().exit(0);
             }

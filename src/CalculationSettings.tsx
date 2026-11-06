@@ -1,6 +1,6 @@
+import MediumInput from "./MediumInput";
 import EnvironmentSettings from "./EnvironmentSettings";
 import CommitNumber from "./CommitNumber";
-import { synchronizeBoundaries } from "./model";
 import type { Polarization, Project, Settings } from "./types";
 export default function CalculationSettings({
   project: p,
@@ -19,14 +19,6 @@ export default function CalculationSettings({
     update((next) => {
       Object.assign(next.settings, { [key]: value });
     });
-  const media = (kind: "incident" | "substrate") =>
-    p.materials.filter(
-      (m) =>
-        m.role === "all" ||
-        m.role === "medium" ||
-        m.role === "substrate" ||
-        m.name === p.settings[`${kind}_material`],
-    );
   return (
     <section className="engineering-parameters">
       <fieldset disabled={busy}>
@@ -83,20 +75,12 @@ export default function CalculationSettings({
         </label>
         <label className="property-row">
           <span>入射介质</span>
-          <select
-            aria-label="入射介质材料"
-            value={p.settings.incident_material}
-            onChange={(e) =>
-              update((next) => {
-                next.settings.incident_material = e.target.value;
-                synchronizeBoundaries(next);
-              })
-            }
-          >
-            {media("incident").map((m) => (
-              <option key={m.name}>{m.name}</option>
-            ))}
-          </select>
+          <MediumInput
+            project={p}
+            field="incident_material"
+            label="入射介质材料"
+            update={update}
+          />
           <span />
         </label>
         <div className="property-row property-readonly">

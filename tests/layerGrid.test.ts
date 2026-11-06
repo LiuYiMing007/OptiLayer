@@ -35,7 +35,7 @@ test("multirow paste converts optical units atomically and does not mutate sourc
   assert.throws(() => pasteGrid(p, { row: 0, col: 1 }, "105\nNaN"));
   assert.throws(() => pasteGrid(p, { row: 0, col: 1 }, "105\t205"));
   assert.throws(() => pasteGrid(p, { row: 0, col: 0 }, "unknown"));
-  assert.throws(() => pasteGrid(p, { row: 1, col: 3 }, "1\t2"));
+  assert.throws(() => pasteGrid(p, { row: 1, col: 4 }, "1\t2"));
   assert.throws(() => pasteGrid(p, { row: 0, col: 1 }, "-1"));
   assert.equal(p.layers[1].thickness_nm, 100);
 });
@@ -47,10 +47,10 @@ test("material + physical paste resolves n using new material, without changing 
   assert.deepEqual(q.layers[0], p.layers[0]);
 });
 test("Tab wraps editable columns; reverse Tab, Enter and arrows clamp to actual grid", () => {
-  assert.deepEqual(moveCell({ row: 0, col: 3 }, "Tab", 2), { row: 1, col: 0 });
+  assert.deepEqual(moveCell({ row: 0, col: 4 }, "Tab", 2), { row: 1, col: 0 });
   assert.deepEqual(moveCell({ row: 1, col: 0 }, "Tab", 2, true), {
     row: 0,
-    col: 3,
+    col: 4,
   });
   assert.deepEqual(moveCell({ row: 1, col: 2 }, "Enter", 2), {
     row: 1,

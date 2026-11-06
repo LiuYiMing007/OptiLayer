@@ -253,7 +253,7 @@ export default function App() {
     setCalculationError("");
     const timer = setTimeout(() => {
       queue.current!.submit(current.current);
-    }, 180);
+    }, 35);
     return () => {
       clearTimeout(timer);
       queue.current!.invalidate();
