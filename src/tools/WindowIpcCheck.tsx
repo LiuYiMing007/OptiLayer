@@ -168,6 +168,12 @@ export default function WindowIpcCheck() {
         (report.main_button_ipc as string[]).push(id);
         if (id === "materials" || id === "substrate")
           await until((s) => !!s.details?.[`tool-${id}`]?.editor);
+        // Keep the input window visible until blur commits have been acknowledged.
+        // WebView2 can defer hidden-renderer input work when the sweep opens the next window.
+        if (id === "settings")
+          await until((s) => !!s.details?.["tool-settings"]?.environment);
+        if (id === "interactive")
+          await until((s) => !!s.details?.["tool-interactive"]?.interactive);
         await latest.current.host.hide(id);
         await until((s) => !s.visible[id]);
         await invoke("window_check_dispatch", { id: `view.${id}` });
