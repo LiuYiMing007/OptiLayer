@@ -2,6 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import type { ToolIntent } from "./tools/useToolHost";
 import type { ToolSnapshot } from "./tools/state";
 import { interactiveValue, type InteractiveTarget } from "./interactiveModel";
+// Undo advances the shared scope and remounts the view. Keep only the selected
+// control (never a project copy), so undo does not unexpectedly select another variable.
+let lastSelection: {
+  projectId: string;
+  kind: InteractiveTarget["kind"];
+  layerId: string;
+  group: number;
+} | null = null;
 export default function InteractiveAnalysis({
   snapshot: s,
   send,
@@ -9,16 +17,24 @@ export default function InteractiveAnalysis({
   snapshot: ToolSnapshot;
   send: (a: ToolIntent) => Promise<void>;
 }) {
-  const [kind, setKind] = useState<InteractiveTarget["kind"]>("physical");
+  const remembered =
+    lastSelection?.projectId === s.project.id ? lastSelection : null;
+  const [kind, setKind] = useState<InteractiveTarget["kind"]>(
+    remembered?.kind || "physical",
+  );
   const [layerId, setLayer] = useState(
-    (s.layerSide === "back" ? s.project.back_layers : s.project.layers)?.[
-      s.selected
-    ]?.id ||
+    remembered?.layerId ||
+      (s.layerSide === "back" ? s.project.back_layers : s.project.layers)?.[
+        s.selected
+      ]?.id ||
       s.project.layers[0]?.id ||
       s.project.back_layers?.[0]?.id ||
       "",
   );
-  const [group, setGroup] = useState(1);
+  const [group, setGroup] = useState(remembered?.group || 1);
+  useEffect(() => {
+    lastSelection = { projectId: s.project.id, kind, layerId, group };
+  }, [s.project.id, kind, layerId, group]);
   const groups = [
     ...new Set(
       [...s.project.layers, ...(s.project.back_layers || [])]
