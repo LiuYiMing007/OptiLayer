@@ -1260,3 +1260,4 @@
 .medium-input { min-width: 0; }
 .medium-input input { width: 100%; box-sizing: border-box; }
 .medium-input small { display: block; white-space: normal; }
+.browser-tool.tool-interactive { height: 380px; min-height: 300px; max-height: calc(100vh - 100px); }
