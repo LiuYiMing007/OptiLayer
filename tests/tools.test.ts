@@ -301,3 +301,20 @@ test("invalidated requests and another project's frames cannot become live previ
   await tick();
   assert.equal(h.results[0].id, "other");
 });
+
+test("scope reset rejects a previous workspace frame even when project IDs match", async () => {
+  const h = harness(true),
+    p = project();
+  h.queue.submit(p);
+  h.queue.reset();
+  const moved = structuredClone(p);
+  moved.layers[0].thickness_nm = 140;
+  h.queue.submit(moved);
+  h.calls[0].resolve({} as Spectrum);
+  await tick();
+  assert.equal(h.previews.length, 0);
+  assert.equal(h.results.length, 0);
+  h.calls[1].resolve({} as Spectrum);
+  await tick();
+  assert.equal(h.results[0].layers[0].thickness_nm, 140);
+});

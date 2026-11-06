@@ -3,8 +3,13 @@ import type { Project, Spectrum } from "./types.ts";
 /** One running engine request, one replaceable pending request. Old results never publish. */
 export class CalculationQueue {
   private revision = 0;
+  private scopeRevision = 0;
   private lastKey = "";
-  private pending: { project: Project; revision: number } | null = null;
+  private pending: {
+    project: Project;
+    revision: number;
+    scopeRevision: number;
+  } | null = null;
   private running = false;
   private compute: (project: Project) => Promise<Spectrum>;
   private result: (s: Spectrum, p: Project) => void;
@@ -30,9 +35,14 @@ export class CalculationQueue {
     this.lastKey = key;
     this.pending = {
       project: structuredClone(project),
+      scopeRevision: this.scopeRevision,
       revision: ++this.revision,
     };
     if (!this.running) void this.pump();
+  }
+  reset() {
+    ++this.scopeRevision;
+    this.invalidate();
   }
   invalidate() {
     this.lastKey = "";
@@ -48,7 +58,11 @@ export class CalculationQueue {
       try {
         const result = await this.compute(job.project);
         if (job.revision === this.revision) this.result(result, job.project);
-        else if (this.pending && this.pending.project.id === job.project.id)
+        else if (
+          this.pending &&
+          this.pending.project.id === job.project.id &&
+          job.scopeRevision === this.scopeRevision
+        )
           this.preview?.(result, job.project);
       } catch (error) {
         if (job.revision === this.revision) this.error(error);

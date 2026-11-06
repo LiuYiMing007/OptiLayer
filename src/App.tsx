@@ -163,6 +163,7 @@ export default function App() {
       (v) => receiverRef.current.activity(v),
       (s, p) => receiverRef.current.preview(s, p),
     );
+  const calculationScope = useRef(scope);
   const interaction = useRef<{
     session: string;
     source: string;
@@ -264,7 +265,10 @@ export default function App() {
   }
   const physicalKey = physicalSignature(project);
   useEffect(() => {
-    queue.current!.invalidate();
+    if (calculationScope.current !== scope) {
+      queue.current!.reset();
+      calculationScope.current = scope;
+    } else queue.current!.invalidate();
     setCalculationError("");
     queue.current!.submit(current.current);
     return () => queue.current!.invalidate();
