@@ -7,7 +7,7 @@ class CalculationServiceTests(unittest.TestCase):
         p=engine.validate(fixture());p['layers'][0]['group']=2;p['group_factors']={'2':1.25}
         q=copy.deepcopy(p);q['settings']['angle_deg']=35
         requests=[{'action':'calculate','project':p},{'action':'calculate','project':q},{'action':'save','project':p},{'action':'calculate','project':p}]
-        proc=subprocess.run([sys.executable,str(ROOT/'engine/main.py'),'--serve-calculation'],input='\n'.join(json.dumps(r) for r in requests)+'\n',text=True,capture_output=True,timeout=30,check=True)
+        proc=subprocess.run([sys.executable,str(ROOT/'engine/main.py'),'--serve-calculation'],input='\n'.join(json.dumps(r) for r in requests)+'\n',text=True,encoding="utf-8",capture_output=True,timeout=30,check=True)
         results=[json.loads(line) for line in proc.stdout.splitlines()]
         self.assertEqual(len(results),4)
         self.assertEqual(results[0],engine.calculate(p));self.assertEqual(results[1],engine.calculate(q));self.assertEqual(results[3],results[0]);self.assertIn('error',results[2])
