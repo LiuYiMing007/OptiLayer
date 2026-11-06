@@ -10,16 +10,19 @@ export class CalculationQueue {
   private result: (s: Spectrum, p: Project) => void;
   private error: (e: unknown) => void;
   private activity: (busy: boolean) => void;
+  private preview?: (s: Spectrum, p: Project) => void;
   constructor(
     compute: (project: Project) => Promise<Spectrum>,
     result: (s: Spectrum, p: Project) => void,
     error: (e: unknown) => void,
     activity: (busy: boolean) => void,
+    preview?: (s: Spectrum, p: Project) => void,
   ) {
     this.compute = compute;
     this.result = result;
     this.error = error;
     this.activity = activity;
+    this.preview = preview;
   }
   submit(project: Project, force = false) {
     const key = project.id + physicalSignature(project);
@@ -45,6 +48,8 @@ export class CalculationQueue {
       try {
         const result = await this.compute(job.project);
         if (job.revision === this.revision) this.result(result, job.project);
+        else if (this.pending && this.pending.project.id === job.project.id)
+          this.preview?.(result, job.project);
       } catch (error) {
         if (job.revision === this.revision) this.error(error);
       }

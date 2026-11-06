@@ -139,7 +139,8 @@ test("nonfinite thickness, negative extinction and structural patch proposals re
   );
 });
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
-function harness() {
+function harness(live = false) {
+  const previews: Project[] = [];
   const calls: {
     p: Project;
     resolve: (s: Spectrum) => void;
@@ -153,8 +154,13 @@ function harness() {
     (_s, p) => results.push(p),
     (e) => errors.push(e),
     (v) => activity.push(v),
+    live
+      ? (_s, p) => {
+          previews.push(p);
+        }
+      : undefined,
   );
-  return { queue, calls, results, errors, activity };
+  return { queue, calls, results, errors, activity, previews };
 }
 test("continuous edits coalesce to newest request, never compute concurrently or publish old result", async () => {
   const h = harness();
@@ -256,4 +262,42 @@ test("new environment settings and full response data travel through shared patc
   const result = applyPatches(p, patchesBetween(p, next));
   assert.equal(result.settings.substrate_model, "incoherent");
   assert.deepEqual(result.response_data, next.response_data);
+});
+
+test("live tuning previews completed frames while retaining only the latest final result", async () => {
+  const h = harness(true),
+    p = project();
+  h.queue.submit(p);
+  const next = structuredClone(p);
+  next.layers[0].thickness_nm = 120;
+  h.queue.submit(next);
+  h.calls[0].resolve({} as Spectrum);
+  await tick();
+  assert.equal(h.previews.length, 1);
+  assert.equal(h.results.length, 0);
+  assert.equal(h.previews[0].layers[0].thickness_nm, 100);
+  h.calls[1].resolve({} as Spectrum);
+  await tick();
+  assert.equal(h.results[0].layers[0].thickness_nm, 120);
+  assert.equal(h.previews.length, 1);
+  assert.deepEqual(h.activity, [true, false]);
+});
+test("invalidated requests and another project's frames cannot become live previews", async () => {
+  const h = harness(true),
+    p = project();
+  h.queue.submit(p);
+  h.queue.invalidate();
+  h.calls[0].resolve({} as Spectrum);
+  await tick();
+  assert.equal(h.previews.length, 0);
+  h.queue.submit(p);
+  const other = structuredClone(p);
+  other.id = "other";
+  h.queue.submit(other);
+  h.calls[1].resolve({} as Spectrum);
+  await tick();
+  assert.equal(h.previews.length, 0);
+  h.calls[2].resolve({} as Spectrum);
+  await tick();
+  assert.equal(h.results[0].id, "other");
 });

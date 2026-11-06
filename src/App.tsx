@@ -127,6 +127,7 @@ export default function App() {
     result: (s: Spectrum, p: Project) => acceptResult(s, p),
     error: (e: unknown) => setCalculationError(message(e)),
     activity: setCalculating,
+    preview: (_s: Spectrum, _p: Project) => {},
   });
   receiverRef.current = {
     result: (s, p) => {
@@ -140,6 +141,18 @@ export default function App() {
     },
     error: (e) => setCalculationError(message(e)),
     activity: setCalculating,
+    preview: (s, p) => {
+      const session = interaction.current;
+      if (
+        session &&
+        session.scope === scopeRef.current &&
+        session.last === projectKey(current.current) &&
+        session.keys.has(physicalSignature(p))
+      ) {
+        acceptResult(s, p);
+        setNotice("实时调膜预览 · 继续更新最新参数");
+      }
+    },
   };
   const queue = useRef<CalculationQueue | null>(null);
   if (!queue.current)
@@ -148,6 +161,7 @@ export default function App() {
       (s, p) => receiverRef.current.result(s, p),
       (e) => receiverRef.current.error(e),
       (v) => receiverRef.current.activity(v),
+      (s, p) => receiverRef.current.preview(s, p),
     );
   const interaction = useRef<{
     session: string;
@@ -156,6 +170,7 @@ export default function App() {
     target: string;
     baseline: Project;
     last: string;
+    keys: Set<string>;
   } | null>(null);
   function commit(next: Project, clearWriters = true) {
     const previous = clone(current.current);
@@ -251,13 +266,8 @@ export default function App() {
   useEffect(() => {
     queue.current!.invalidate();
     setCalculationError("");
-    const timer = setTimeout(() => {
-      queue.current!.submit(current.current);
-    }, 35);
-    return () => {
-      clearTimeout(timer);
-      queue.current!.invalidate();
-    };
+    queue.current!.submit(current.current);
+    return () => queue.current!.invalidate();
   }, [physicalKey, scope]);
   async function save(copyName?: string, forceCopy = false) {
     if (saveResolver.current || working.current) return false;
@@ -453,6 +463,7 @@ export default function App() {
           scope: action.scope,
           target: JSON.stringify(action.target),
           baseline: clone(current.current),
+          keys: new Set<string>(),
           last: projectKey(current.current),
         };
       const next = interactiveProject(
@@ -467,6 +478,9 @@ export default function App() {
         current.current = next;
         setProject(next);
       }
+      session!.keys.add(physicalSignature(next));
+      if (session!.keys.size > 128)
+        session!.keys.delete(session!.keys.values().next().value!);
       interaction.current = { ...session!, last: projectKey(next) };
       return;
     }
