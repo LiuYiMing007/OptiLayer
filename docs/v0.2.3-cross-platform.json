@@ -1,0 +1,19 @@
+{
+  "version": "0.2.3",
+  "source_commit": "9ed7c7d2af3d39d580345d1dc91df2087ff48ba4",
+  "both_native_platforms_passed": true,
+  "native_tools_per_platform": 15,
+  "environment_reference_fields": 24,
+  "cross_platform_max_error_pp": 7.105427357601002e-14,
+  "asset_sha256": {
+    "TFC-0.2.3-macOS-arm64.zip": "20a3b76a34a51c4211935f518cc290825efa29374a9fbadf17b6371474fe61e2",
+    "TFC-0.2.3-macOS-Windows-portable.zip": "2a340627a0d9f6a37b5cae889a70d6f983b356dd5f91c9511b28a5513b474ce6",
+    "TFC-0.2.3-Windows-x64-portable.zip": "3abe0397767d15a8f7b44be70bf611fa2c662601b14741f0121d597f4e54d32c"
+  },
+  "user_workspace_in_archives": false,
+  "limits": "Native automated verification; no claim of physical SSD drive-letter changes, physical offline checks, all display scaling or original TFCalc curve equivalence.",
+  "ci_run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42412531862",
+  "release_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.3",
+  "published_bundle_reproduced_exactly": true,
+  "all_six_published_digests_verified": true
+}
