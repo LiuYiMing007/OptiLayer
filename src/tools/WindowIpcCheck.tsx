@@ -42,6 +42,7 @@ export default function WindowIpcCheck() {
   const sequence = useRef(0),
     started = useRef(false);
   const snapshot: ToolSnapshot = {
+    inspectedMaterial: { name: "TFC/SOPRA/AG", substrate: false },
     sequence: ++sequence.current,
     scope: "isolated-window-ipc-check",
     project,
@@ -167,7 +168,9 @@ export default function WindowIpcCheck() {
         );
         (report.main_button_ipc as string[]).push(id);
         if (id === "materials" || id === "substrate")
-          await until((s) => !!s.details?.[`tool-${id}`]?.editor);
+          await until((s) => !!s.details?.[`tool-${id}`]?.catalogue);
+        if (id === "materialdata")
+          await until((s) => !!s.details?.["tool-materialdata"]?.editor);
         // Keep the input window visible until blur commits have been acknowledged.
         // WebView2 can defer hidden-renderer input work when the sweep opens the next window.
         if (id === "settings")

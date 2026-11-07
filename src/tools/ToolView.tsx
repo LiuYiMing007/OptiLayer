@@ -1,3 +1,10 @@
+import {
+  EnvironmentTable,
+  GroupTable,
+  ResponseTable,
+  StackTool,
+} from "../CompactTools";
+import HorizontalLayers from "../HorizontalLayers";
 import InteractiveAnalysis from "../InteractiveAnalysis";
 import { useEffect, useRef, useState } from "react";
 import TextInput from "../TextInput";
@@ -29,8 +36,9 @@ export default function ToolView({
       target?.focus();
     }
   }, [s.focus?.token, id]);
+  const side = id === "rear" ? "back" : s.layerSide || "front";
   const layerProject =
-    s.layerSide === "back"
+    side === "back"
       ? { ...s.project, layers: s.project.back_layers || [] }
       : s.project;
   const importInfo = s.project.import_info;
@@ -46,6 +54,7 @@ export default function ToolView({
         m &&
         [m.role, m.original, m.resolved].every((v) => typeof v === "string"),
     );
+  const [horizontal, setHorizontal] = useState(true);
   const [projectSearch, setProjectSearch] = useState("");
   const [projectPage, setProjectPage] = useState(0);
   useEffect(() => setProjectPage(0), [projectSearch, s.workspace?.id]);
@@ -83,7 +92,7 @@ export default function ToolView({
           {error || s.error}
         </p>
       )}
-      {s.notice && (
+      {s.notice && id === "project" && (
         <p className="tool-notice" role="status">
           {s.notice}
         </p>
@@ -91,71 +100,150 @@ export default function ToolView({
       {id === "interactive" && (
         <InteractiveAnalysis snapshot={s} send={dispatch} />
       )}
-      {id === "layers" && (
+      {id === "environment" && (
+        <EnvironmentTable project={s.project} update={update} />
+      )}
+      {id === "groups" && <GroupTable project={s.project} update={update} />}
+      {(id === "illuminant" || id === "detector") && (
+        <ResponseTable
+          key={id + s.project.id}
+          project={s.project}
+          update={update}
+          detector={id === "detector"}
+        />
+      )}
+      {id === "stack" && (
+        <StackTool key={s.project.id} project={s.project} send={dispatch} />
+      )}
+      {(id === "layers" || id === "rear") && (
         <div className="layer-face-workbench">
           <div className="layer-face-toolbar">
             <button
+              disabled={id === "rear"}
               aria-label="选择正面膜层"
-              aria-pressed={s.layerSide !== "back"}
+              aria-pressed={side !== "back"}
               onClick={() => void send({ kind: "layer-side", side: "front" })}
             >
               正面 · {s.project.layers.length} 层
             </button>
             <button
               aria-label="选择背面膜层"
-              aria-pressed={s.layerSide === "back"}
+              aria-pressed={side === "back"}
               onClick={() => void send({ kind: "layer-side", side: "back" })}
             >
               背面 · {s.project.back_layers?.length || 0} 层
             </button>
-            <span>两侧均从基底向外编号</span>
+            <button
+              aria-pressed={horizontal}
+              onClick={() => setHorizontal(!horizontal)}
+            >
+              {horizontal ? "切换纵向表" : "切换横向表"}
+            </button>
           </div>
-          {s.layerSide === "back" &&
+          {side === "back" &&
             (s.project.settings.substrate_model || "semi_infinite") ===
               "semi_infinite" && (
               <p className="catalogue-hint">
                 请在计算参数中选择有限厚基底后编辑背面膜层。
               </p>
             )}
-          <LayerEditor
-            project={layerProject}
-            surface={s.layerSide || "front"}
-            busy={s.busy}
-            selected={s.selected}
-            setSelected={(index) => {
-              const layer = layerProject.layers[index];
-              if (layer) void send({ kind: "select", layerId: layer.id });
-            }}
-            update={
-              s.layerSide === "back"
-                ? (mutator) =>
-                    update((p) => {
-                      const projection = { ...p, layers: p.back_layers || [] };
-                      mutator(projection);
-                      p.back_layers = projection.layers;
-                    })
-                : update
-            }
-            command={(command, index = s.selected) => {
-              void send({
-                kind: "layer",
-                command,
-                layerId: layerProject.layers[index]?.id,
-              });
-            }}
-            undo={() => command("edit.undo")}
-            redo={() => command("edit.redo")}
-            canUndo={s.canUndo}
-            canRedo={s.canRedo}
-          />
+          {horizontal ? (
+            <HorizontalLayers
+              onSelect={(index) => {
+                const l = layerProject.layers[index];
+                if (l) void send({ kind: "select", layerId: l.id, side });
+              }}
+              project={layerProject}
+              update={
+                side === "back"
+                  ? (mutator) =>
+                      update((p) => {
+                        const projection = {
+                          ...p,
+                          layers: p.back_layers || [],
+                        };
+                        mutator(projection);
+                        p.back_layers = projection.layers;
+                      })
+                  : update
+              }
+              command={(command, index) =>
+                void send({
+                  kind: "layer",
+                  command,
+                  side,
+                  layerId: layerProject.layers[index]?.id,
+                })
+              }
+              undo={() => command("edit.undo")}
+              redo={() => command("edit.redo")}
+            />
+          ) : (
+            <LayerEditor
+              project={layerProject}
+              surface={side}
+              busy={s.busy}
+              selected={s.selected}
+              setSelected={(index) => {
+                const layer = layerProject.layers[index];
+                if (layer)
+                  void send({ kind: "select", layerId: layer.id, side });
+              }}
+              update={
+                side === "back"
+                  ? (mutator) =>
+                      update((p) => {
+                        const projection = {
+                          ...p,
+                          layers: p.back_layers || [],
+                        };
+                        mutator(projection);
+                        p.back_layers = projection.layers;
+                      })
+                  : update
+              }
+              command={(command, index = s.selected) => {
+                void send({
+                  kind: "layer",
+                  side,
+                  command,
+                  layerId: layerProject.layers[index]?.id,
+                });
+              }}
+              undo={() => command("edit.undo")}
+              redo={() => command("edit.redo")}
+              canUndo={s.canUndo}
+              canRedo={s.canRedo}
+            />
+          )}
         </div>
       )}
-      {(id === "materials" || id === "substrate") && (
+      {(id === "materials" || id === "substrate" || id === "materialdata") && (
         <MaterialLibrary
           project={s.project}
           update={update}
           library={s.library || []}
-          substrate={id === "substrate"}
+          compactList={id !== "materialdata"}
+          inspectName={
+            id === "materialdata"
+              ? s.inspectedMaterial?.name ||
+                s.library?.[0]?.name ||
+                s.project.materials[0]?.name
+              : undefined
+          }
+          onInspect={(name) =>
+            send({
+              kind: "material-inspect",
+              name,
+              substrate:
+                id === "substrate" ||
+                (id === "materialdata" && !!s.inspectedMaterial?.substrate),
+            })
+          }
+          substrate={
+            id === "substrate" ||
+            (id === "materialdata" && !!s.inspectedMaterial?.substrate)
+          }
           onImport={(name, substrate) =>
             send({ kind: "catalogue-import", name, substrate })
           }
@@ -165,14 +253,19 @@ export default function ToolView({
               material,
               replaces,
               expected,
-              substrate: id === "substrate",
+              substrate:
+                id === "substrate" ||
+                (id === "materialdata" && !!s.inspectedMaterial?.substrate),
             })
           }
           onEditing={(active) =>
             send({
               kind: "material-editing",
               active,
-              tool: id as "materials" | "substrate",
+              tool:
+                id === "substrate" || s.inspectedMaterial?.substrate
+                  ? "substrate"
+                  : "materials",
             })
           }
           openFolder={() => send({ kind: "materials-folder" })}

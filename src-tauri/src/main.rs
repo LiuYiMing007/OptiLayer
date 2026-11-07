@@ -193,7 +193,7 @@ async fn material_check(
     app: tauri::AppHandle,
     materials: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    if !["main", "tool-materials", "tool-substrate"].contains(&window.label()) {
+    if !["main", "tool-materials", "tool-substrate", "tool-materialdata"].contains(&window.label()) {
         return Err("此窗口无权校验材料".into());
     }
     if materials.to_string().len() > 2_000_000 {
@@ -216,7 +216,7 @@ async fn catalogue_read(
     app: tauri::AppHandle,
     name: String,
 ) -> Result<serde_json::Value, String> {
-    if !["main", "tool-materials", "tool-substrate"].contains(&window.label()) {
+    if window.label() != "main" && !window.label().strip_prefix("tool-").map(tools::valid).unwrap_or(false) {
         return Err("此窗口无权读取材料目录".into());
     }
     tauri::async_runtime::spawn_blocking(move || {

@@ -87,7 +87,7 @@ def inspect_tfd(text, template, name='', encoding='unicode'):
             groups[key]=number(g[2],'膜层组系数',0,1e6)
         group_count=one('GROUPS',True)
         if group_count and int(group_count[1])!=len(groups):raise ValueError('GROUPS 数量不匹配')
-        layers=[];back_layers=[];source_layers=[]
+        layers=[];back_layers=[];source_layers=[];thickness_warnings=[]
         rear_declared=one('LAYERS2',True)
         rear_rows=records.get('LAYER2',[])
         if len(rear_rows)!=(int(rear_declared[1]) if rear_declared else 0):
@@ -100,6 +100,15 @@ def inspect_tfd(text, template, name='', encoding='unicode'):
                 if groups and group not in groups:raise ValueError(f'{side}第 {i+1} 层引用不存在的组 {group}')
                 factor=groups.get(group,1.0)
                 source_layers.append({'side':side,'index':i+1,'material':row[2],'physical_nm':d,'group':group,'factor':factor})
+                if m:
+                    q=number(row[3],f'{side}第 {i+1} 层 QWOT',0,1e9)
+                    n=float(optical_constants(m,np.array([float(e[4])]))[0][0])
+                    computed=4*d*n/float(e[4])
+                    # TFD does not embed the original material table. Inconsistent
+                    # redundant thicknesses are evidence, never permission to fit n.
+                    if abs(q-computed)>max(2e-5,abs(q)*1e-4):
+                        inferred=q*float(e[4])/(4*d) if d else None
+                        thickness_warnings.append(f'{side} 第 {i+1} 层 {row[2]}：文件 QWOT={q:.7g}，当前材料按原物理厚度换算为 {computed:.7g}；当前 n(λ₀)={n:.7g}'+(f'，原厚度反推 n≈{inferred:.7g}' if inferred is not None else '')+'。可能使用了不同材料数据或厚度优先规则；保留原物理厚度，不反推替换材料。')
                 if m:target.append({'id':str(uuid.uuid4()),'material':m['name'],'thickness_nm':d*factor,'group':group})
         report['materials']=mapping
         if report['issues']:return report
@@ -119,6 +128,7 @@ def inspect_tfd(text, template, name='', encoding='unicode'):
                '正面、背面膜层分别保存为基底向外层序；有限厚基底采用非相干多次反射，与 TFCalc 块状基底假设一致。',
                '仅导入当前膜系和环境；未导入优化约束、目标曲线、照明/探测器加权及其它 TFCalc 分析设置。',
                '后续编辑采用本软件物理厚度规则，不模拟原 TFCalc 的光学厚度优先设置。']
+        notes.extend(thickness_warnings)
         if encoding=='gb18030':notes.append('文件按 GB18030 严格解码，保留中文名称。')
         project={'schema_version':1,'id':str(uuid.uuid4()),'name':name.rsplit('.',1)[0] if name else '导入的膜系',
                  'layer_order':'substrate_to_air','group_factors':{str(g):f for g,f in groups.items() if g>0},'settings':settings,'materials':list(materials.values()),'layers':layers,

@@ -27,7 +27,7 @@ export default function ToolWindow() {
   useEffect(() => {
     if (
       !new URLSearchParams(location.search).has("window-ipc-check") ||
-      !["materials", "substrate"].includes(id) ||
+      !["materials", "substrate", "materialdata"].includes(id) ||
       !snapshot?.library?.length ||
       catalogueCheck.current
     )
@@ -37,6 +37,12 @@ export default function ToolWindow() {
       const full = await readCatalogue("TFC/SOPRA/AG");
       if (full.material.samples?.length !== 121)
         throw new Error("材料工具窗口读取不到完整 n/k");
+      if (id !== "materialdata") {
+        if (!document.querySelector('.picker-list [role="option"]'))
+          throw Error("材料列表缺失");
+        await invoke("window_check_details", { details: { catalogue: true } });
+        return;
+      }
       const edit = document.querySelector<HTMLButtonElement>(
         ".catalogue-edit-button",
       );
@@ -184,7 +190,7 @@ export default function ToolWindow() {
         await until(() => latest.current?.layerSide === "back");
         const add = [
           ...document.querySelectorAll<HTMLButtonElement>(
-            ".engineering-toolbar button",
+            ".engineering-toolbar button, .sheet-toolbar button",
           ),
         ].find((b) => b.textContent?.trim() === "添加");
         if (!add) throw new Error("缺少添加背面膜层按钮");

@@ -7,6 +7,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./styles.css";
 import "./design/engineering.css";
+import "./design/compact.css";
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 async function boot() {
   if (

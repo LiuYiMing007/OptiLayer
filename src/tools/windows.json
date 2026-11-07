@@ -2,34 +2,34 @@
   {
     "id": "layers",
     "title": "膜层结构",
-    "width": 980,
-    "height": 650,
-    "minWidth": 780,
-    "minHeight": 360
+    "width": 490,
+    "height": 270,
+    "minWidth": 380,
+    "minHeight": 220
   },
   {
     "id": "materials",
     "title": "材料",
-    "width": 960,
-    "height": 680,
-    "minWidth": 720,
-    "minHeight": 440
+    "width": 240,
+    "height": 410,
+    "minWidth": 200,
+    "minHeight": 260
   },
   {
     "id": "substrate",
     "title": "基底",
-    "width": 960,
-    "height": 680,
-    "minWidth": 720,
-    "minHeight": 440
+    "width": 240,
+    "height": 410,
+    "minWidth": 200,
+    "minHeight": 260
   },
   {
     "id": "settings",
     "title": "计算参数",
-    "width": 460,
-    "height": 720,
-    "minWidth": 400,
-    "minHeight": 460
+    "width": 400,
+    "height": 600,
+    "minWidth": 340,
+    "minHeight": 380
   },
   {
     "id": "project",
@@ -62,5 +62,61 @@
     "height": 300,
     "minWidth": 380,
     "minHeight": 280
+  },
+  {
+    "id": "environment",
+    "title": "环境",
+    "width": 360,
+    "height": 385,
+    "minWidth": 300,
+    "minHeight": 300
+  },
+  {
+    "id": "illuminant",
+    "title": "光源",
+    "width": 400,
+    "height": 190,
+    "minWidth": 300,
+    "minHeight": 160
+  },
+  {
+    "id": "detector",
+    "title": "探测器",
+    "width": 400,
+    "height": 190,
+    "minWidth": 300,
+    "minHeight": 160
+  },
+  {
+    "id": "groups",
+    "title": "组",
+    "width": 360,
+    "height": 180,
+    "minWidth": 280,
+    "minHeight": 150
+  },
+  {
+    "id": "stack",
+    "title": "膜堆表达式",
+    "width": 520,
+    "height": 350,
+    "minWidth": 380,
+    "minHeight": 280
+  },
+  {
+    "id": "rear",
+    "title": "后表面膜层",
+    "width": 590,
+    "height": 250,
+    "minWidth": 360,
+    "minHeight": 210
+  },
+  {
+    "id": "materialdata",
+    "title": "材料数据",
+    "width": 480,
+    "height": 240,
+    "minWidth": 340,
+    "minHeight": 220
   }
 ]

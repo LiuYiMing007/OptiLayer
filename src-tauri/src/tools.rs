@@ -60,7 +60,7 @@ fn rect(window: &tauri::WebviewWindow) -> Option<Value> {
     let m = monitor.position();
     let screen = monitor.size();
     Some(
-        json!({"monitor":monitor.name(),"x":(pos.x-m.x) as f64 / screen.width as f64,"y":(pos.y-m.y) as f64 / screen.height as f64,"width":size.width as f64/scale,"height":size.height as f64/scale,"visible":window.is_visible().ok()?,"maximized":window.is_maximized().ok()?}),
+        json!({"sizing":2,"monitor":monitor.name(),"x":(pos.x-m.x) as f64 / screen.width as f64,"y":(pos.y-m.y) as f64 / screen.height as f64,"width":size.width as f64/scale,"height":size.height as f64/scale,"visible":window.is_visible().ok()?,"maximized":window.is_maximized().ok()?}),
     )
 }
 pub fn save_layout(app: &tauri::AppHandle) -> Result<(), String> {
@@ -134,14 +134,40 @@ fn restore_rect(app: &tauri::AppHandle, window: &tauri::WebviewWindow) {
         let origin = monitor.position();
         let max_w = screen.width as f64 / scale;
         let max_h = screen.height as f64 / scale;
-        let width = r["width"]
-            .as_f64()
-            .unwrap_or(800.0)
-            .clamp(340.0, max_w.max(340.0));
-        let height = r["height"]
-            .as_f64()
-            .unwrap_or(600.0)
-            .clamp(260.0, (max_h - 80.0).max(260.0));
+        let definition = definitions()
+            .into_iter()
+            .find(|d| tool_label(d["id"].as_str().unwrap_or("")) == window.label());
+        let default_w = definition
+            .as_ref()
+            .and_then(|d| d["width"].as_f64())
+            .unwrap_or(800.0);
+        let default_h = definition
+            .as_ref()
+            .and_then(|d| d["height"].as_f64())
+            .unwrap_or(600.0);
+        let min_w = definition
+            .as_ref()
+            .and_then(|d| d["minWidth"].as_f64())
+            .unwrap_or(340.0);
+        let min_h = definition
+            .as_ref()
+            .and_then(|d| d["minHeight"].as_f64())
+            .unwrap_or(260.0);
+        // Older layouts contain Dashboard-sized tools. Keep their location and
+        // adopt compact defaults once; later user resizes are retained as usual.
+        let migrated = definition.is_some() && r["sizing"] != 2;
+        let width = (if migrated {
+            default_w
+        } else {
+            r["width"].as_f64().unwrap_or(default_w)
+        })
+        .clamp(min_w, max_w.max(min_w));
+        let height = (if migrated {
+            default_h
+        } else {
+            r["height"].as_f64().unwrap_or(default_h)
+        })
+        .clamp(min_h, (max_h - 80.0).max(min_h));
         let x = (r["x"].as_f64().unwrap_or(0.1) * max_w).clamp(0.0, (max_w - width).max(0.0));
         let y =
             (r["y"].as_f64().unwrap_or(0.1) * max_h).clamp(40.0, (max_h - height - 40.0).max(40.0));
@@ -296,7 +322,7 @@ fn projection(mut snapshot: Value, label: &str) -> Value {
             v.remove("spectrum");
         }
     }
-    if label != "tool-materials" && label != "tool-substrate" {
+    if label != "tool-materials" && label != "tool-substrate" && label != "tool-materialdata" {
         if let Some(v) = snapshot.as_object_mut() {
             v.remove("library");
         }

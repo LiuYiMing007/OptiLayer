@@ -69,7 +69,7 @@ pub fn window_check_details(
     details: Value,
 ) -> Result<(), String> {
     require(&app)?;
-    if !["tool-materials", "tool-substrate", "tool-settings", "tool-layers", "tool-interactive"].contains(&window.label()) {
+    if !["tool-materialdata", "tool-materials", "tool-substrate", "tool-settings", "tool-layers", "tool-interactive"].contains(&window.label()) {
         return Err("不是已授权的验收工具窗口".into());
     }
     eprintln!("window-check details: {} {details}", window.label());

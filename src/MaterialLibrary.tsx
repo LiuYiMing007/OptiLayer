@@ -1,3 +1,4 @@
+import NkSheet from "./NkSheet";
 import MaterialEditor from "./MaterialEditor";
 import { editableCopy } from "./materialEditing";
 import { readCatalogue, checkMaterials } from "./api";
@@ -90,6 +91,9 @@ export default function MaterialLibrary({
   openFolder,
   onEditing,
   substrate = false,
+  compactList = false,
+  inspectName,
+  onInspect,
 }: {
   project: Project;
   update: (f: (p: Project) => void) => void;
@@ -104,7 +108,11 @@ export default function MaterialLibrary({
   openFolder: () => Promise<void>;
   onEditing: (active: boolean) => Promise<void>;
   substrate?: boolean;
+  compactList?: boolean;
+  inspectName?: string;
+  onInspect?: (name: string) => Promise<void>;
 }) {
+  const [showMetadata, setShowMetadata] = useState(false);
   const [tab, setTab] = useState<"project" | "library">("library"),
     [search, setSearch] = useState("");
   const [collection, setCollection] = useState(""),
@@ -171,7 +179,10 @@ export default function MaterialLibrary({
   const pages = Math.max(1, Math.ceil(filtered.length / 50)),
     currentPage = Math.min(page, pages - 1),
     rows = filtered.slice(currentPage * 50, currentPage * 50 + 50);
-  const m = filtered.find((x) => x.name === selected) || rows[0];
+  const m = inspectName
+    ? project.materials.find((x) => x.name === inspectName) ||
+      library.find((x) => x.name === inspectName)
+    : filtered.find((x) => x.name === selected) || rows[0];
   const inProject = m && project.materials.find((x) => x.name === m.name);
   const current = project.materials.find(
     (x) => x.name === project.settings.substrate_material,
@@ -228,12 +239,130 @@ export default function MaterialLibrary({
           setSearch("");
           setRole("");
           setSelected(m.name);
+          if (inspectName && onInspect) await onInspect(m.name);
           setNotice("材料已保存；当前项目使用更新后的快照。");
         }}
       />
     );
+  if (compactList)
+    return (
+      <section className="material-picker">
+        <div className="picker-toolbar">
+          <select
+            aria-label="材料目录来源"
+            value={tab}
+            onChange={(e) => {
+              setTab(e.target.value as typeof tab);
+              reset();
+            }}
+          >
+            <option value="library">全部材料</option>
+            <option value="project">当前项目</option>
+          </select>
+          <button
+            disabled={!m}
+            onClick={() => m && void perform(() => onInspect!(m.name))}
+          >
+            数据…
+          </button>
+        </div>
+        <input
+          className="picker-search"
+          aria-label="搜索材料"
+          placeholder="搜索名称 / 来源…"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            reset();
+          }}
+        />
+        <select
+          aria-label="材料集合"
+          value={collection}
+          onChange={(e) => {
+            setCollection(e.target.value);
+            reset();
+          }}
+        >
+          <option value="">全部来源</option>
+          {[...new Set(items.map((m) => m.collection).filter(Boolean))].map(
+            (c) => (
+              <option key={c}>{c}</option>
+            ),
+          )}
+        </select>
+        <div
+          className="picker-list"
+          role="listbox"
+          aria-label={substrate ? "基底目录" : "材料目录"}
+        >
+          {rows.map((item) => (
+            <button
+              key={item.name}
+              role="option"
+              aria-selected={m?.name === item.name}
+              onClick={() => {
+                setSelected(item.name);
+                void perform(() => onInspect!(item.name));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                  e.preventDefault();
+                  const index = filtered.findIndex((x) => x.name === item.name),
+                    next = Math.max(
+                      0,
+                      Math.min(
+                        filtered.length - 1,
+                        index + (e.key === "ArrowDown" ? 1 : -1),
+                      ),
+                    );
+                  setSelected(filtered[next].name);
+                  setPage(Math.floor(next / 50));
+                  queueMicrotask(() =>
+                    document
+                      .querySelector<HTMLElement>(
+                        '.picker-list [aria-selected="true"]',
+                      )
+                      ?.focus(),
+                  );
+                }
+              }}
+            >
+              <span>{materialLabel(item)}</span>
+              <small>{item.collection || "自定义"}</small>
+            </button>
+          ))}
+        </div>
+        <footer className="picker-footer">
+          <button
+            disabled={!currentPage}
+            onClick={() => setPage(currentPage - 1)}
+          >
+            ‹
+          </button>
+          <span>
+            {filtered.length} 项 · {currentPage + 1}/{pages}
+          </span>
+          <button
+            disabled={currentPage + 1 >= pages}
+            onClick={() => setPage(currentPage + 1)}
+          >
+            ›
+          </button>
+        </footer>
+        <div className="picker-toolbar">
+          <button disabled={!m} onClick={() => m && void apply(m)}>
+            {substrate ? "设为基底" : "加入项目"}
+          </button>
+          <button onClick={() => void perform(openFolder)}>数据文件夹</button>
+        </div>
+        {error && <p role="alert">{error}</p>}
+      </section>
+    );
   return (
-    <section className="catalogue-window">
+    <section
+      className={`catalogue-window compact-catalogue ${inspectName ? "data-inspector" : ""} ${showMetadata ? "show-metadata" : ""}`}
+    >
       {substrate && (
         <div className="catalogue-current">
           <span>当前基底</span>
@@ -272,6 +401,14 @@ export default function MaterialLibrary({
         </div>
       )}
       <div className="catalogue-toolbar">
+        {inspectName && (
+          <button
+            aria-pressed={showMetadata}
+            onClick={() => setShowMetadata(!showMetadata)}
+          >
+            资料说明
+          </button>
+        )}
         <button onClick={() => void perform(openFolder)}>打开数据文件夹</button>
         <div className="catalogue-tabs" role="tablist" aria-label="材料来源">
           <button
@@ -489,6 +626,9 @@ export default function MaterialLibrary({
                   >
                     <td title={item.name}>
                       {materialLabel(item)}
+                      <small className="catalogue-list-source">
+                        {item.collection || "自定义"}
+                      </small>
                       {project.materials.some((x) => x.name === item.name) && (
                         <span className="catalogue-used"> · 已加入</span>
                       )}
@@ -572,7 +712,13 @@ export default function MaterialLibrary({
                   </>
                 )}
               </dl>
-              {m.status !== "quarantined" && <Preview m={m} />}
+              {m.status !== "quarantined" && <NkSheet material={m} />}
+              {m.status !== "quarantined" && (
+                <details>
+                  <summary>n/k 曲线预览</summary>
+                  <Preview m={m} />
+                </details>
+              )}
               {!!m.issues?.length && (
                 <div className="catalogue-issues">
                   <strong>
@@ -702,15 +848,18 @@ export default function MaterialLibrary({
           )}
         </aside>
       </div>
-      <p className="catalogue-hint">
-        每种材料独立保存为 .material.json；基底位于
-        materials/substrates。外部修改文件后，请用“导入
-        JSON”校验并载入，再保存到共享库。原始目录保持只读，修改时创建自定义副本。
-      </p>
-      <footer className="catalogue-footer">
-        ¹ 列表 n 为数据预览值。选入项目后，计算使用完整
-        n/k，光学膜厚按参考波长求值。↑↓ 选择 · Enter / 双击应用
-      </footer>
+      <details className="sheet-help">
+        <summary>数据说明</summary>
+        <p className="catalogue-hint">
+          每种材料独立保存为 .material.json；基底位于
+          materials/substrates。外部修改文件后，请用“导入
+          JSON”校验并载入，再保存到共享库。原始目录保持只读，修改时创建自定义副本。
+        </p>
+        <footer className="catalogue-footer">
+          ¹ 列表 n 为数据预览值。选入项目后，计算使用完整
+          n/k，光学膜厚按参考波长求值。↑↓ 选择 · Enter / 双击应用
+        </footer>
+      </details>
       <input
         ref={fileInput}
         hidden

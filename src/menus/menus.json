@@ -130,12 +130,48 @@
         "id": "layer.material",
         "label": "替换选中层材料…",
         "implemented": true
+      },
+      {
+        "id": "view.groups",
+        "label": "组…",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.stack",
+        "label": "膜堆表达式…",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.rear",
+        "label": "后表面膜层…",
+        "implemented": true,
+        "check": true
       }
     ]
   },
   {
     "title": "参数",
     "items": [
+      {
+        "id": "view.environment",
+        "label": "环境…",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.illuminant",
+        "label": "光源…",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.detector",
+        "label": "探测器…",
+        "implemented": true,
+        "check": true
+      },
       {
         "id": "settings.wavelength",
         "label": "波长范围…",
@@ -225,6 +261,12 @@
       {
         "id": "view.substrate",
         "label": "基底",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.materialdata",
+        "label": "材料数据",
         "implemented": true,
         "check": true
       },

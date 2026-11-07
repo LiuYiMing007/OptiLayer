@@ -1,3 +1,4 @@
+import { replaceStack } from "./stackFormula";
 import { interactiveProject } from "./interactiveModel";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { readImportFile } from "./importEncoding";
@@ -91,6 +92,10 @@ export default function App() {
   const [confirmation, setConfirmation] = useState<
     ((answer: boolean) => void) | null
   >(null);
+  const [inspectedMaterial, setInspectedMaterial] = useState<{
+    name: string;
+    substrate: boolean;
+  }>();
   const [layerSide, setLayerSide] = useState<"front" | "back">("front");
   const editingLayers =
     layerSide === "front" ? project.layers : project.back_layers || [];
@@ -334,11 +339,11 @@ export default function App() {
     p.layers = [];
     replace(p);
   }
-  function layerCommand(id: LayerCommand, index = selected) {
+  function layerCommand(id: LayerCommand, index = selected, side = layerSide) {
     if (working.current || confirmation) return;
     let nextSelected = index;
     update((next) => {
-      if (layerSide === "back") {
+      if (side === "back") {
         if (
           (next.settings.substrate_model || "semi_infinite") === "semi_infinite"
         )
@@ -355,6 +360,7 @@ export default function App() {
   }
   const toolSnapshot: ToolSnapshot = {
     focus,
+    inspectedMaterial,
     sequence: ++sequence.current,
     scope,
     project,
@@ -555,14 +561,43 @@ export default function App() {
       commit(next, false);
       return;
     }
+    if (action.kind === "material-inspect") {
+      if (
+        [...materialEditors.current.keys()].some((k) =>
+          k.endsWith("materialdata"),
+        )
+      )
+        throw Error("请先保存或取消材料数据窗口中的编辑");
+      if (
+        ![...current.current.materials, ...library].some(
+          (m) => m.name === action.name,
+        )
+      )
+        throw Error("材料不存在，请刷新目录");
+      setInspectedMaterial({ name: action.name, substrate: action.substrate });
+      await showTool("materialdata");
+      return;
+    }
+    if (action.kind === "stack-apply") {
+      const next = replaceStack(
+        current.current,
+        action.side,
+        action.expected,
+        action.layers,
+      );
+      commit(next, false);
+      setSelected(0);
+      return;
+    }
     if (action.kind === "layer-side") {
       setLayerSide(action.side);
       setSelected(0);
       return;
     }
     if (action.kind === "select") {
+      if (action.side) setLayerSide(action.side);
       const index = (
-        layerSide === "front"
+        (action.side || layerSide) === "front"
           ? current.current.layers
           : current.current.back_layers || []
       ).findIndex((l) => l.id === action.layerId);
@@ -571,14 +606,14 @@ export default function App() {
     }
     if (action.kind === "layer") {
       const index = action.layerId
-        ? (layerSide === "front"
+        ? ((action.side || layerSide) === "front"
             ? current.current.layers
             : current.current.back_layers || []
           ).findIndex((l) => l.id === action.layerId)
         : selected;
       if (index < 0 && action.command !== "layer.add")
         throw new Error("该膜层已删除");
-      layerCommand(action.command, index);
+      layerCommand(action.command, index, action.side || layerSide);
       return;
     }
     if (action.kind === "command") {

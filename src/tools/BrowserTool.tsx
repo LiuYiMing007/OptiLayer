@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ToolView from "./ToolView";
+import { toolDefinitions } from "./state";
 import type { ToolSnapshot } from "./state";
 import type { ToolIntent } from "./useToolHost";
 export default function BrowserTool({
@@ -17,8 +18,22 @@ export default function BrowserTool({
   close: () => void;
   index: number;
 }) {
+  const definition = toolDefinitions.find((d) => d.id === id)!;
+  const compact = [
+    "layers",
+    "rear",
+    "environment",
+    "illuminant",
+    "detector",
+    "groups",
+    "stack",
+    "materialdata",
+  ].includes(id);
   const [position, setPosition] = useState({
-    x: 40 + index * 22,
+    x: Math.min(
+      40 + index * 22,
+      Math.max(8, window.innerWidth - definition.width - 8),
+    ),
     y: 70 + index * 22,
   });
   const [minimized, setMinimized] = useState(false);
@@ -27,7 +42,19 @@ export default function BrowserTool({
       role="dialog"
       aria-label={title}
       className={`browser-tool tool-${id} ${minimized ? "minimized" : ""}`}
-      style={{ left: position.x, top: position.y }}
+      style={{
+        left: position.x,
+        top: position.y,
+        width: `min(${definition.width}px, calc(100vw - 50px))`,
+        height: minimized
+          ? 28
+          : compact
+            ? "auto"
+            : `min(${definition.height}px, 80vh)`,
+        minWidth: Math.min(definition.minWidth, 300),
+        minHeight: minimized ? 28 : compact ? 0 : definition.minHeight,
+        maxHeight: "85vh",
+      }}
     >
       <header
         onPointerDown={(e) => {
@@ -63,7 +90,7 @@ export default function BrowserTool({
         }}
       >
         <strong>{title}</strong>
-        <span>{snapshot.project.name}</span>
+        <span title={snapshot.project.name} />
         <button
           aria-label={`最小化${title}`}
           onClick={() => setMinimized((v) => !v)}

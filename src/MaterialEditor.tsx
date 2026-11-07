@@ -1,3 +1,4 @@
+import { NkSheetEditor } from "./NkSheet";
 import { useState } from "react";
 import type { Material, MaterialRole } from "./types";
 import { parseNkTable } from "./materialEditing";
@@ -232,15 +233,21 @@ export default function MaterialEditor({
           )}
         </div>
         {draft.model === "tabulated" && (
-          <label className="nk-table-editor">
-            波长 nm　n　k（可从 Excel 粘贴三列；波长必须递增）
-            <textarea
-              spellCheck={false}
-              aria-label="编辑 n/k 数据表"
-              value={table}
-              onChange={(e) => setTable(e.target.value)}
-            />
-          </label>
+          <div>
+            <NkSheetEditor value={table} onChange={setTable} />
+            <details>
+              <summary>批量粘贴 / 原始三列文本</summary>
+              <label className="nk-table-editor">
+                波长 nm　n　k（可从 Excel 粘贴三列；波长必须递增）
+                <textarea
+                  spellCheck={false}
+                  aria-label="编辑 n/k 数据表"
+                  value={table}
+                  onChange={(e) => setTable(e.target.value)}
+                />
+              </label>
+            </details>
+          </div>
         )}
         {error && (
           <p role="alert" className="inline-error">

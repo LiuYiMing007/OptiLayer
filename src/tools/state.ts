@@ -17,8 +17,16 @@ export type ToolId =
   | "project"
   | "analysis"
   | "targets"
-  | "interactive";
+  | "interactive"
+  | "materialdata"
+  | "rear"
+  | "environment"
+  | "illuminant"
+  | "detector"
+  | "groups"
+  | "stack";
 export interface ToolSnapshot {
+  inspectedMaterial?: { name: string; substrate: boolean };
   focus?: { id: string; label: string; token: string };
   sequence: number;
   scope: string;
@@ -72,6 +80,7 @@ export type Patch =
       value: unknown;
     };
 export type ToolAction = { scope: string; requestId: string } & (
+  | { kind: "material-inspect"; name: string; substrate: boolean }
   | { kind: "patch"; patches: Patch[] }
   | {
       kind: "interactive";
@@ -81,10 +90,17 @@ export type ToolAction = { scope: string; requestId: string } & (
       value: number;
     }
   | { kind: "command"; id: string }
-  | { kind: "select"; layerId: string }
+  | {
+      kind: "stack-apply";
+      side: "front" | "back";
+      expected: Project["layers"];
+      layers: Project["layers"];
+    }
+  | { kind: "select"; layerId: string; side?: "front" | "back" }
   | { kind: "layer-side"; side: "front" | "back" }
   | {
       kind: "layer";
+      side?: "front" | "back";
       command:
         "layer.add" | "layer.copy" | "layer.delete" | "layer.up" | "layer.down";
       layerId?: string;

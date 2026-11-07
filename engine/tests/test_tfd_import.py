@@ -11,6 +11,17 @@ def text(material='SIO2', substrate='K9', exit_medium='K9', group='1.250000'):
 
 
 class RealTFDAdapterTests(unittest.TestCase):
+    def test_redundant_qwot_mismatch_is_reported_without_fitting_material_or_thickness(self):
+        source=text(group='1')
+        report=inspect_tfd(source,fixture())
+        self.assertFalse(report['issues'])
+        self.assertTrue(any('可能使用了不同材料数据' in n for n in report['warnings']))
+        layer=report['project']['layers'][0]
+        self.assertEqual(layer['thickness_nm'],100)
+        original=catalogue_material(layer['material'])
+        actual=next(m for m in report['project']['materials'] if m['name']==layer['material'])
+        self.assertEqual(actual,original)
+
     def test_real_materials_and_group_factor_preserve_physical_meaning(self):
         template=fixture();template['analysis_bands']={'passband':{'start_nm':400,'end_nm':500}}
         p=parse_tfd(text(),template,'synthetic.tfd')
