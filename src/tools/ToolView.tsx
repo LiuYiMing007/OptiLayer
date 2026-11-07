@@ -36,7 +36,9 @@ export default function ToolView({
       target?.focus();
     }
   }, [s.focus?.token, id]);
-  const side = id === "rear" ? "back" : s.layerSide || "front";
+  const [side, setSide] = useState<"front" | "back">(
+    id === "rear" ? "back" : "front",
+  );
   const layerProject =
     side === "back"
       ? { ...s.project, layers: s.project.back_layers || [] }
@@ -122,14 +124,20 @@ export default function ToolView({
               disabled={id === "rear"}
               aria-label="选择正面膜层"
               aria-pressed={side !== "back"}
-              onClick={() => void send({ kind: "layer-side", side: "front" })}
+              onClick={() => {
+                setSide("front");
+                void send({ kind: "layer-side", side: "front" });
+              }}
             >
               正面 · {s.project.layers.length} 层
             </button>
             <button
               aria-label="选择背面膜层"
               aria-pressed={side === "back"}
-              onClick={() => void send({ kind: "layer-side", side: "back" })}
+              onClick={() => {
+                setSide("back");
+                void send({ kind: "layer-side", side: "back" });
+              }}
             >
               背面 · {s.project.back_layers?.length || 0} 层
             </button>
