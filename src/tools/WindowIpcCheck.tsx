@@ -18,6 +18,7 @@ interface Status {
   details?: Record<
     string,
     {
+      management?: boolean;
       editor?: boolean;
       catalogue?: boolean;
       environment?: boolean;
@@ -37,6 +38,7 @@ export default function WindowIpcCheck() {
   const [project, setProject] = useState(referenceProject),
     [error, setError] = useState("");
   const [layerSide, setLayerSide] = useState<"front" | "back">("front");
+  const materialCommands = useRef(new Set<string>());
   const currentProject = useRef(project);
   currentProject.current = project;
   const sequence = useRef(0),
@@ -63,7 +65,22 @@ export default function WindowIpcCheck() {
   };
   const host = useToolHost(
     snapshot,
-    async (_source, action) => {
+    async (source, action) => {
+      if (
+        ["material-new", "material-delete", "material-restore"].includes(
+          action.kind,
+        )
+      ) {
+        if (
+          action.kind === "material-new" &&
+          action.substrate !==
+            (source === "substrate" || source === "tool-substrate")
+        )
+          throw Error("新增材料用途未正确传递");
+        materialCommands.current.add(
+          `${source.replace(/^tool-/, "")}:${action.kind}`,
+        );
+      }
       let next = currentProject.current;
       if (action.kind === "patch") next = applyPatches(next, action.patches);
       if (action.kind === "layer-side") {
@@ -168,7 +185,7 @@ export default function WindowIpcCheck() {
         );
         (report.main_button_ipc as string[]).push(id);
         if (id === "materials" || id === "substrate")
-          await until((s) => !!s.details?.[`tool-${id}`]?.catalogue);
+          await until((s) => !!s.details?.[`tool-${id}`]?.management);
         if (id === "materialdata")
           await until((s) => !!s.details?.["tool-materialdata"]?.editor);
         // Keep the input window visible until blur commits have been acknowledged.
@@ -220,6 +237,17 @@ export default function WindowIpcCheck() {
       )
         throw new Error("常驻计算服务结果或无状态恢复失败");
       report.warm_calculation_service = true;
+      for (const tool of ["materials", "substrate"]) {
+        for (const action of [
+          "material-new",
+          "material-delete",
+          "material-restore",
+        ]) {
+          if (!materialCommands.current.has(`${tool}:${action}`))
+            throw Error(`材料管理 IPC 缺失：${tool}/${action}`);
+        }
+      }
+      report.material_management_button_ipc = true;
       report.material_and_substrate_editors = true;
       report.shared_project_rendered = true;
       report.close_hide_reopen = true;

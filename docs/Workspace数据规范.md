@@ -1,5 +1,7 @@
 # Workspace 数据规范 v1
 
+当前客户端：0.2.4。Workspace manifest 仍为 v1，SQLite 数据库版本为4，项目支持原有 schema_version=1/2；以下版本小节记录历史变化。
+
 ## 0.1.4 便携项目层
 
 程序与数据共同放在一个项目文件夹：根部 `tfc-project.json` 标记项目；`macOS/TFC.app` 和 `Windows/TFC.exe` 为各自客户端；`Workspace/` 为默认工作区。工作区内部格式仍为 v1，没有改变已保存的材料、膜系和光谱数据。
@@ -13,10 +15,12 @@
 ```text
 OpticalWorkspace/
 ├── workspace.json
-├── projects/     # 按稳定项目 ID 导出的 JSON 恢复副本
+├── projects/     # 可读项目名称的 *.tfc.json；内部仍使用稳定 ID
 ├── materials/
 │   ├── catalogue/  # TFCalc-0.2.0.original.json 原始目录快照
-│   └── custom/     # 可读名称加稳定 ID 哈希的 *.material.json 恢复副本
+│   ├── films/      # 新增/编辑的膜层材料，每种一个可读名称文件
+│   ├── substrates/ # 基底/介质逐项文件，原始来源有各自子目录
+│   └── deleted/    # 删除记录的完整恢复备份
 ├── spectra/      # 保存项目时保留的有效计算结果
 ├── database/
 │   └── workspace.sqlite3
@@ -41,7 +45,7 @@ imports 和 config 已建立目录，但没有自动归档导入文件或完整�
 - 内部文件名使用稳定 ID / 哈希，避免跨平台保留字符、大小写和中文文件名歧义；用户名称保留在内容中。
 - 内部引用使用 `/` 的相对格式；通过 pathlib 解析到本机路径。拒绝盘符、UNC、上级目录和逃逸到工作区外的符号链接。
 - 未支持的未来 Workspace 或数据库版本明确拒绝，不自动降级覆盖。
-- 当前项目格式保持 schema_version=1，不重写已验证的材料/膜系数据模型。
+- 保留 schema_version=1 普通项目及 schema_version=2 有限基底/背面/响应项目，不重写已验证的光学材料数据。
 - SQLite schema v3 沿用 projects/materials，新增 spectra；使用 DELETE journal 和 FULL synchronous。所有请求结束会关闭连接。
 - 复制工作区之前退出应用，并复制整个目录。异常断开后的 journal 可能参与恢复，不应只复制主数据库后自行删除日志。
 - 工作区支持在 Mac / Windows 间顺序使用；不提供网络共享并发写、多设备同步或冲突合并。驱动器不可用时提示重新选择，不在旧挂载位置偷偷创建空数据。
@@ -107,3 +111,12 @@ JSON 是恢复副本，不监控外部文件变化。建议在软件中编辑；
 项目保留可选 import_info：TFCalc 文件名、编码、解码后 UTF-8 文本 SHA-256、材料角色与精确目录映射、原始膜厚/组号/系数及未导入设置说明。原膜层和材料结构不变，物理厚度存实际值（源物理厚度乘组系数）。schema_version=1，数据库版本不变。
 
 批量审计工具必须指定源目录及全新输出目录，拒绝覆盖或在源目录内写入。成功膜系写独立 Workspace；未支持项写逐文件清单。全部原件归档至 imports/TFCalc-originals.zip，附原始字节 SHA-256 清单；归档不代表被计算，应用不会自动执行或解析其中的内容。用户工作区和归档只保留本地。
+
+
+## 0.2.4 材料统一目录与增删
+
+材料、基底窗口可新增、删除；不单列“自定义”。新记录采用稳定内部 ID，但显示和逐项文件使用用户名称。原始记录编辑生成独立副本，保留来源。`materials/films` 保存膜层材料，`materials/substrates` 保存基底和介质。SQLite 仍为权威数据；不直接扫描文件来覆盖项目。
+
+数据库版本4新增 `removed_materials`，以保存共享目录删除状态，防止程序内置目录在重启后又将已删除条目加回。删除前校验完整材料是否被其它窗口更新，先写完整备份到 `materials/deleted`。原始 TFCalc 目录保持只读。共享目录删除不修改任何项目内材料快照；当前项目删除必须无前后膜层/三种环境介质引用，并接入项目撤销。
+
+升级仅移除与原始示例完全相同的四条共享常数，不影响同名但已修改的记录，不修改项目快照。旧可读导出迁入 films/substrates；若旧文件被用户手工修改则保留。新版工作区应同时使用0.2.4 Mac/Windows 客户端；旧客户端拒绝更高数据库版本，不允许降级写入。

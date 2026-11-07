@@ -30,9 +30,26 @@ with tempfile.TemporaryDirectory(prefix='tfc-catalogue-') as folder:
     edited=json.loads(json.dumps(silver));edited['name']='USER/ci-silver';edited['display_name']='CI 编辑银';edited['samples'][5][2]+=.01
     edited=call({'action':'material_validate','material':edited})['material']
     call({'action':'library_save','materials':[edited]})
-    files=list((workspace/'materials/custom').glob('*.material.json'))
+    files=list((workspace/'materials/films').glob('*.material.json'))
     assert len(files)==1 and json.loads(files[0].read_text(encoding='utf-8'))==edited
     assert (workspace/'materials/catalogue/TFCalc-0.2.0.original.json').exists()
+    # Frozen executable must persist both material and substrate CRUD on this OS.
+    for role in ('film','substrate'):
+        item=dict(name='USER/crud-'+role,display_name='新增材料' if role=='film' else '新增基底',n=1.73,k=0,role=role,model='constant',color='#6488a6',source='CI CRUD')
+        call({'action':'library_save','materials':[item]})
+        category='substrates' if role=='substrate' else 'films'
+        path=workspace/'materials'/category/(item['display_name']+'.material.json')
+        assert json.loads(path.read_text(encoding='utf-8'))==item
+        assert any(m['name']==item['name'] for m in call({'action':'library_list'})['materials'])
+        call({'action':'library_delete','name':item['name'],'expected':item})
+        assert not path.exists()
+        assert all(m['name']!=item['name'] for m in call({'action':'library_list'})['materials'])
+        call({'action':'library_restore','name':item['name']})
+        assert json.loads(path.read_text(encoding='utf-8'))==item
+    call({'action':'library_delete','name':silver['name'],'expected':silver})
+    assert all(m['name']!=silver['name'] for m in call({'action':'library_list'})['materials'])
+    call({'action':'library_restore','name':silver['name']})
+    assert any(m['name']==silver['name'] for m in call({'action':'library_list'})['materials'])
     project['materials'].append(edited);project['layers'][0]['material']=edited['name']
 
     call({'action':'save','project':project})
@@ -45,7 +62,7 @@ with tempfile.TemporaryDirectory(prefix='tfc-catalogue-') as folder:
     assert spectrum==call({'action':'calculate','project':loaded})
     report={'all_pass':True,'platform':platform.system(),'catalogue_total':1211,'ready':1186,'quarantined':25,
             'catalogue_digest':hashlib.sha256((root/'engine/data/tfcalc-catalogue.json').read_bytes()).hexdigest(),
-            'packaged_data_loaded':True,'metal_absorption_and_glass_dispersion':True,'move_save_exact_recalculation':True,'material_edit_and_custom_file':True,'visible_original_catalogue_export':True}
+            'packaged_data_loaded':True,'metal_absorption_and_glass_dispersion':True,'move_save_exact_recalculation':True,'material_edit_and_custom_file':True,'visible_original_catalogue_export':True,'material_substrate_create_delete_restore':True,'catalogue_delete_restore':True,'demo_shared_records_absent':not any(m['name'] in ('AIR','TA2O5_REF','SIO2_REF','GLASS_REF') for m in materials)}
 checks=root/'release/checks';checks.mkdir(parents=True,exist_ok=True)
 (checks/'catalogue.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print(json.dumps(report,ensure_ascii=False))

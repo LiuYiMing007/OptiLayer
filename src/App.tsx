@@ -2,7 +2,10 @@ import { replaceStack } from "./stackFormula";
 import { interactiveProject } from "./interactiveModel";
 import SaveProjectDialog from "./SaveProjectDialog";
 import { readImportFile } from "./importEncoding";
-import { applyMaterialChange } from "./applyMaterialChange";
+import {
+  applyMaterialChange,
+  removeProjectMaterial,
+} from "./applyMaterialChange";
 import UnsavedDialog from "./UnsavedDialog";
 import { projectKey, hasUnsavedChanges, dataKey } from "./projectStatus";
 import { useEffect, useRef, useState } from "react";
@@ -95,6 +98,7 @@ export default function App() {
   const [inspectedMaterial, setInspectedMaterial] = useState<{
     name: string;
     substrate: boolean;
+    draft?: Material;
   }>();
   const [layerSide, setLayerSide] = useState<"front" | "back">("front");
   const editingLayers =
@@ -509,6 +513,64 @@ export default function App() {
       await request({ action: "materials_reveal" });
       return;
     }
+    if (action.kind === "material-new") {
+      if (materialEditors.current.size)
+        throw Error("请先保存或取消正在编辑的材料");
+      const draft: Material = {
+        name: `USER/${crypto.randomUUID()}`,
+        display_name: "",
+        n: 1.5,
+        k: 0,
+        role: action.substrate ? "substrate" : "film",
+        model: "constant",
+        color: "#6488a6",
+        source: "用户输入；未经实测校准",
+      };
+      setInspectedMaterial({
+        name: draft.name,
+        substrate: action.substrate,
+        draft,
+      });
+      await showTool("materialdata");
+      return;
+    }
+    if (action.kind === "material-delete") {
+      if (materialEditors.current.size)
+        throw Error("请先保存或取消正在编辑的材料");
+      if (action.target === "project") {
+        const next = removeProjectMaterial(
+          current.current,
+          action.name,
+          action.expected,
+        );
+        commit(next);
+        setNotice("已从当前项目移除材料，可撤销；共享目录未改变");
+      } else {
+        const full =
+          action.expected.catalogue_summary &&
+          action.expected.status !== "quarantined"
+            ? (
+                await request<{ material: Material }>({
+                  action: "catalogue_get",
+                  name: action.name,
+                })
+              ).material
+            : action.expected;
+        await request({
+          action: "library_delete",
+          name: action.name,
+          expected: full,
+        });
+        await refreshLibrary();
+        setNotice("已从共享目录删除；现有项目快照保留。可在目录中撤销删除");
+      }
+      return;
+    }
+    if (action.kind === "material-restore") {
+      await request({ action: "library_restore", name: action.name });
+      await refreshLibrary();
+      return;
+    }
     if (action.kind === "material-save") {
       if (
         dataKey(
@@ -530,7 +592,7 @@ export default function App() {
           material,
           action.replaces,
           action.expected,
-          !!action.substrate,
+          !!action.substrate && !!action.expected,
         );
         const result = await request<{ warnings?: string[] }>({
           action: "library_save",
@@ -1369,6 +1431,32 @@ export default function App() {
                     kind: "catalogue-import",
                     name,
                     substrate,
+                    scope: scopeRef.current,
+                    requestId: crypto.randomUUID(),
+                  })
+                }
+                onNew={() =>
+                  handleToolAction("main", {
+                    kind: "material-new",
+                    substrate: false,
+                    scope: scopeRef.current,
+                    requestId: crypto.randomUUID(),
+                  })
+                }
+                onDelete={(name, expected, target) =>
+                  handleToolAction("main", {
+                    kind: "material-delete",
+                    name,
+                    expected,
+                    target,
+                    scope: scopeRef.current,
+                    requestId: crypto.randomUUID(),
+                  })
+                }
+                onRestore={(name) =>
+                  handleToolAction("main", {
+                    kind: "material-restore",
+                    name,
                     scope: scopeRef.current,
                     requestId: crypto.randomUUID(),
                   })

@@ -464,3 +464,53 @@
   margin: 0 0 5px;
   font-size: 12px;
 }
+
+.material-management {
+  flex-wrap: wrap;
+  flex: none;
+  padding: 4px 6px;
+  border-bottom: 1px solid #d8d8d8;
+}
+.material-delete-prompt {
+  padding: 6px 8px;
+  border: 1px solid #d8d8d8;
+  background: #f6f7f8;
+  font-size: 12px;
+}
+.material-delete-prompt p {
+  margin: 0 0 6px;
+}
+.material-delete-prompt button {
+  margin-right: 6px;
+}
+.tool-materialdata .material-editor-panel {
+  padding: 8px;
+  overflow: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+.tool-materialdata .material-editor-panel header h2 {
+  font-size: 13px;
+  margin: 0;
+}
+.tool-materialdata .material-editor-panel header span {
+  font-size: 11px;
+  color: #666;
+}
+.material-management button,
+.material-delete-prompt button {
+  min-height: 26px;
+  padding: 0 7px;
+  border: 1px solid #cdd5de;
+  border-radius: 3px;
+  background: #f8f9fa;
+  color: #303840;
+  font-size: 12px;
+}
+.material-management button:hover:not(:disabled),
+.material-delete-prompt button:hover:not(:disabled) {
+  background: #eaf1f8;
+}
+.material-management button:disabled {
+  opacity: 0.5;
+}

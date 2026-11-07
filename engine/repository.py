@@ -7,10 +7,29 @@ import uuid
 from datetime import datetime, timezone
 from models import BUILTIN_MATERIALS, validate, validate_material
 from workspace import atomic_json
-from catalogue import catalogue
+from catalogue import catalogue, catalogue_summaries
 from file_exports import named_export, export_catalogue, file_label
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
+
+
+def remove_library_record(workspace, conn, material):
+    """Logical deletion is portable; a full recoverable record stays outside active folders."""
+    name = material['name']
+    import hashlib
+    backup = workspace.manifest['directories']['materials']+'/deleted/'+hashlib.sha256(name.encode()).hexdigest()[:16]+'.material.json'
+    atomic_json(workspace.resolve(backup), material)
+    row = conn.execute("SELECT relative_path FROM file_exports WHERE kind='material' AND item_key=?", (name,)).fetchone()
+    if row:
+        path = workspace.resolve(row[0])
+        if path.exists():
+            try:
+                if json.loads(path.read_text(encoding='utf-8')) == material:
+                    path.unlink()
+            except (ValueError, OSError): pass  # Never erase a hand-edited file.
+    conn.execute('INSERT OR REPLACE INTO removed_materials VALUES (?,?)', (name, json.dumps(material, ensure_ascii=False)))
+    conn.execute('DELETE FROM materials WHERE name=?', (name,))
+    conn.execute("DELETE FROM file_exports WHERE kind='material' AND item_key=?", (name,))
 
 
 def connect_db(workspace):
@@ -27,8 +46,15 @@ def connect_db(workspace):
     conn.execute('CREATE TABLE IF NOT EXISTS materials (name TEXT PRIMARY KEY, document TEXT NOT NULL, updated_at TEXT NOT NULL)')
     conn.execute('CREATE TABLE IF NOT EXISTS spectra (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, relative_path TEXT NOT NULL, created_at TEXT NOT NULL)')
     conn.execute('CREATE TABLE IF NOT EXISTS file_exports (kind TEXT NOT NULL, item_key TEXT NOT NULL, relative_path TEXT NOT NULL UNIQUE, PRIMARY KEY(kind,item_key))')
-    for material in BUILTIN_MATERIALS:
-        conn.execute("INSERT OR IGNORE INTO materials VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))", (material['name'], json.dumps(material, ensure_ascii=False)))
+    conn.execute('CREATE TABLE IF NOT EXISTS removed_materials (name TEXT PRIMARY KEY, document TEXT NOT NULL)')
+    # Remove only the four unchanged demonstration records from the shared library.
+    # Project snapshots and user-edited variants remain intact.
+    if version < 4:
+        for material in BUILTIN_MATERIALS:
+            row = conn.execute('SELECT document FROM materials WHERE name=?', (material['name'],)).fetchone()
+            if row and json.loads(row[0]) == material:
+                remove_library_record(workspace, conn, material)
+
     conn.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
     conn.commit()
     # A discoverable, portable reference export. Never overwrite files users have.
@@ -43,9 +69,9 @@ def connect_db(workspace):
         # Existing projects acquire readable exports lazily without changing their IDs.
         for key, name, document in conn.execute("SELECT id,name,document FROM projects WHERE id NOT IN (SELECT item_key FROM file_exports WHERE kind='project')").fetchall():
             named_export(workspace, conn, 'project', key, workspace.manifest['directories']['projects'], name, '.tfc.json', json.loads(document))
-        for key, document in conn.execute("SELECT name,document FROM materials WHERE name NOT IN (SELECT item_key FROM file_exports WHERE kind='material')").fetchall():
+        for key, document in conn.execute("SELECT name,document FROM materials" if version < 4 else "SELECT name,document FROM materials WHERE name NOT IN (SELECT item_key FROM file_exports WHERE kind='material')").fetchall():
             material = json.loads(document)
-            category = ('substrates/' if material.get('role') in ('substrate','medium') else '') + ('builtins' if material['name'] in {m['name'] for m in BUILTIN_MATERIALS} else 'custom')
+            category = 'substrates' if material.get('role') in ('substrate','medium') else 'films'
             named_export(workspace, conn, 'material', key, workspace.manifest['directories']['materials']+'/'+category, material.get('display_name') or key.split('/')[-1], '.material.json', material)
         conn.commit()
     except OSError:
@@ -67,20 +93,44 @@ def storage_action(workspace, request):
     try:
         with conn:
             if action == 'library_list':
-                return {'materials': [json.loads(row[0]) for row in conn.execute('SELECT document FROM materials ORDER BY name')]}
+                return {'materials': [json.loads(row[0]) for row in conn.execute('SELECT document FROM materials ORDER BY name')], 'removed': [row[0] for row in conn.execute('SELECT name FROM removed_materials')]}
+            if action == 'library_delete':
+                name = request['name']
+                row = conn.execute('SELECT document FROM materials WHERE name=?', (name,)).fetchone()
+                material = json.loads(row[0]) if row else next((m for m in catalogue()['materials'] if m['name'] == name), None)
+                if material is None: raise ValueError('材料已不存在，请刷新目录')
+                expected = request.get('expected')
+                if not row and material:
+                    material = {k:v for k,v in material.items() if k not in ('preview','raw_records')}
+                    current = next((m for m in catalogue_summaries() if m['name'] == name), None) if isinstance(expected, dict) and expected.get('catalogue_summary') else material
+                else: current = material
+                if expected != current: raise ValueError('材料已改变，请刷新后再删除')
+                remove_library_record(workspace, conn, material)
+                return {'deleted': True}
+            if action == 'library_restore':
+                row = conn.execute('SELECT document FROM removed_materials WHERE name=?', (request['name'],)).fetchone()
+                if row is None: raise ValueError('没有可恢复的材料')
+                material = json.loads(row[0])
+                conn.execute('DELETE FROM removed_materials WHERE name=?', (material['name'],))
+                conn.execute("INSERT OR IGNORE INTO materials VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))", (material['name'], row[0]))
+                category = 'substrates' if material.get('role') in ('substrate','medium') else 'films'
+                named_export(workspace, conn, 'material', material['name'], workspace.manifest['directories']['materials']+'/'+category, material.get('display_name') or material['name'], '.material.json', material)
+                return {'restored': True}
             if action == 'library_save':
                 materials = request['materials']
                 if not isinstance(materials, list) or not 1 <= len(materials) <= 300:
                     raise ValueError('一次保存 1–300 种材料')
                 for material in materials:
                     validate_material(material)
+                    if material.get("catalogue_summary"): raise ValueError("不能保存目录摘要，请先读取完整材料数据")
                 for material in materials:
+                    conn.execute('DELETE FROM removed_materials WHERE name=?', (material['name'],))
                     conn.execute("INSERT INTO materials VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now')) ON CONFLICT(name) DO UPDATE SET document=excluded.document, updated_at=excluded.updated_at", (material['name'], json.dumps(material, ensure_ascii=False, allow_nan=False)))
                 conn.commit()
                 warnings=[]
                 for material in materials:
                     try:
-                        category = ('substrates/' if material.get('role') in ('substrate','medium') else '') + ('builtins' if material['name'] in {m['name'] for m in BUILTIN_MATERIALS} else 'custom')
+                        category = 'substrates' if material.get('role') in ('substrate','medium') else 'films'
                         named_export(workspace, conn, 'material', material['name'], workspace.manifest['directories']['materials']+'/'+category, material.get('display_name') or material['name'].split('/')[-1], '.material.json', material)
                     except (OSError, ValueError) as error:
                         warnings.append(f'材料已入库，但恢复副本未写入：{error}')

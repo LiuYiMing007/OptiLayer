@@ -94,7 +94,19 @@ export default function MaterialLibrary({
   compactList = false,
   inspectName,
   onInspect,
+  onNew,
+  onDelete,
+  onRestore,
+  newMaterial,
 }: {
+  onNew: () => Promise<void>;
+  onDelete: (
+    name: string,
+    expected: Material,
+    target: "project" | "library",
+  ) => Promise<void>;
+  onRestore: (name: string) => Promise<void>;
+  newMaterial?: Material;
   project: Project;
   update: (f: (p: Project) => void) => void;
   library: Material[];
@@ -123,13 +135,11 @@ export default function MaterialLibrary({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
-  const [adding, setAdding] = useState(false),
-    [newName, setNewName] = useState(""),
-    [newN, setNewN] = useState(1.5),
-    [newK, setNewK] = useState(0),
-    [newRole, setNewRole] = useState<MaterialRole>(
-      substrate ? "substrate" : "film",
-    );
+  const [confirmDelete, setConfirmDelete] = useState<{
+    material: Material;
+    target: "project" | "library";
+  } | null>(null);
+  const [lastDeleted, setLastDeleted] = useState<string>();
   const [editing, setEditing] = useState<{
     material: Material;
     replaces: string;
@@ -161,6 +171,18 @@ export default function MaterialLibrary({
       });
     });
   }
+  useEffect(() => {
+    if (!newMaterial) return;
+    void perform(async () => {
+      await onEditing(true);
+      editingActive.current = true;
+      setEditing({
+        material: structuredClone(newMaterial),
+        replaces: newMaterial.name,
+        expected: null,
+      });
+    });
+  }, [newMaterial?.name]);
   const fileInput = useRef<HTMLInputElement>(null);
   const items = tab === "project" ? project.materials : library;
   const filtered = useMemo(
@@ -190,6 +212,62 @@ export default function MaterialLibrary({
   const selectedNk = m
     ? materialAt(m, project.settings.reference_nm)
     : [NaN, NaN];
+  const management = (
+    <div className="picker-toolbar material-management">
+      <button disabled={busy} onClick={() => void perform(onNew)}>
+        新增…
+      </button>
+      <button
+        disabled={busy || !m}
+        onClick={() =>
+          setConfirmDelete({ material: structuredClone(m!), target: tab })
+        }
+      >
+        删除…
+      </button>
+      {lastDeleted && (
+        <button
+          disabled={busy}
+          onClick={() =>
+            void perform(async () => {
+              await onRestore(lastDeleted);
+              setLastDeleted(undefined);
+            })
+          }
+        >
+          撤销删除
+        </button>
+      )}
+    </div>
+  );
+  async function removeSelected() {
+    if (!confirmDelete) return;
+    const { material: item, target } = confirmDelete;
+    await perform(async () => {
+      await onDelete(item.name, item, target);
+      if (target === "library") setLastDeleted(item.name);
+      setSelected("");
+      setConfirmDelete(null);
+    });
+  }
+  const deletionPrompt = confirmDelete && (
+    <div
+      className="material-delete-prompt"
+      role="alertdialog"
+      aria-label="删除材料确认"
+    >
+      <p>
+        删除“{materialLabel(confirmDelete.material)}”？
+        {confirmDelete.target === "library"
+          ? "从共享目录移除，已有项目快照保留。"
+          : "从当前项目移除，使用中的材料需先替换。"}
+      </p>
+      <button disabled={busy} onClick={() => void removeSelected()}>
+        确认删除
+      </button>
+      <button onClick={() => setConfirmDelete(null)}>取消</button>
+    </div>
+  );
   async function perform(fn: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -247,6 +325,8 @@ export default function MaterialLibrary({
   if (compactList)
     return (
       <section className="material-picker">
+        {management}
+        {deletionPrompt}
         <div className="picker-toolbar">
           <select
             aria-label="材料目录来源"
@@ -285,11 +365,13 @@ export default function MaterialLibrary({
           }}
         >
           <option value="">全部来源</option>
-          {[...new Set(items.map((m) => m.collection).filter(Boolean))].map(
-            (c) => (
-              <option key={c}>{c}</option>
+          {[
+            ...new Set(
+              items.map((m) => m.collection).filter((c) => c && c !== "自定义"),
             ),
-          )}
+          ].map((c) => (
+            <option key={c}>{c}</option>
+          ))}
         </select>
         <div
           className="picker-list"
@@ -329,7 +411,9 @@ export default function MaterialLibrary({
               }}
             >
               <span>{materialLabel(item)}</span>
-              <small>{item.collection || "自定义"}</small>
+              <small>
+                {item.collection === "自定义" ? "" : item.collection || ""}
+              </small>
             </button>
           ))}
         </div>
@@ -363,6 +447,8 @@ export default function MaterialLibrary({
     <section
       className={`catalogue-window compact-catalogue ${inspectName ? "data-inspector" : ""} ${showMetadata ? "show-metadata" : ""}`}
     >
+      {management}
+      {deletionPrompt}
       {substrate && (
         <div className="catalogue-current">
           <span>当前基底</span>
@@ -432,7 +518,7 @@ export default function MaterialLibrary({
             项目快照 · {project.materials.length}
           </button>
         </div>
-        <button onClick={() => setAdding(!adding)}>新建常数材料</button>
+
         <button onClick={() => fileInput.current?.click()}>导入 JSON</button>
         {tab === "project" && (
           <button disabled={busy} onClick={() => void perform(onSaveLibrary)}>
@@ -460,11 +546,13 @@ export default function MaterialLibrary({
           }}
         >
           <option value="">全部来源</option>
-          {[...new Set(items.map((x) => x.collection).filter(Boolean))].map(
-            (c) => (
-              <option key={c}>{c}</option>
+          {[
+            ...new Set(
+              items.map((x) => x.collection).filter((c) => c && c !== "自定义"),
             ),
-          )}
+          ].map((c) => (
+            <option key={c}>{c}</option>
+          ))}
         </select>
         <select
           aria-label="材料用途筛选"
@@ -503,73 +591,6 @@ export default function MaterialLibrary({
         <p className="catalogue-notice" role="status">
           {notice}
         </p>
-      )}
-      {adding && (
-        <form
-          className="catalogue-add"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (project.materials.some((x) => x.name === newName.trim())) {
-              setError("名称已存在，请使用其他名称");
-              return;
-            }
-            update((p) =>
-              p.materials.push({
-                name: newName.trim(),
-                n: newN,
-                k: newK,
-                color: "#6488a6",
-                role: newRole,
-                model: "constant",
-                source: "用户输入常数；未经实测校准",
-              }),
-            );
-            setNewName("");
-            setTab("project");
-            setAdding(false);
-          }}
-        >
-          <input
-            required
-            maxLength={100}
-            aria-label="新材料名称"
-            placeholder="材料名称"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-          />
-          <label>
-            n{" "}
-            <NumericInput
-              label="新材料折射率"
-              value={newN}
-              min={0.001}
-              max={20}
-              onChange={setNewN}
-            />
-          </label>
-          <label>
-            k{" "}
-            <NumericInput
-              label="新材料消光系数"
-              value={newK}
-              min={0}
-              max={1000000}
-              onChange={setNewK}
-            />
-          </label>
-          <select
-            aria-label="新材料用途"
-            value={newRole}
-            onChange={(e) => setNewRole(e.target.value as MaterialRole)}
-          >
-            {Object.entries(roles).map(([v, t]) => (
-              <option key={v} value={v}>
-                {t}
-              </option>
-            ))}
-          </select>
-          <button type="submit">加入项目</button>
-        </form>
       )}
       <div className="catalogue-body">
         <div className="catalogue-table-area">
@@ -627,13 +648,19 @@ export default function MaterialLibrary({
                     <td title={item.name}>
                       {materialLabel(item)}
                       <small className="catalogue-list-source">
-                        {item.collection || "自定义"}
+                        {item.collection === "自定义"
+                          ? ""
+                          : item.collection || ""}
                       </small>
                       {project.materials.some((x) => x.name === item.name) && (
                         <span className="catalogue-used"> · 已加入</span>
                       )}
                     </td>
-                    <td>{item.collection || "自定义"}</td>
+                    <td>
+                      {item.collection === "自定义"
+                        ? ""
+                        : item.collection || ""}
+                    </td>
                     <td>{roles[item.role]}</td>
                     <td className="numeric">
                       {item.status === "quarantined" ? "—" : format(item.n)}
@@ -853,7 +880,7 @@ export default function MaterialLibrary({
         <p className="catalogue-hint">
           每种材料独立保存为 .material.json；基底位于
           materials/substrates。外部修改文件后，请用“导入
-          JSON”校验并载入，再保存到共享库。原始目录保持只读，修改时创建自定义副本。
+          JSON”校验并载入，再保存到共享库。原始目录保持只读，修改时创建可编辑副本。
         </p>
         <footer className="catalogue-footer">
           ¹ 列表 n 为数据预览值。选入项目后，计算使用完整

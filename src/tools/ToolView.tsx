@@ -239,6 +239,21 @@ export default function ToolView({
                 s.project.materials[0]?.name
               : undefined
           }
+          newMaterial={
+            id === "materialdata" ? s.inspectedMaterial?.draft : undefined
+          }
+          onNew={() =>
+            send({
+              kind: "material-new",
+              substrate:
+                id === "substrate" ||
+                (!!s.inspectedMaterial?.substrate && id === "materialdata"),
+            })
+          }
+          onDelete={(name, expected, target) =>
+            send({ kind: "material-delete", name, expected, target })
+          }
+          onRestore={(name) => send({ kind: "material-restore", name })}
           onInspect={(name) =>
             send({
               kind: "material-inspect",

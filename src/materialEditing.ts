@@ -10,8 +10,8 @@ export function editableCopy(
   delete copy.issues;
   if (copy.name.startsWith("TFC/")) {
     copy.name = `USER/${id()}`;
-    copy.display_name = `${m.display_name || m.name}（自定义）`;
-    copy.collection = "自定义";
+    copy.display_name = `${m.display_name || m.name}（副本）`;
+    delete copy.collection;
     copy.source = `用户编辑副本；原始来源：${m.source}`;
   }
   copy.status = "ready";

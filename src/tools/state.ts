@@ -26,7 +26,7 @@ export type ToolId =
   | "groups"
   | "stack";
 export interface ToolSnapshot {
-  inspectedMaterial?: { name: string; substrate: boolean };
+  inspectedMaterial?: { name: string; substrate: boolean; draft?: Material };
   focus?: { id: string; label: string; token: string };
   sequence: number;
   scope: string;
@@ -80,6 +80,14 @@ export type Patch =
       value: unknown;
     };
 export type ToolAction = { scope: string; requestId: string } & (
+  | { kind: "material-new"; substrate: boolean }
+  | {
+      kind: "material-delete";
+      name: string;
+      expected: Material;
+      target: "project" | "library";
+    }
+  | { kind: "material-restore"; name: string }
   | { kind: "material-inspect"; name: string; substrate: boolean }
   | { kind: "patch"; patches: Patch[] }
   | {

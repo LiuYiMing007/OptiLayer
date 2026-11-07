@@ -46,7 +46,7 @@ test("built-in edit retains full spectrum, original identity and provenance whil
   copy.samples![0][1] = 0.15;
   assert.equal(original.samples![0][1], 0.1);
   assert.equal(copy.provenance?.sha256, "abc");
-  assert.equal(copy.collection, "自定义");
+  assert.equal(copy.collection, undefined);
 });
 test("material edit atomically rebinds used layers and substrate; a stale editor cannot overwrite newer input", () => {
   const p = referenceProject(),
@@ -80,4 +80,31 @@ test("nk editor accepts Excel TSV without losing precision and rejects partial, 
     "0 1.5 0",
   ])
     assert.throws(() => parseNkTable(s));
+});
+
+test("removing a project material protects front/back layers and boundary media", async () => {
+  const { removeProjectMaterial } =
+    await import("../src/applyMaterialChange.ts");
+  const p = referenceProject();
+  for (const m of p.materials.filter(
+    (m) =>
+      p.layers.some((l) => l.material === m.name) ||
+      Object.values(p.settings).includes(m.name),
+  )) {
+    assert.throws(() => removeProjectMaterial(p, m.name, m), /正在用于/);
+  }
+  const spare = { ...p.materials[0], name: "USER/spare" };
+  p.materials.push(spare);
+  const removed = removeProjectMaterial(p, spare.name, spare);
+  assert.ok(!removed.materials.some((m) => m.name === spare.name));
+  assert.ok(p.materials.some((m) => m.name === spare.name));
+  assert.throws(
+    () => removeProjectMaterial(p, spare.name, { ...spare, n: 7 }),
+    /材料已改变/,
+  );
+  p.back_layers = [{ ...p.layers[0], material: spare.name }];
+  assert.throws(
+    () => removeProjectMaterial(p, spare.name, spare),
+    /后表面第 1 层/,
+  );
 });

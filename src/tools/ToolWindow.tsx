@@ -40,7 +40,36 @@ export default function ToolWindow() {
       if (id !== "materialdata") {
         if (!document.querySelector('.picker-list [role="option"]'))
           throw Error("材料列表缺失");
-        await invoke("window_check_details", { details: { catalogue: true } });
+        if (
+          !["新增…", "删除…"].every((label) =>
+            [...document.querySelectorAll("button")].some(
+              (b) => b.textContent?.trim() === label,
+            ),
+          )
+        )
+          throw Error("材料和基底管理操作缺失");
+        const button = (label: string) =>
+          [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+            (b) => b.textContent?.trim() === label,
+          );
+        const waitForButton = async (label: string) => {
+          const deadline = Date.now() + 10000;
+          while (Date.now() < deadline) {
+            const b = button(label);
+            if (b && !b.disabled) return b;
+            await new Promise((r) => setTimeout(r, 50));
+          }
+          throw Error(`材料管理按钮没有出现：${label}`);
+        };
+        (await waitForButton("新增…")).click();
+        await tail.current;
+        (await waitForButton("删除…")).click();
+        (await waitForButton("确认删除")).click();
+        (await waitForButton("撤销删除")).click();
+        await tail.current;
+        await invoke("window_check_details", {
+          details: { catalogue: true, management: true },
+        });
         return;
       }
       const edit = document.querySelector<HTMLButtonElement>(

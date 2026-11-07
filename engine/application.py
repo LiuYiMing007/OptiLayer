@@ -25,9 +25,11 @@ def dispatch(request, workspace=None):
         return decode_tfd(bytes(values))
     if action=='library_list':
         workspace=workspace or configured_workspace()
-        custom=storage_action(workspace,request)['materials']
+        stored=storage_action(workspace,request)
+        custom=stored['materials']
+        removed=set(stored['removed'])
         names={m['name'] for m in custom}
-        return {'materials':custom+[m for m in catalogue_summaries() if m['name'] not in names]}
+        return {'materials':custom+[m for m in catalogue_summaries() if m['name'] not in names and m['name'] not in removed]}
     if action=='materials_validate':
         items=request['materials']
         if not isinstance(items,list) or not 1<=len(items)<=300:raise ValueError('一次校验 1–300 种材料')

@@ -41,7 +41,7 @@ class WorkbenchFixTests(unittest.TestCase):
             root=Path(t)/'original';w=Workspace(root,create=True)
             m=catalogue_material('TFC/SOPRA/AG');m.update(name='USER/silver',display_name='银/工艺:A');m['samples'][5][2]+=.02;m=prepare_material(m)
             storage_action(w,{'action':'library_save','materials':[m]})
-            files=list((root/'materials/custom').glob('*.material.json'));self.assertEqual(len(files),1);self.assertIn('银_工艺_A',files[0].name)
+            files=list((root/'materials/films').glob('*.material.json'));self.assertEqual(len(files),1);self.assertIn('银_工艺_A',files[0].name)
             self.assertEqual(json.loads(files[0].read_text(encoding='utf-8')),m)
             c=root/'materials/catalogue/TFCalc-0.2.0.original.json';self.assertEqual(len(json.loads(c.read_text(encoding='utf-8'))['materials']),1211)
             p=fixture();p['materials'].append(m);p['layers'][0]['material']=m['name'];storage_action(w,{'action':'save','project':p});before=engine.calculate(p)

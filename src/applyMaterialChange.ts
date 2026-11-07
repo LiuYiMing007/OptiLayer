@@ -27,3 +27,29 @@ export function applyMaterialChange(
   synchronizeBoundaries(next);
   return next;
 }
+
+export function removeProjectMaterial(
+  p: Project,
+  name: string,
+  expected: Material,
+): Project {
+  if (dataKey(p.materials.find((m) => m.name === name)) !== dataKey(expected))
+    throw Error("材料已改变，请刷新后再删除");
+  const uses = [
+    ...p.layers.flatMap((l, i) =>
+      l.material === name ? [`前表面第 ${i + 1} 层`] : [],
+    ),
+    ...(p.back_layers || []).flatMap((l, i) =>
+      l.material === name ? [`后表面第 ${i + 1} 层`] : [],
+    ),
+    ...(["incident", "substrate", "exit"] as const).flatMap((k, i) =>
+      p.settings[`${k}_material`] === name
+        ? [["入射介质", "基底", "出射介质"][i]]
+        : [],
+    ),
+  ];
+  if (uses.length) throw Error(`正在用于${uses.join("、")}，请先替换再删除`);
+  const next = structuredClone(p);
+  next.materials = next.materials.filter((m) => m.name !== name);
+  return next;
+}
