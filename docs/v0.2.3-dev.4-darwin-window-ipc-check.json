@@ -42,9 +42,10 @@
   ],
   "platform": "macos",
   "shared_project_rendered": true,
-  "warm_calculation_ms": 6,
+  "warm_calculation_ms": 5.000000000001819,
   "warm_calculation_service": true,
   "workspace_used": false,
   "version": "0.2.3-dev.4",
-  "limits": "Real frontend IPC and React tool rendering; does not simulate physical mouse clicks on native OS menus or validate display scaling."
+  "limits": "Real frontend IPC and React tool rendering; does not simulate physical mouse clicks on native OS menus or validate display scaling.",
+  "source_commit": "0390798c5c8f84b59d5bb97debd881d9a44ae12c"
 }
