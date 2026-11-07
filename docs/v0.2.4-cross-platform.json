@@ -1,0 +1,35 @@
+{
+  "version": "0.2.4",
+  "source_commit": "91338eb7d5d89f7766351f7e729d796d0a33182c",
+  "workflow_run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42417104330",
+  "platform_reports_verified": true,
+  "material_substrate_create_delete_restore": true,
+  "material_management_button_ipc": true,
+  "optical_reference_fields": 24,
+  "mac_windows_max_difference_pp": 7.105427357601002e-14,
+  "limits": "CI native windows, frozen engine and portable-folder checks; physical SSD drive-letter changes and all display scales are not implied.",
+  "workflow_conclusion": "success",
+  "release_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.4",
+  "published_at": "2026-11-07T21:55:17Z",
+  "published_assets": [
+    {
+      "name": "TFC-0.2.4-macOS-Windows-portable.zip",
+      "sha256": "c1e449e745c7d2e24262f24a0bee3cd39adde428bfefb5dfbf5cab3f80a9eea6",
+      "bytes": 95786718,
+      "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.4/TFC-0.2.4-macOS-Windows-portable.zip"
+    },
+    {
+      "name": "TFC-0.2.4-Windows-x64-portable.zip",
+      "sha256": "8fca966c56cd3abc77f44cdf1f391496c15380b1532ab3cd99ab9ad34356f227",
+      "bytes": 57146254,
+      "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.4/TFC-0.2.4-Windows-x64-portable.zip"
+    },
+    {
+      "name": "TFC-0.2.4-macOS-arm64.zip",
+      "sha256": "45e50d71fc853be8e783c1139a2ce77b6974be88553fda00cf0be7ceb6cce96e",
+      "bytes": 38645856,
+      "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.4/TFC-0.2.4-macOS-arm64.zip"
+    }
+  ],
+  "all_six_server_digests_match_checksums": true
+}

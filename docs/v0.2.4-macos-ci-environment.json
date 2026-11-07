@@ -1,0 +1,48 @@
+{
+  "all_pass": true,
+  "platform": "Darwin",
+  "version": "0.2.4",
+  "bare_plate_analytic": true,
+  "front_back_coatings": true,
+  "oblique_s_p": true,
+  "absorbing_finite_substrate": true,
+  "coherent_and_incoherent": true,
+  "independent_max_error_pp": 6.288303211476887e-13,
+  "reference_rt": {
+    "incoherent-front": {
+      "R_percent": 26.02219543755498,
+      "T_percent": 72.7671572936492,
+      "Rs_percent": 39.84359162383899,
+      "Rp_percent": 12.200799251270968,
+      "Ts_percent": 59.09687635153386,
+      "Tp_percent": 86.43743823576455
+    },
+    "incoherent-back": {
+      "R_percent": 25.379998415783135,
+      "T_percent": 72.76715729364915,
+      "Rs_percent": 38.90551295295879,
+      "Rp_percent": 11.854483878607477,
+      "Ts_percent": 59.09687635153386,
+      "Tp_percent": 86.43743823576446
+    },
+    "coherent-front": {
+      "R_percent": 35.27281756439455,
+      "T_percent": 63.674314880479166,
+      "Rs_percent": 54.747431391531684,
+      "Rp_percent": 15.79820373725741,
+      "Ts_percent": 44.45333298762907,
+      "Tp_percent": 82.89529677332928
+    },
+    "coherent-back": {
+      "R_percent": 34.74534535814834,
+      "T_percent": 63.67431488047915,
+      "Rs_percent": 54.02973130292214,
+      "Rp_percent": 15.460959413374539,
+      "Ts_percent": 44.45333298762906,
+      "Tp_percent": 82.89529677332925
+    }
+  },
+  "responses_separate_from_physical_rt": true,
+  "named_project_and_1211_individual_material_files": true,
+  "save_move_reload_exact": true
+}
