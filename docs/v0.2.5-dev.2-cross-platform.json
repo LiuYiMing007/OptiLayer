@@ -1,0 +1,57 @@
+{
+  "version": "0.2.5-dev.2",
+  "source_commit": "9a691110bd409896987c36c06b6f2fa80fd9b5e4",
+  "run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42460247761",
+  "all_pass": true,
+  "prerelease": true,
+  "assets": [
+    {
+      "name": "TFC-0.2.5-dev.2-macOS-arm64.zip",
+      "size": 38650379,
+      "digest": "sha256:ca80be42e77d49aedd3d899ba5b1eaa078bcb5e3dd44d46c55d38bed893952f3",
+      "browser_download_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5-dev.2/TFC-0.2.5-dev.2-macOS-arm64.zip"
+    },
+    {
+      "name": "TFC-0.2.5-dev.2-macOS-arm64.zip.sha256",
+      "size": 98,
+      "digest": "sha256:f401b10d3262cf527498fb21fbdb2d51655d3f78df2c3ff84baee7aa2057a334",
+      "browser_download_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5-dev.2/TFC-0.2.5-dev.2-macOS-arm64.zip.sha256"
+    },
+    {
+      "name": "TFC-0.2.5-dev.2-macOS-Windows-portable.zip",
+      "size": 95793084,
+      "digest": "sha256:01526c5feab036acddca793a468ffb1a88f499bd8f644440126171c0f269b67c",
+      "browser_download_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5-dev.2/TFC-0.2.5-dev.2-macOS-Windows-portable.zip"
+    },
+    {
+      "name": "TFC-0.2.5-dev.2-macOS-Windows-portable.zip.sha256",
+      "size": 109,
+      "digest": "sha256:59f8fc44a819d20fdd3de29550a9414728deecb1ae2610a40c83057071f695b1",
+      "browser_download_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5-dev.2/TFC-0.2.5-dev.2-macOS-Windows-portable.zip.sha256"
+    },
+    {
+      "name": "TFC-0.2.5-dev.2-Windows-x64-portable.zip",
+      "size": 57148097,
+      "digest": "sha256:7776d9964755cfe460ce9c402ca89a933180908e4f1b6378075c625e72c16dc9",
+      "browser_download_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5-dev.2/TFC-0.2.5-dev.2-Windows-x64-portable.zip"
+    },
+    {
+      "name": "TFC-0.2.5-dev.2-Windows-x64-portable.zip.sha256",
+      "size": 108,
+      "digest": "sha256:8d0a6b15039f0269572fe9f942609d6c69ff5097c69b3e38fc11c84edf6fafc8",
+      "browser_download_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5-dev.2/TFC-0.2.5-dev.2-Windows-x64-portable.zip.sha256"
+    }
+  ],
+  "material_editor_checks": {
+    "macos": {
+      "material_editor_browse_cancel": true,
+      "material_editor_close_reopen": true,
+      "material_and_substrate_editors": true
+    },
+    "windows": {
+      "material_editor_browse_cancel": true,
+      "material_editor_close_reopen": true,
+      "material_and_substrate_editors": true
+    }
+  }
+}

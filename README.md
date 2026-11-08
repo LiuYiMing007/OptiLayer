@@ -1,6 +1,6 @@
 # TFC · 0.2.5-dev.2 开发预览
 
-[0.2.5-dev.2 开发预览](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5-dev.2)修复材料/基底窗口排版回归，恢复默认完整逐波长数据查看，支持保留草稿时浏览其他材料，统一隐藏旧自定义集合标签。[更新报告](docs/更新报告/0.2.5-dev.2更新报告.md)。保留 dev.1 的纵轴范围和膜厚显示改进。Windows 与 Mac 发布验收以对应标签构建状态为准；下方 0.2.4 仍为正式版。
+[0.2.5-dev.2 开发预览](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5-dev.2)修复材料/基底窗口排版回归，恢复默认完整逐波长数据查看，支持保留草稿时浏览其他材料，统一隐藏旧自定义集合标签。[更新报告](docs/更新报告/0.2.5-dev.2更新报告.md)。保留 dev.1 的纵轴范围和膜厚显示改进。[Mac 与 Windows 标签验收](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42460247761)均已通过；下方 0.2.4 仍为正式版。
 
 0.2.4 补齐紧凑材料和基底窗口的新增、删除、恢复与独立文件保存，移除“自定义”分类及四条未修改演示常数的共享记录。旧项目快照保留。
 
