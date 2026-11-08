@@ -1,6 +1,11 @@
+import {
+  defaultWindowPreferences,
+  normalizeWindowPreferences,
+  type WindowPreferences,
+} from "./windowPreferences";
 import { replaceStack } from "./stackFormula";
 import { interactiveProject } from "./interactiveModel";
-import SaveProjectDialog from "./SaveProjectDialog";
+import SaveProjectDialog, { type SaveChoice } from "./SaveProjectDialog";
 import { readImportFile } from "./importEncoding";
 import {
   applyMaterialChange,
@@ -18,7 +23,7 @@ import {
   Waves,
 } from "lucide-react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+
 import { request } from "./api";
 import { clone, referenceProject } from "./defaults";
 import {
@@ -72,8 +77,10 @@ export default function App() {
     initial: string;
     copy: boolean;
   } | null>(null);
-  const saveResolver = useRef<((value: string | null) => void) | null>(null);
-  async function chooseSaveName(copy: boolean): Promise<string | null> {
+  const saveResolver = useRef<((value: SaveChoice | null) => void) | null>(
+    null,
+  );
+  async function chooseSaveName(copy: boolean): Promise<SaveChoice | null> {
     if (saveResolver.current) return null;
     await focusMain();
     return new Promise((resolve) => {
@@ -90,6 +97,7 @@ export default function App() {
   const [spectrum, setSpectrum] = useState<Spectrum | null>(null),
     [resultKey, setResultKey] = useState("");
   const [persisted, setPersisted] = useState(false);
+  const [projectFormat, setProjectFormat] = useState<"tfd" | "json">("tfd");
   const [savedKey, setSavedKey] = useState(() => projectKey(project)),
     [selected, setSelected] = useState(0);
   const [busy, setBusy] = useState(false),
@@ -105,6 +113,24 @@ export default function App() {
     substrate: boolean;
     draft?: Material;
   }>();
+  const [windowPreferences, setWindowPreferences] = useState<WindowPreferences>(
+    () => {
+      try {
+        return normalizeWindowPreferences(
+          JSON.parse(localStorage.getItem("tfc-window-preferences") || "null"),
+        );
+      } catch {
+        return structuredClone(defaultWindowPreferences);
+      }
+    },
+  );
+  const [environmentPending, setEnvironmentPending] = useState(false);
+  useEffect(() => {
+    if (isTauri())
+      void invoke<WindowPreferences>("tool_preferences")
+        .then((p) => setWindowPreferences(normalizeWindowPreferences(p)))
+        .catch((e) => setError(message(e)));
+  }, []);
   const [layerSide, setLayerSide] = useState<"front" | "back">("front");
   const editingLayers =
     layerSide === "front" ? project.layers : project.back_layers || [];
@@ -289,11 +315,14 @@ export default function App() {
   }, [physicalKey, scope]);
   async function save(copyName?: string, forceCopy = false) {
     if (saveResolver.current || working.current) return false;
-    let name = copyName;
-    if ((!persisted && !copyName) || forceCopy) {
+    if (forceCopy) return await saveAsFile(copyName);
+    let name = copyName,
+      format = projectFormat;
+    if (!persisted && !copyName) {
       const chosen = await chooseSaveName(forceCopy);
       if (chosen === null) return false;
-      name = chosen;
+      name = chosen.name;
+      format = chosen.format;
     }
     const snapshot = clone(current.current);
     if (copyName || forceCopy) snapshot.id = crypto.randomUUID();
@@ -306,6 +335,7 @@ export default function App() {
       }>({
         action: "save",
         project: snapshot,
+        format,
       });
       if (copyName || forceCopy) {
         epoch.current++;
@@ -318,6 +348,7 @@ export default function App() {
       setProject(r.project);
       setSavedKey(projectKey(r.project));
       setPersisted(true);
+      setProjectFormat(format);
       let spectrumWarning = "";
       if (
         resultRef.current &&
@@ -341,12 +372,80 @@ export default function App() {
       await refreshProjects();
     });
   }
+  async function saveAsFile(initialName?: string) {
+    let choice: SaveChoice | null = null;
+    if (!isTauri()) {
+      choice = await chooseSaveName(true);
+      if (!choice) return false;
+    }
+    let written = false;
+    const ok = await run(async () => {
+      const snapshot = clone(current.current);
+      snapshot.id = crypto.randomUUID();
+      if (initialName) snapshot.name = initialName;
+      let result: {
+        project: Project;
+        format: "tfd" | "json";
+        path?: string;
+        warnings?: string[];
+      } | null;
+      if (isTauri())
+        result = await invoke("project_save_as", {
+          project: snapshot,
+          format: projectFormat,
+        });
+      else {
+        snapshot.name = choice!.name;
+        const data = await request<{
+          project: Project;
+          format: "tfd" | "json";
+          content: string;
+          bytes?: number[];
+          warnings?: string[];
+        }>({
+          action: "export_project",
+          project: snapshot,
+          format: choice!.format,
+        });
+        const url = URL.createObjectURL(
+          new Blob([data.bytes ? new Uint8Array(data.bytes) : data.content], {
+            type: "application/octet-stream",
+          }),
+        );
+        const a = document.createElement("a");
+        a.href = url;
+        a.download =
+          snapshot.name + (data.format === "tfd" ? ".tfd" : ".tfc.json");
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        result = data;
+      }
+      if (!result) return;
+      epoch.current++;
+      writers.current.clear();
+      scopeRef.current = `${workspace?.id || "unavailable"}:${result.project.id}:${epoch.current}`;
+      current.current = result.project;
+      setProject(result.project);
+      setPast([]);
+      setFuture([]);
+      setProjectFormat(result.format);
+      setSavedKey(projectKey(result.project));
+      setPersisted(true);
+      setNotice(
+        `项目已另存${result.path ? "：" + result.path : "为下载文件"}；下一次“保存项目”写入 Workspace${result.warnings?.length ? "；" + result.warnings.join("；") : ""}`,
+      );
+      written = true;
+    });
+    return ok && written;
+  }
   async function newProject() {
     if (!(await canReplace())) return;
     const p = referenceProject();
     p.name = "未命名膜系";
     p.layers = [];
     replace(p);
+    setProjectFormat("tfd");
+    await beginProjectWindows();
   }
   function layerCommand(id: LayerCommand, index = selected, side = layerSide) {
     if (working.current || confirmation) return;
@@ -356,7 +455,7 @@ export default function App() {
         if (
           (next.settings.substrate_model || "semi_infinite") === "semi_infinite"
         )
-          throw new Error("请先在计算参数中启用有限厚基底，再编辑背面膜层");
+          throw new Error("请先在环境中启用有限厚基底，再编辑背面膜层");
         const projection = { ...next, layers: next.back_layers || [] };
         nextSelected = changeLayer(projection, index, id, () =>
           crypto.randomUUID(),
@@ -368,6 +467,8 @@ export default function App() {
     setSelected(nextSelected);
   }
   const toolSnapshot: ToolSnapshot = {
+    windowPreferences,
+    environmentPending,
     focus,
     inspectedMaterial,
     sequence: ++sequence.current,
@@ -398,14 +499,36 @@ export default function App() {
     setError,
   );
   async function showTool(id: ToolId, label = "") {
+    if (id === "settings") id = "environment";
     setFocus({ id, label, token: crypto.randomUUID() });
     await host.show(id);
     if (id === "project") await refreshProjects();
     if ((id === "materials" || id === "substrate") && workspace)
       await refreshLibrary();
   }
+  async function beginProjectWindows() {
+    setEnvironmentPending(true);
+    for (const tool of toolDefinitions) await host.hide(tool.id as ToolId);
+    await host.spectrum(false);
+    await showTool("environment");
+  }
+  async function completeEnvironment() {
+    setError("");
+    // Validate the whole environment before leaving the first step.
+    await request({ action: "validate", project: current.current });
+    const selected = isTauri()
+      ? normalizeWindowPreferences(await invoke("tool_preferences"))
+      : windowPreferences;
+    setWindowPreferences(selected);
+    setEnvironmentPending(false);
+    await host.hide("environment");
+    await host.spectrum(selected.openWindows.includes("spectrum"));
+    for (const id of selected.openWindows)
+      if (id !== "spectrum") await showTool(id as ToolId);
+  }
   async function focusMain() {
     if (isTauri()) await invoke("tool_focus_main");
+    else await host.spectrum(true);
   }
   async function focusPanel(panel: "layers" | "settings" | "spectrum") {
     if (panel === "spectrum") {
@@ -457,6 +580,21 @@ export default function App() {
       (modal && source !== "main")
     )
       throw new Error("主工作台正在处理，请稍后重试");
+    if (action.kind === "window-preferences") {
+      const preferences = normalizeWindowPreferences(action.preferences);
+      if (isTauri()) await invoke("tool_preferences", { preferences });
+      else
+        localStorage.setItem(
+          "tfc-window-preferences",
+          JSON.stringify(preferences),
+        );
+      setWindowPreferences(preferences);
+      return;
+    }
+    if (action.kind === "environment-complete") {
+      await completeEnvironment();
+      return;
+    }
     if (action.kind === "interactive") {
       if (action.phase === "undo") {
         const session = interaction.current;
@@ -828,7 +966,7 @@ export default function App() {
         setModal("workspace");
         break;
       case "file.quit":
-        if (isTauri()) await getCurrentWindow().close();
+        if (isTauri() && (await canReplace())) await invoke("app_quit");
         break;
       case "edit.undo":
         undo();
@@ -1025,35 +1163,6 @@ export default function App() {
       window.removeEventListener("beforeunload", leave);
     };
   }, [savedKey, platform]);
-  useEffect(() => {
-    if (!isTauri()) return;
-    let disposed = false;
-    let unlisten: (() => void) | undefined;
-    void getCurrentWindow()
-      .onCloseRequested(async (event) => {
-        if (working.current || saveResolver.current) {
-          event.preventDefault();
-          setNotice("正在处理，请完成后再关闭工作台");
-          return;
-        }
-        if (
-          !hasUnsavedChanges(current.current, savedKey) &&
-          !materialEditors.current.size
-        )
-          return;
-        event.preventDefault();
-        if (await canReplace()) await getCurrentWindow().destroy();
-      })
-      .then((fn) => {
-        if (disposed) fn();
-        else unlisten = fn;
-      })
-      .catch((e) => setError(message(e)));
-    return () => {
-      disposed = true;
-      unlisten?.();
-    };
-  }, [savedKey]);
   async function canReplace() {
     if (materialEditors.current.size) {
       await revealMaterialEditor();
@@ -1097,6 +1206,12 @@ export default function App() {
     await run(async () => {
       const r = await request<{ project: Project }>({ action: "load", id });
       replace(r.project, true);
+      setProjectFormat(
+        projects.find((p) => p.id === id)?.relative_path?.endsWith(".tfd")
+          ? "tfd"
+          : "json",
+      );
+      await beginProjectWindows();
     });
   }
   async function switchExample(feedback = false) {
@@ -1131,6 +1246,8 @@ export default function App() {
             project: JSON.parse(text),
           });
       replace(r.project);
+      setProjectFormat(name.toLowerCase().endsWith(".tfd") ? "tfd" : "json");
+      await beginProjectWindows();
       setSavedKey("");
 
       if (r.warning) setNotice(r.warning);
@@ -1193,137 +1310,142 @@ export default function App() {
           }}
         />
       )}
-      <header className="spectrum-topbar">
-        <div className="spectrum-project">
-          <div>
-            <strong title={project.name}>{project.name}</strong>
-            <small>
-              {dirty ? "未保存" : persisted ? "已保存" : "新项目 · 未修改"} ·{" "}
-              {workspace?.name || "未选择工作区"} · 正面 {project.layers.length}{" "}
-              层
-              {project.back_layers?.length
-                ? ` / 背面 ${project.back_layers.length} 层`
-                : ""}
-            </small>
+      <div
+        className="spectrum-window-body"
+        hidden={host.visible.spectrum === false}
+      >
+        <header className="spectrum-topbar">
+          <div className="spectrum-project">
+            <div>
+              <strong title={project.name}>{project.name}</strong>
+              <small>
+                {dirty ? "未保存" : persisted ? "已保存" : "新项目 · 未修改"} ·{" "}
+                {workspace?.name || "未选择工作区"} · 正面{" "}
+                {project.layers.length} 层
+                {project.back_layers?.length
+                  ? ` / 背面 ${project.back_layers.length} 层`
+                  : ""}
+              </small>
+            </div>
           </div>
-        </div>
-        <nav className="compact-tools" aria-label="打开工具窗口">
-          {toolDefinitions
-            .filter((d) => ["layers", "settings", "project"].includes(d.id))
-            .map((d) => (
+          <nav className="compact-tools" aria-label="打开工具窗口">
+            {toolDefinitions
+              .filter((d) => ["layers", "settings", "project"].includes(d.id))
+              .map((d) => (
+                <button
+                  key={d.id}
+                  aria-pressed={!!host.visible[d.id]}
+                  onClick={() =>
+                    void showTool(d.id as ToolId).catch((e) =>
+                      setError(message(e)),
+                    )
+                  }
+                >
+                  {d.title}
+                </button>
+              ))}
+            <button
+              title={
+                workspace ? `数据保存在：${workspace.root}` : "尚未连接工作区"
+              }
+              onClick={() => setModal("workspace")}
+            >
+              数据位置…
+            </button>
+          </nav>
+          <div className="spectrum-actions">
+            <button
+              className="button secondary"
+              disabled={busy}
+              onClick={() => void save()}
+            >
+              保存
+            </button>
+            <button
+              className="button primary"
+              disabled={busy}
+              onClick={() => void calculate()}
+            >
+              单纯分析
+            </button>
+            {platform === "windows" && (
               <button
-                key={d.id}
-                aria-pressed={!!host.visible[d.id]}
                 onClick={() =>
-                  void showTool(d.id as ToolId).catch((e) =>
-                    setError(message(e)),
-                  )
+                  void invoke("menu_show").catch((e) => setError(message(e)))
                 }
               >
-                {d.title}
+                菜单
               </button>
-            ))}
-          <button
-            title={
-              workspace ? `数据保存在：${workspace.root}` : "尚未连接工作区"
-            }
-            onClick={() => setModal("workspace")}
-          >
-            数据位置…
-          </button>
-        </nav>
-        <div className="spectrum-actions">
-          <button
-            className="button secondary"
-            disabled={busy}
-            onClick={() => void save()}
-          >
-            保存
-          </button>
-          <button
-            className="button primary"
-            disabled={busy}
-            onClick={() => void calculate()}
-          >
-            单纯分析
-          </button>
-          {platform === "windows" && (
-            <button
-              onClick={() =>
-                void invoke("menu_show").catch((e) => setError(message(e)))
-              }
-            >
-              菜单
-            </button>
-          )}
-        </div>
-      </header>
-      {importFailure && (
-        <section className="import-failure" role="alert">
-          <div>
-            <strong>未导入：{importFailure.name}</strong>
-            <span>{importFailure.reason}</span>
-            <small>
-              当前项目未被替换。下方曲线仍属于“{project.name}
-              ”，不是本次导入文件的结果。
-            </small>
+            )}
           </div>
-          <button
-            disabled={busy}
-            onClick={() => {
-              if (isTauri()) void importNative();
-              else importRef.current?.click();
-            }}
-          >
-            重新选择文件
-          </button>
-          <button onClick={() => setImportFailure(null)}>关闭提示</button>
-        </section>
-      )}
-      {(error || calculationError || workspaceError) && (
-        <div role="alert" className="notice error">
-          <span>{error || calculationError || workspaceError}</span>
-          <button
-            onClick={() => {
-              setError("");
-              setCalculationError("");
-              if (workspaceError) setModal("workspace");
-            }}
-          >
-            {workspaceError ? "工作区设置" : "关闭提示"}
-          </button>
+        </header>
+        {importFailure && (
+          <section className="import-failure" role="alert">
+            <div>
+              <strong>未导入：{importFailure.name}</strong>
+              <span>{importFailure.reason}</span>
+              <small>
+                当前项目未被替换。下方曲线仍属于“{project.name}
+                ”，不是本次导入文件的结果。
+              </small>
+            </div>
+            <button
+              disabled={busy}
+              onClick={() => {
+                if (isTauri()) void importNative();
+                else importRef.current?.click();
+              }}
+            >
+              重新选择文件
+            </button>
+            <button onClick={() => setImportFailure(null)}>关闭提示</button>
+          </section>
+        )}
+        {(error || calculationError || workspaceError) && (
+          <div role="alert" className="notice error">
+            <span>{error || calculationError || workspaceError}</span>
+            <button
+              onClick={() => {
+                setError("");
+                setCalculationError("");
+                if (workspaceError) setModal("workspace");
+              }}
+            >
+              {workspaceError ? "工作区设置" : "关闭提示"}
+            </button>
+          </div>
+        )}
+        <div className="main-spectrum">
+          <SpectrumPanel
+            mode="main"
+            project={project}
+            spectrum={spectrum}
+            stale={stale}
+            busy={busy}
+            update={update}
+            analyze={(bands) => void analyze(bands)}
+            download={download}
+            onError={setError}
+            details={details}
+            setDetails={setDetails}
+            openAnalysis={() => void showTool("analysis")}
+            openTargets={() => void showTool("targets")}
+          />
         </div>
-      )}
-      <div className="main-spectrum">
-        <SpectrumPanel
-          mode="main"
-          project={project}
-          spectrum={spectrum}
-          stale={stale}
-          busy={busy}
-          update={update}
-          analyze={(bands) => void analyze(bands)}
-          download={download}
-          onError={setError}
-          details={details}
-          setDetails={setDetails}
-          openAnalysis={() => void showTool("analysis")}
-          openTargets={() => void showTool("targets")}
-        />
+        <footer className="spectral-status">
+          <span>
+            {calculating
+              ? "正在自动更新光谱…"
+              : !spectrum
+                ? "等待光谱计算"
+                : stale
+                  ? "参数已改变，等待更新…"
+                  : "光谱已与当前膜系同步"}
+            {notice ? " · " + notice : ""}
+          </span>
+          <span>各向同性 n/k · A=100−R−T · {appVersion}</span>
+        </footer>
       </div>
-      <footer className="spectral-status">
-        <span>
-          {calculating
-            ? "正在自动更新光谱…"
-            : !spectrum
-              ? "等待光谱计算"
-              : stale
-                ? "参数已改变，等待更新…"
-                : "光谱已与当前膜系同步"}
-          {notice ? " · " + notice : ""}
-        </span>
-        <span>各向同性 n/k · A=100−R−T · {appVersion}</span>
-      </footer>
       <input
         ref={importRef}
         type="file"
@@ -1601,6 +1723,7 @@ export default function App() {
         <SaveProjectDialog
           initial={savePrompt.initial}
           copy={savePrompt.copy}
+          defaultFormat={projectFormat}
           folder={workspace?.root || "Workspace"}
           finish={(name) => {
             const resolve = saveResolver.current;

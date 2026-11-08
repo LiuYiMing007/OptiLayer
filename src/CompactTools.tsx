@@ -31,6 +31,44 @@ export function EnvironmentTable({
             </tr>
           </thead>
           <tbody>
+            {(
+              [
+                ["start_nm", "起始波长"],
+                ["end_nm", "终止波长"],
+                ["step_nm", "采样步长"],
+              ] as const
+            ).map(([key, label]) =>
+              row(
+                label + " (nm)",
+                <CommitNumber
+                  label={label}
+                  value={s[key]}
+                  min={key === "step_nm" ? 0.001 : 1}
+                  onChange={(v) =>
+                    update((p) => {
+                      p.settings[key] = v;
+                    })
+                  }
+                />,
+              ),
+            )}
+            {row(
+              "偏振",
+              <select
+                aria-label="偏振"
+                value={s.polarization}
+                onChange={(e) =>
+                  update((p) => {
+                    p.settings.polarization = e.target
+                      .value as typeof s.polarization;
+                  })
+                }
+              >
+                <option value="unpolarized">非偏振（S/P 平均）</option>
+                <option value="s">S 偏振</option>
+                <option value="p">P 偏振</option>
+              </select>,
+            )}
             {row(
               "参考波长 (nm)",
               <CommitNumber
@@ -64,7 +102,7 @@ export function EnvironmentTable({
             {row(
               "入射角 (°)",
               <CommitNumber
-                label="环境入射角"
+                label="入射角"
                 value={s.angle_deg}
                 min={0}
                 max={89.9}
@@ -90,13 +128,20 @@ export function EnvironmentTable({
             {row(
               "基底厚度 (mm)",
               <CommitNumber
-                label="环境厚度"
+                label="基底厚度"
                 value={s.substrate_thickness_mm ?? 1}
                 min={0.000001}
                 max={1e5}
                 onChange={(v) =>
                   update((p) => {
                     p.settings.substrate_thickness_mm = v;
+                    if (
+                      (p.settings.substrate_model || "semi_infinite") ===
+                      "semi_infinite"
+                    ) {
+                      p.settings.substrate_model = "incoherent";
+                      p.settings.exit_material = p.settings.incident_material;
+                    }
                   })
                 }
               />,
@@ -106,7 +151,7 @@ export function EnvironmentTable({
               <MediumInput
                 project={p}
                 field="exit_material"
-                label="环境出射介质"
+                label="出射介质"
                 update={update}
               />,
             )}
@@ -130,7 +175,7 @@ export function EnvironmentTable({
             {row(
               "第一表面",
               <select
-                aria-label="环境第一表面"
+                aria-label="第一表面"
                 value={s.first_surface || "front"}
                 onChange={(e) =>
                   update((p) => {
@@ -146,12 +191,19 @@ export function EnvironmentTable({
             {row(
               "基底模型",
               <select
-                aria-label="环境基底模型"
+                aria-label="基底模型"
                 value={s.substrate_model || "semi_infinite"}
                 onChange={(e) =>
                   update((p) => {
+                    const before =
+                      p.settings.substrate_model || "semi_infinite";
                     p.settings.substrate_model = e.target
                       .value as typeof s.substrate_model;
+                    if (
+                      before === "semi_infinite" &&
+                      e.target.value !== "semi_infinite"
+                    )
+                      p.settings.exit_material = p.settings.incident_material;
                     p.settings.substrate_thickness_mm ??= 1;
                     if (e.target.value === "semi_infinite")
                       p.settings.exit_material = p.settings.substrate_material;

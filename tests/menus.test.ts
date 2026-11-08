@@ -57,6 +57,7 @@ test("compact menu catalogue has six categories while toolbar commands remain av
       "基底",
       "光源",
       "探测器",
+      "分布",
     ],
   );
   assert.deepEqual(
@@ -108,7 +109,6 @@ test("selection, stale spectra, workspace failures and layer limit gate actual d
     "layer.up",
     "file.exportSpectrum",
     "edit.redo",
-    "file.saveAs",
   ])
     assert.equal(state[id].enabled, false, id);
   assert.equal(state["file.open"].enabled, true);

@@ -80,6 +80,7 @@ export interface Project {
   response_data?: {
     illuminants?: SpectralResponse[];
     detectors?: SpectralResponse[];
+    distributions?: { name: string; samples: number[][] }[];
   };
   import_info?: {
     format: "TFCalc";

@@ -171,6 +171,7 @@ async fn engine_request(
                 | "calculate_rt"
                 | "analyze"
                 | "validate"
+                | "export_project"
                 | "import_tfd"
                 | "catalogue_list"
                 | "catalogue_get"
@@ -416,8 +417,10 @@ async fn import_file(
 ) -> Result<Option<serde_json::Value>, String> {
     menus::require_main(&window)?;
     tauri::async_runtime::spawn_blocking(move || {
-        let mut dialog = app.dialog().file().set_parent(&window).set_title("打开项目")
+        let parent=app.webview_windows().into_values().find(|w|w.is_visible().unwrap_or(false) && w.is_focused().unwrap_or(false)).unwrap_or(window.clone());
+        let mut dialog = app.dialog().file().set_title("打开项目")
             .add_filter("TFCalc / TFC 项目", &["tfd", "json"]);
+        if parent.is_visible().unwrap_or(false) {dialog=dialog.set_parent(&parent);}
         if let Ok(project)=project_folder() { dialog=dialog.set_directory(project); }
         let picked=dialog.blocking_pick_file();
         let Some(file) = picked else { return Ok(None); };
@@ -463,6 +466,53 @@ async fn export_file(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn project_save_as(window: tauri::WebviewWindow, app: tauri::AppHandle, mut project: serde_json::Value, format: String) -> Result<Option<serde_json::Value>,String> {
+    menus::require_main(&window)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let name=project["name"].as_str().unwrap_or("未命名膜系").replace(['/', ':', '\\'], "_");
+        let file_name=format!("{}{}",name,if format=="tfd" {".tfd"}else{".tfc.json"});
+        let parent=app.webview_windows().into_values().find(|w|w.is_visible().unwrap_or(false) && w.is_focused().unwrap_or(false)).unwrap_or(window.clone());
+        let mut dialog=app.dialog().file().set_title("另存项目")
+            .add_filter("TFCalc 膜系 (*.tfd)", &["tfd"])
+            .add_filter("TFC 完整项目 (*.tfc.json)", &["json"])
+            .set_can_create_directories(true).set_file_name(&file_name);
+        if parent.is_visible().unwrap_or(false) {dialog=dialog.set_parent(&parent);}
+        if let Ok(root)=current_workspace(&app) {dialog=dialog.set_directory(root.join("projects"));}
+        let Some(picked)=dialog.blocking_save_file() else {return Ok(None)};
+        let path=picked.into_path().map_err(|e| e.to_string())?;
+        let filename=path.file_name().and_then(|s|s.to_str()).ok_or("文件名无效")?;
+        let lower=filename.to_lowercase();
+        let (chosen,label)=if lower.ends_with(".tfd") {("tfd",&filename[..filename.len()-4])}
+            else if lower.ends_with(".tfc.json") {("json",&filename[..filename.len()-9])}
+            else if lower.ends_with(".json") {("json",&filename[..filename.len()-5])}
+            else {return Err("请使用 .tfd 或 .tfc.json 扩展名；文件未写入".into())};
+        project["name"]=serde_json::json!(label);
+        let result=run_engine(&app,None,false,serde_json::json!({"action":"export_project","project":project,"format":chosen}))?;
+        let bytes=if chosen=="tfd" {
+            result["bytes"].as_array().ok_or("TFD 编码无效")?.iter().map(|v|v.as_u64().and_then(|x|u8::try_from(x).ok()).ok_or("TFD 字节无效")).collect::<Result<Vec<u8>,_>>()?
+        } else {result["content"].as_str().ok_or("项目内容无效")?.as_bytes().to_vec()};
+        if bytes.len()>2_000_000 {return Err("项目文件超过 2 MB，未写入".into())}
+        let parent=path.parent().ok_or("保存目录无效")?;
+        let temp=parent.join(format!(".tfc-save-{}-{}.tmp",std::process::id(),std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e|e.to_string())?.as_nanos()));
+        let written=(|| -> Result<(),String> {
+            use std::io::Write;
+            let mut file=std::fs::OpenOptions::new().create_new(true).write(true).open(&temp).map_err(|e|e.to_string())?;
+            file.write_all(&bytes).map_err(|e|e.to_string())?;file.sync_all().map_err(|e|e.to_string())?;
+            std::fs::rename(&temp,&path).map_err(|e|e.to_string())?;Ok(())
+        })();
+        if written.is_err(){let _=std::fs::remove_file(&temp);}written?;
+        Ok(Some(serde_json::json!({"project":result["project"],"format":chosen,"path":path,"warnings":result["warnings"]})))
+    }).await.map_err(|e|e.to_string())?
+}
+#[tauri::command]
+fn app_quit(window: tauri::WebviewWindow, app: tauri::AppHandle) -> Result<(),String> {
+    menus::require_main(&window)?;
+    tools::save_layout(&app)?;
+    app.state::<calculation_worker::CalculationWorker>().stop();
+    tools::shutdown(&app);
+    app.exit(0); Ok(())
 }
 fn main() {
     // Explicit diagnostics use a caller-created copy, without booting App or user preferences.
@@ -539,10 +589,16 @@ fn main() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if window.label() == "main"
-                && matches!(event, tauri::WindowEvent::CloseRequested { .. })
-            {
-                let _ = tools::save_layout(window.app_handle());
+            if window.label() == "main" {
+                match event {
+                    tauri::WindowEvent::CloseRequested {api, ..} => {
+                        api.prevent_close();
+                        let _ = tools::save_layout(window.app_handle());
+                        let _ = tools::spectrum_visible(window.app_handle(), false);
+                    },
+                    tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_) => {tools::persist_later(window.app_handle().clone());},
+                    _ => {}
+                }
             }
             if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
                 window.app_handle().state::<calculation_worker::CalculationWorker>().stop();
@@ -561,6 +617,7 @@ fn main() {
             workspace_pick,
             workspace_copy,
             export_file,
+            project_save_as,
             import_file,
             menus::menu_platform,
             menus::menu_sync,
@@ -570,6 +627,9 @@ fn main() {
             tools::tool_hide,
             tools::tool_visibility,
             tools::tool_remember,
+            tools::tool_preferences,
+            tools::tool_spectrum,
+            app_quit,
             tools::tool_snapshot,
             tools::tool_publish,
             tools::tool_submit,

@@ -164,6 +164,21 @@ pub fn start(app: tauri::AppHandle) {
                 }
                 Ok(json!(true))
             })?;
+            ui(&app, |app| {
+                let main=app.get_webview_window("main").ok_or("main missing")?;
+                main.show().map_err(|e|e.to_string())?;
+                main.close().map_err(|e|e.to_string())?;
+                Ok(json!(true))
+            })?;
+            std::thread::sleep(Duration::from_millis(250));
+            ui(&app, |app| {
+                let main=app.get_webview_window("main").ok_or("closing spectrum destroyed coordinator")?;
+                if main.is_visible().map_err(|e|e.to_string())? {return Err("spectrum close did not hide".into())}
+                if app.get_webview_window("tool-settings").is_none() {return Err("spectrum close destroyed tools".into())}
+                crate::tools::spectrum_visible(&app,true)?;
+                if !main.is_visible().map_err(|e|e.to_string())? {return Err("spectrum did not reopen".into())}
+                Ok(json!(true))
+            })?;
             if tool_count.load(Ordering::SeqCst) != 1 {
                 return Err("tool action routing failed".into());
             }
@@ -179,7 +194,7 @@ pub fn start(app: tauri::AppHandle) {
                 Ok(json!(true))
             })?;
             Ok(
-                json!({"platform":crate::menus::menu_platform(),"native_tool_windows":true,"tool_close_hide_restore":true,"tool_projection_ordered":true,"tool_command_routed_once":true,"tool_cannot_mutate_workspace":true,"native_menu":true,"command_routed_once_to_main":true,"disabled_command_blocked":true,"native_enabled_and_checked_sync":true,"windows_auxiliary_close_hide_restore":cfg!(windows),"auxiliary_cannot_mutate_workspace":cfg!(windows),"workspace_untouched":true}),
+                json!({"platform":crate::menus::menu_platform(),"spectrum_close_hide_restore":true,"native_tool_windows":true,"tool_close_hide_restore":true,"tool_projection_ordered":true,"tool_command_routed_once":true,"tool_cannot_mutate_workspace":true,"native_menu":true,"command_routed_once_to_main":true,"disabled_command_blocked":true,"native_enabled_and_checked_sync":true,"windows_auxiliary_close_hide_restore":cfg!(windows),"auxiliary_cannot_mutate_workspace":cfg!(windows),"workspace_untouched":true}),
             )
         })();
         match &result {

@@ -40,6 +40,14 @@ def dispatch(request, workspace=None):
     if action=='calculate':return calculate(request['project'])
     if action=='calculate_rt':return calculate_rt(request['project'],request['wavelength_nm'],request.get('polarization'))
     if action=='analyze':return analyze_spectrum(request['spectrum'],request.get('bands'))
+    if action=='export_project':
+        if request.get('format')=='tfd':
+            from exporters.tfd import export_tfd
+            return export_tfd(request['project'])
+        if request.get('format','json')!='json':raise ValueError('不支持的保存格式')
+        import json
+        project=validate(request['project'])
+        return {'project':project,'format':'json','content':json.dumps(project,ensure_ascii=False,allow_nan=False,indent=2)+'\n','encoding':'utf-8','warnings':[]}
     if action=='validate':return {'project':validate(request['project'])}
     if action=='import_tfd':
         project=parse_tfd(request['text'],request['template'],request.get('name',''),request.get('encoding','unicode'))

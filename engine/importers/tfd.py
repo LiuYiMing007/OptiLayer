@@ -97,9 +97,10 @@ def inspect_tfd(text, template, name='', encoding='unicode'):
                 if len(row)<6 or int(row[1])!=i+1:raise ValueError(f'{side} 膜层编号必须从 1 连续递增，且厚度字段完整')
                 m=resolve(row[2],'film');d=number(row[4],f'{side}第 {i+1} 层原始物理膜厚',0,1e6)
                 group=int(row[6]) if len(row)>6 and row[6] else 1
-                if groups and group not in groups:raise ValueError(f'{side}第 {i+1} 层引用不存在的组 {group}')
+                if groups and group!=0 and group not in groups:raise ValueError(f'{side}第 {i+1} 层引用不存在的组 {group}')
                 factor=groups.get(group,1.0)
-                source_layers.append({'side':side,'index':i+1,'material':row[2],'physical_nm':d,'group':group,'factor':factor})
+                layer_id=str(uuid.uuid4())
+                source_layers.append({'layer_id':layer_id,'side':side,'index':i+1,'material':row[2],'physical_nm':d,'group':group,'factor':factor})
                 if m:
                     q=number(row[3],f'{side}第 {i+1} 层 QWOT',0,1e9)
                     n=float(optical_constants(m,np.array([float(e[4])]))[0][0])
@@ -109,7 +110,7 @@ def inspect_tfd(text, template, name='', encoding='unicode'):
                     if abs(q-computed)>max(2e-5,abs(q)*1e-4):
                         inferred=q*float(e[4])/(4*d) if d else None
                         thickness_warnings.append(f'{side} 第 {i+1} 层 {row[2]}：文件 QWOT={q:.7g}，当前材料按原物理厚度换算为 {computed:.7g}；当前 n(λ₀)={n:.7g}'+(f'，原厚度反推 n≈{inferred:.7g}' if inferred is not None else '')+'。可能使用了不同材料数据或厚度优先规则；保留原物理厚度，不反推替换材料。')
-                if m:target.append({'id':str(uuid.uuid4()),'material':m['name'],'thickness_nm':d*factor,'group':group})
+                if m:target.append({'id':layer_id,'material':m['name'],'thickness_nm':d*factor,'group':group})
         report['materials']=mapping
         if report['issues']:return report
         settings=dict(zip(['start_nm','end_nm','step_nm','reference_nm','angle_deg'],map(float,e[1:6])))
@@ -134,7 +135,8 @@ def inspect_tfd(text, template, name='', encoding='unicode'):
                  'layer_order':'substrate_to_air','group_factors':{str(g):f for g,f in groups.items() if g>0},'settings':settings,'materials':list(materials.values()),'layers':layers,
                  **({'back_layers':back_layers} if back_layers else {}),
                  'import_info':{'format':'TFCalc','file_name':name,'encoding':encoding,'text_sha256':hashlib.sha256(text.encode('utf-8')).hexdigest(),
-                                'materials':mapping,'source_layers':source_layers,'notes':notes}}
+                                'materials':mapping,'source_layers':source_layers,'notes':notes,
+                                'tfd_records':[[v for v in line.split('*')] for line in text.lstrip('\ufeff').splitlines() if line.strip()]}}
         report['project']=validate(project);report['warnings']=notes
     except (ValueError,TypeError,IndexError,KeyError,OverflowError) as error:
         issue('structure_or_input',str(error))

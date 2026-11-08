@@ -222,6 +222,8 @@ export default function WindowIpcCheck() {
           await until((s) => !!s.details?.["tool-settings"]?.environment);
         if (id === "interactive")
           await until((s) => !!s.details?.["tool-interactive"]?.interactive);
+        // The legacy settings ID remains callable for old clients, but has no second menu entry.
+        if (id === "settings") continue;
         await latest.current.host.hide(id);
         await until((s) => !s.visible[id]);
         await invoke("window_check_dispatch", { id: `view.${id}` });

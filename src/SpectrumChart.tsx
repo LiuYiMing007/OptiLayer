@@ -26,7 +26,12 @@ export default function SpectrumChart({
   useEffect(() => {
     const element = host.current;
     if (!element) return;
-    const observer = new ResizeObserver(() => Plotly.Plots.resize(element));
+    const observer = new ResizeObserver(() => {
+      if (element.clientWidth > 0 && element.clientHeight > 0)
+        void Promise.resolve(Plotly.Plots.resize(element)).catch(() => {
+          // A native hide can race Plotly's deferred resize. Reopening triggers a fresh resize.
+        });
+    });
     observer.observe(element);
     return () => {
       observer.disconnect();

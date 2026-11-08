@@ -1,3 +1,4 @@
+import type { WindowPreferences } from "../windowPreferences.ts";
 import type { InteractiveTarget } from "../interactiveModel.ts";
 import type {
   Material,
@@ -24,8 +25,12 @@ export type ToolId =
   | "illuminant"
   | "detector"
   | "groups"
-  | "stack";
+  | "stack"
+  | "windowconfig"
+  | "distribution";
 export interface ToolSnapshot {
+  windowPreferences?: WindowPreferences;
+  environmentPending?: boolean;
   inspectedMaterial?: { name: string; substrate: boolean; draft?: Material };
   focus?: { id: string; label: string; token: string };
   sequence: number;
@@ -98,6 +103,8 @@ export type ToolAction = { scope: string; requestId: string } & (
       value: number;
     }
   | { kind: "command"; id: string }
+  | { kind: "window-preferences"; preferences: WindowPreferences }
+  | { kind: "environment-complete" }
   | {
       kind: "stack-apply";
       side: "front" | "back";

@@ -1,0 +1,11 @@
+{
+  "all_pass": true,
+  "platform": "Darwin",
+  "tfd_records_not_json_renamed": true,
+  "full_original_records_preserved": true,
+  "group_and_polarization_roundtrip": true,
+  "max_rt_error_pp": 0.0,
+  "named_workspace_tfd_visible": true,
+  "distribution_json_visible": true,
+  "limits": "Frozen TFD writer and re-import with verified original material records. Does not run proprietary TFCalc or assert native OS save-dialog clicks."
+}

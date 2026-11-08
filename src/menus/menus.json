@@ -110,6 +110,12 @@
         "label": "探测器",
         "implemented": true,
         "check": true
+      },
+      {
+        "id": "view.distribution",
+        "label": "分布",
+        "implemented": true,
+        "check": true
       }
     ]
   },
@@ -138,14 +144,14 @@
     "title": "窗口",
     "items": [
       {
-        "id": "view.materialdata",
-        "label": "材料数据",
+        "id": "view.windowconfig",
+        "label": "配置…",
         "implemented": true,
         "check": true
       },
       {
-        "id": "view.settings",
-        "label": "计算参数",
+        "id": "view.materialdata",
+        "label": "材料数据",
         "implemented": true,
         "check": true
       },
@@ -187,13 +193,6 @@
         "implemented": true
       },
       {
-        "id": "view.remember",
-        "label": "下次恢复工具窗口布局",
-        "check": true,
-        "implemented": true,
-        "platform": "desktop"
-      },
-      {
         "id": "view.menu",
         "label": "显示菜单窗口（Windows）",
         "implemented": true,
@@ -218,6 +217,17 @@
         "id": "help.about",
         "label": "关于 TFC Workbench…",
         "implemented": true
+      },
+      {
+        "separator": true,
+        "platform": "windows"
+      },
+      {
+        "id": "file.quit",
+        "label": "退出 TFC",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+Q",
+        "platform": "windows"
       }
     ]
   }

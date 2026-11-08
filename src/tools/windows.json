@@ -25,11 +25,11 @@
   },
   {
     "id": "settings",
-    "title": "计算参数",
-    "width": 400,
-    "height": 600,
+    "title": "环境",
+    "width": 420,
+    "height": 520,
     "minWidth": 340,
-    "minHeight": 380
+    "minHeight": 360
   },
   {
     "id": "project",
@@ -66,10 +66,10 @@
   {
     "id": "environment",
     "title": "环境",
-    "width": 360,
-    "height": 385,
-    "minWidth": 300,
-    "minHeight": 300
+    "width": 420,
+    "height": 520,
+    "minWidth": 340,
+    "minHeight": 360
   },
   {
     "id": "illuminant",
@@ -116,6 +116,22 @@
     "title": "材料数据",
     "width": 480,
     "height": 240,
+    "minWidth": 340,
+    "minHeight": 220
+  },
+  {
+    "id": "windowconfig",
+    "title": "窗口配置",
+    "width": 390,
+    "height": 430,
+    "minWidth": 320,
+    "minHeight": 330
+  },
+  {
+    "id": "distribution",
+    "title": "分布",
+    "width": 420,
+    "height": 280,
     "minWidth": 340,
     "minHeight": 220
   }

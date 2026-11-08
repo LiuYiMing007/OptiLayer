@@ -16,15 +16,25 @@ export default function MediumInput({
 }) {
   const current =
     project.settings[field] || project.settings.substrate_material;
-  const [draft, setDraft] = useState(current),
+  const selected = project.materials.find((m) => m.name === current);
+  const display =
+    selected?.display_name &&
+    project.materials.filter(
+      (m) =>
+        m.display_name === selected.display_name ||
+        m.name === selected.display_name,
+    ).length === 1
+      ? selected.display_name
+      : current;
+  const [draft, setDraft] = useState(display),
     [error, setError] = useState("");
   const focused = useRef(false),
     cancelled = useRef(false),
     requestId = useRef(0),
     id = useId();
   useEffect(() => {
-    if (!focused.current) setDraft(current);
-  }, [current]);
+    if (!focused.current) setDraft(display);
+  }, [current, display]);
   async function commit() {
     focused.current = false;
     if (cancelled.current) {
@@ -32,7 +42,7 @@ export default function MediumInput({
       return;
     }
     const value = draft.trim();
-    if (value === current) return;
+    if (value === current || value === display) return;
     const token = ++requestId.current;
     try {
       if (!value) throw new Error("请输入材料名称或折射率 n");
@@ -47,7 +57,7 @@ export default function MediumInput({
         if (Number.isFinite(n) && n > 0 && n <= 20)
           material = {
             name: `USER/n=${n}`,
-            display_name: `自定义 n=${n}`,
+            display_name: `n = ${n}`,
             n,
             k: 0,
             color: "#6b7280",
@@ -106,7 +116,7 @@ export default function MediumInput({
           if (e.key === "Escape") {
             cancelled.current = true;
             ++requestId.current;
-            setDraft(current);
+            setDraft(display);
             setError("");
             focused.current = false;
             e.currentTarget.blur();

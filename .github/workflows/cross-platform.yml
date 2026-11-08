@@ -75,6 +75,7 @@ jobs:
       - run: node scripts/run_python.mjs scripts/validate_menu_release.py
       - run: node scripts/run_python.mjs scripts/validate_window_ipc_release.py
       - run: node scripts/run_python.mjs scripts/validate_catalogue_release.py
+      - run: node scripts/run_python.mjs scripts/validate_project_flow_release.py
       - run: node scripts/run_python.mjs scripts/validate_tfd_release.py
       - run: node scripts/run_python.mjs scripts/validate_environment_release.py
       - run: node scripts/run_python.mjs scripts/validate_workspace_release.py

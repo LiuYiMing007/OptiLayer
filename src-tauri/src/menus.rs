@@ -229,6 +229,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
         let handle = app.handle().clone();
         auxiliary.on_window_event(move |event| {
+            if matches!(event,tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_)) {crate::tools::persist_later(handle.clone());}
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 if let Some(window) = handle.get_webview_window("menu") {

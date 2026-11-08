@@ -17,12 +17,6 @@
     "implemented": true
   },
   {
-    "id": "file.quit",
-    "label": "退出 TFC",
-    "implemented": true,
-    "shortcut": "CmdOrCtrl+Q"
-  },
-  {
     "id": "layer.copy",
     "label": "复制选中膜层",
     "implemented": true,
@@ -107,6 +101,17 @@
   {
     "id": "project.feedback",
     "label": "打开光谱复核示例",
+    "implemented": true
+  },
+  {
+    "id": "view.settings",
+    "label": "环境（旧入口）",
+    "implemented": true,
+    "check": true
+  },
+  {
+    "id": "view.remember",
+    "label": "记住窗口位置（旧入口）",
     "implemented": true
   }
 ]

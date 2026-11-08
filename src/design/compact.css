@@ -599,3 +599,87 @@
 .tool-materialdata .material-editor-panel .engineering-sheet input {
   width: 90px;
 }
+
+.spectrum-window-body {
+  display: contents;
+}
+.spectrum-window-body[hidden] {
+  display: none;
+}
+.window-configuration {
+  padding: 4px;
+  font-size: 12px;
+}
+.opening-window-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 0;
+  border-block: 1px solid #d8d8d8;
+  margin-bottom: 12px;
+}
+.window-configuration label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.window-configuration input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+.environment-stage {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 5px;
+  background: #f3f3f3;
+  font-size: 12px;
+  border-bottom: 1px solid #d8d8d8;
+}
+.tool-environment .tool-content {
+  display: flex;
+  flex-direction: column;
+}
+.tool-environment .engineering-parameters {
+  flex: none;
+}
+
+.tool-windowconfig .tool-content {
+  display: block;
+}
+.distribution-editor {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+}
+.distribution-editor textarea {
+  min-height: 90px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.environment-stage button {
+  margin-left: auto;
+  min-height: 26px;
+  padding: 2px 8px;
+  border: 1px solid #a9bdcf;
+  border-radius: 3px;
+  background: #eaf1f8;
+  color: #285780;
+  font-size: 12px;
+}
+.window-configuration > button,
+.distribution-window button {
+  min-height: 26px;
+  padding: 2px 8px;
+  border: 1px solid #ccd4dc;
+  border-radius: 3px;
+  background: #f8f9fa;
+  color: #303840;
+  font-size: 12px;
+}

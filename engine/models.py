@@ -135,6 +135,24 @@ def validate(project):
         number(s.get('substrate_thickness_mm'), '基底厚度 mm', 0, 1e5, strict=True)
     elif exit_name != s['substrate_material'] or p.get('back_layers'):
         raise ValueError('半无限基底不含背面；独立出射介质或背面膜层需要有限厚基底模型')
+    responses=p.get('response_data') or {}
+    if not isinstance(responses,dict):raise ValueError('响应数据格式无效')
+    distributions=responses.get('distributions',[])
+    if not isinstance(distributions,list) or len(distributions)>100:raise ValueError('分布记录数量无效')
+    distribution_names=set()
+    for record in distributions:
+        import re
+        name=record.get('name','')
+        if not re.fullmatch(r'[A-Z0-9_-]{1,8}',name) or name=='EQUAL' or name in distribution_names:raise ValueError('分布名称无效或重复')
+        distribution_names.add(name);samples=record.get('samples',[])
+        if not isinstance(samples,list) or not 1<=len(samples)<=1001:raise ValueError('分布需要1–1001个数据点')
+        previous=-1;positive=False
+        for row in samples:
+            if not isinstance(row,list) or len(row)!=2:raise ValueError('分布需要角度和强度两列')
+            angle=number(row[0],'分布角度',0,90);intensity=number(row[1],'分布强度',0,100)
+            if angle<=previous:raise ValueError('分布角度须递增且不重复')
+            previous=angle;positive=positive or intensity>0
+        if not positive:raise ValueError('分布强度不能全部为0')
     ids = set()
     for side, layers in [('正面',p['layers']), ('背面',p.get('back_layers',[]))]:
         if not isinstance(layers,list) or len(layers)>500:

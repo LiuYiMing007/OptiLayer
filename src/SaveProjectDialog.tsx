@@ -1,16 +1,23 @@
+export interface SaveChoice {
+  name: string;
+  format: "tfd" | "json";
+}
 import { useEffect, useRef, useState } from "react";
 export default function SaveProjectDialog({
   initial,
   copy,
   folder,
   finish,
+  defaultFormat = "tfd",
 }: {
   initial: string;
   copy: boolean;
   folder: string;
-  finish: (name: string | null) => void;
+  finish: (choice: SaveChoice | null) => void;
+  defaultFormat?: "tfd" | "json";
 }) {
   const [name, setName] = useState(initial);
+  const [format, setFormat] = useState<"tfd" | "json">(defaultFormat);
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -30,7 +37,7 @@ export default function SaveProjectDialog({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (name.trim()) finish(name.trim());
+          if (name.trim()) finish({ name: name.trim(), format });
         }}
       >
         <h2>{copy ? "另存项目" : "保存项目"}</h2>
@@ -46,9 +53,22 @@ export default function SaveProjectDialog({
           />
         </label>
         <p>保存位置：{folder}/projects</p>
+        <label>
+          文件格式
+          <select
+            aria-label="保存项目格式"
+            value={format}
+            onChange={(e) => setFormat(e.target.value as "tfd" | "json")}
+          >
+            <option value="tfd">TFCalc 膜系（.tfd）</option>
+            <option value="json">TFC 完整项目（.tfc.json）</option>
+          </select>
+        </label>
         <p>
-          以项目名称生成 .tfc.json
-          文件；同名项目自动增加序号。内部编号用于保持项目关联。
+          {format === "tfd"
+            ? "TFD 使用原版外部材料库，保存前校验材料对应关系；未匹配时不会替换材料或丢弃数据。"
+            : "JSON 包含完整材料快照与本软件分析配置。"}{" "}
+          同名文件自动增加序号。
         </p>
         <footer>
           <button type="button" onClick={() => finish(null)}>

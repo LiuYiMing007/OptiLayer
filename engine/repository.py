@@ -137,15 +137,24 @@ def storage_action(workspace, request):
                 return {'saved': True, 'warnings': warnings}
             if action == 'save':
                 p = validate(request['project'])
+                export=None
+                if request.get('format','json')=='tfd':
+                    from exporters.tfd import export_tfd
+                    export=export_tfd(p)
+                elif request.get('format','json')!='json':raise ValueError('不支持的保存格式')
                 key = project_id(p.get('id'))
                 conn.execute("INSERT INTO projects VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now')) ON CONFLICT(id) DO UPDATE SET name=excluded.name, document=excluded.document, updated_at=excluded.updated_at", (key, p['name'], json.dumps(p, ensure_ascii=False, allow_nan=False)))
                 conn.commit()
-                warnings=[]
+                warnings=export['warnings'][:] if export else []
                 relative_path=None
                 try:
-                    relative_path=named_export(workspace, conn, 'project', key, workspace.manifest['directories']['projects'], p['name'], '.tfc.json', p)
+                    relative_path=named_export(workspace, conn, 'project', key, workspace.manifest['directories']['projects'], p['name'], '.tfd' if export else '.tfc.json', p, text=export['content'] if export else None)
                 except OSError as error:
                     warnings.append(f'项目已入库，但恢复副本未写入：{error}')
+                for distribution in p.get('response_data',{}).get('distributions',[]):
+                    try:
+                        named_export(workspace,conn,'distribution',key+':'+distribution['name'],workspace.manifest['directories']['materials']+'/distributions',p['name']+'-'+distribution['name'],'.distribution.json',distribution)
+                    except (OSError,ValueError) as error:warnings.append(f'项目已保存，但分布数据副本未写入：{error}')
                 return {'saved': True, 'project': p, 'relative_path':relative_path, 'warnings': warnings}
             if action == 'list':
                 return {'projects': [dict(zip(('id','name','updated_at','relative_path'), row)) for row in conn.execute("SELECT p.id,p.name,p.updated_at,f.relative_path FROM projects p LEFT JOIN file_exports f ON f.kind='project' AND f.item_key=p.id ORDER BY p.updated_at DESC")]}

@@ -1,3 +1,6 @@
+import DistributionWindow from "../DistributionWindow";
+import WindowConfiguration from "../WindowConfiguration";
+import { defaultWindowPreferences } from "../windowPreferences";
 import {
   EnvironmentTable,
   GroupTable,
@@ -9,7 +12,7 @@ import InteractiveAnalysis from "../InteractiveAnalysis";
 import { useEffect, useRef, useState } from "react";
 import TextInput from "../TextInput";
 import LayerEditor from "../LayerEditor";
-import CalculationSettings from "../CalculationSettings";
+
 import MaterialLibrary from "../MaterialLibrary";
 import SpectrumPanel from "../SpectrumPanel";
 import { hasNonFinite, patchesBetween, type ToolSnapshot } from "./state";
@@ -99,11 +102,27 @@ export default function ToolView({
           {s.notice}
         </p>
       )}
+      {id === "distribution" && (
+        <DistributionWindow project={s.project} update={update} />
+      )}
       {id === "interactive" && (
         <InteractiveAnalysis snapshot={s} send={dispatch} />
       )}
-      {id === "environment" && (
-        <EnvironmentTable project={s.project} update={update} />
+      {id === "windowconfig" && (
+        <WindowConfiguration
+          preferences={s.windowPreferences || defaultWindowPreferences}
+          save={(preferences) =>
+            send({ kind: "window-preferences", preferences })
+          }
+        />
+      )}
+      {(id === "environment" || id === "settings") && s.environmentPending && (
+        <div className="environment-stage">
+          <span>确认环境后打开工作窗口</span>
+          <button onClick={() => void send({ kind: "environment-complete" })}>
+            完成环境设置
+          </button>
+        </div>
       )}
       {id === "groups" && <GroupTable project={s.project} update={update} />}
       {(id === "illuminant" || id === "detector") && (
@@ -152,7 +171,7 @@ export default function ToolView({
             (s.project.settings.substrate_model || "semi_infinite") ===
               "semi_infinite" && (
               <p className="catalogue-hint">
-                请在计算参数中选择有限厚基底后编辑背面膜层。
+                请在环境中选择有限厚基底后编辑背面膜层。
               </p>
             )}
           {horizontal ? (
@@ -293,14 +312,8 @@ export default function ToolView({
           onSaveLibrary={() => send({ kind: "library-save" })}
         />
       )}
-      {id === "settings" && (
-        <CalculationSettings
-          project={s.project}
-          busy={s.busy}
-          update={update}
-          calculate={() => command("calculate.spectrum")}
-          openMaterials={() => command("tools.materials")}
-        />
+      {(id === "settings" || id === "environment") && (
+        <EnvironmentTable project={s.project} update={update} />
       )}
       {id === "project" && (
         <div className="project-tool">

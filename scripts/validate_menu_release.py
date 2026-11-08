@@ -22,6 +22,7 @@ before = workspace_hashes()
 response = subprocess.run([str(host), '--menu-self-test'], capture_output=True, encoding='utf-8', timeout=60)
 assert response.returncode == 0, response.stdout + response.stderr
 report = json.loads(response.stdout.strip())
+assert report['spectrum_close_hide_restore']
 assert report['native_menu'] and report['command_routed_once_to_main'] and report['disabled_command_blocked']
 assert report['native_enabled_and_checked_sync']
 assert all(report[key] for key in ('native_tool_windows', 'tool_close_hide_restore', 'tool_projection_ordered', 'tool_command_routed_once', 'tool_cannot_mutate_workspace'))

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ToolView from "./ToolView";
 import { toolDefinitions } from "./state";
 import type { ToolSnapshot } from "./state";
@@ -29,28 +29,85 @@ export default function BrowserTool({
     "stack",
     "materialdata",
   ].includes(id);
+  const root = useRef<HTMLElement>(null);
+  const remembered = useRef<{
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+  }>({});
+  const [layoutLoaded] = useState(() => {
+    if (snapshot.windowPreferences?.rememberGeometry) {
+      try {
+        remembered.current = JSON.parse(
+          localStorage.getItem("tfc-tool-rect-" + id) || "{}",
+        );
+      } catch {
+        /* Invalid local layout uses defaults. */
+      }
+    }
+    return true;
+  });
+  void layoutLoaded;
   const [position, setPosition] = useState({
     x: Math.min(
-      40 + index * 22,
+      remembered.current.x ?? 40 + index * 22,
       Math.max(8, window.innerWidth - definition.width - 8),
     ),
-    y: 70 + index * 22,
+    y: Math.max(
+      0,
+      Math.min(
+        remembered.current.y ?? 70 + index * 22,
+        window.innerHeight - 40,
+      ),
+    ),
   });
   const [minimized, setMinimized] = useState(false);
+  useEffect(() => {
+    if (!snapshot.windowPreferences?.rememberGeometry || minimized) return;
+    const element = root.current;
+    if (!element) return;
+    const save = () => {
+      const r = element.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) return;
+      localStorage.setItem(
+        "tfc-tool-rect-" + id,
+        JSON.stringify({
+          x: position.x,
+          y: position.y,
+          width: r.width,
+          height: r.height,
+        }),
+      );
+    };
+    const observer = new ResizeObserver(save);
+    observer.observe(element);
+    save();
+    return () => observer.disconnect();
+  }, [
+    id,
+    position.x,
+    position.y,
+    snapshot.windowPreferences?.rememberGeometry,
+    minimized,
+  ]);
   return (
     <section
+      ref={root}
       role="dialog"
       aria-label={title}
       className={`browser-tool tool-${id} ${minimized ? "minimized" : ""}`}
       style={{
         left: position.x,
         top: position.y,
-        width: `min(${definition.width}px, calc(100vw - 50px))`,
+        width: `min(${remembered.current.width || definition.width}px, calc(100vw - 50px))`,
         height: minimized
           ? 28
-          : compact
-            ? "auto"
-            : `min(${definition.height}px, 80vh)`,
+          : remembered.current.height
+            ? Math.max(definition.minHeight, remembered.current.height)
+            : compact
+              ? "auto"
+              : `min(${definition.height}px, 80vh)`,
         minWidth: Math.min(definition.minWidth, 300),
         minHeight: minimized ? 28 : compact ? 0 : definition.minHeight,
         maxHeight: "85vh",

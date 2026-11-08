@@ -45,6 +45,40 @@ fn read_layout() -> Value {
         })
         .unwrap_or(json!({"version":1,"restore":false,"windows":{}}))
 }
+fn preferences(layout: &Value) -> Value {
+    let value = &layout["preferences"];
+    let selected = value["openWindows"].as_array().cloned().unwrap_or(vec![json!("spectrum"),json!("layers")]);
+    let mut seen = HashSet::new();
+    let selected: Vec<Value> = selected.into_iter().filter(|v| {
+        v.as_str().map(|id| (id == "spectrum" || (valid(id) && !["settings","environment","windowconfig","materialdata"].contains(&id))) && seen.insert(id.to_string())).unwrap_or(false)
+    }).collect();
+    json!({"openWindows":selected,"rememberGeometry":value["rememberGeometry"].as_bool().unwrap_or(layout["restore"] == true)})
+}
+#[tauri::command]
+pub fn tool_preferences(window: tauri::WebviewWindow, app: tauri::AppHandle, preferences: Option<Value>) -> Result<Value,String> {
+    crate::menus::require_main(&window)?;
+    let result;
+    {
+        let state = app.state::<ToolsState>();
+        let mut layout = state.layout.lock().map_err(|e| e.to_string())?;
+        if let Some(value) = preferences {layout["preferences"] = value;layout["restore"] = json!(false);}
+        result = self::preferences(&layout);
+        layout["preferences"] = result.clone();
+    }
+    save_layout(&app)?;
+    changed(&app);
+    Ok(result)
+}
+pub fn spectrum_visible(app: &tauri::AppHandle, visible: bool) -> Result<(),String> {
+    let main = app.get_webview_window("main").ok_or("光谱窗口不可用")?;
+    if visible {main.show().map_err(|e| e.to_string())?;main.unminimize().map_err(|e| e.to_string())?;main.set_focus().map_err(|e| e.to_string())?;}
+    else {main.hide().map_err(|e| e.to_string())?;}
+    changed(app); Ok(())
+}
+#[tauri::command]
+pub fn tool_spectrum(window: tauri::WebviewWindow, app: tauri::AppHandle, visible: bool) -> Result<(),String> {
+    crate::menus::require_main(&window)?; spectrum_visible(&app, visible)
+}
 fn os_key() -> &'static str {
     if cfg!(windows) {
         "windows"
@@ -72,12 +106,14 @@ pub fn save_layout(app: &tauri::AppHandle) -> Result<(), String> {
     if !layout.is_object() {
         *layout = json!({"version":1,"restore":false,"windows":{}});
     }
+    if preferences(&layout)["rememberGeometry"] == true {
     for (label, window) in app.webview_windows() {
         if label == "main" || label.starts_with("tool-") || label == "menu" {
             if let Some(value) = rect(&window) {
                 layout["windows"][os_key()][label] = value;
             }
         }
+    }
     }
     let path = layout_file()?;
     std::fs::create_dir_all(path.parent().ok_or("layout parent missing")?)
@@ -90,7 +126,7 @@ pub fn save_layout(app: &tauri::AppHandle) -> Result<(), String> {
     .map_err(|e| e.to_string())?;
     std::fs::rename(temp, path).map_err(|e| e.to_string())
 }
-fn persist_later(app: tauri::AppHandle) {
+pub fn persist_later(app: tauri::AppHandle) {
     let generation = app
         .state::<ToolsState>()
         .generation
@@ -114,6 +150,7 @@ fn restore_rect(app: &tauri::AppHandle, window: &tauri::WebviewWindow) {
         .ok()
         .map(|v| v.clone())
         .unwrap_or(Value::Null);
+    if preferences(&layout)["rememberGeometry"] != true {return;}
     let r = &layout["windows"][os_key()][window.label()];
     if !r.is_object() {
         return;
@@ -190,12 +227,13 @@ pub fn visibility(app: &tauri::AppHandle) -> Value {
             .and_then(|w| w.is_visible().ok())
             .unwrap_or(false));
     }
+    value["spectrum"] = json!(app.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(false));
     value["remember"] = json!(app
         .state::<ToolsState>()
         .layout
         .lock()
         .ok()
-        .map(|v| v["restore"] == true)
+        .map(|v| preferences(&v)["rememberGeometry"] == true)
         .unwrap_or(false));
     value
 }
@@ -311,7 +349,7 @@ pub fn tool_remember(
     app.state::<ToolsState>()
         .layout
         .lock()
-        .map_err(|e| e.to_string())?["restore"] = json!(enabled);
+        .map_err(|e| e.to_string())?["preferences"]["rememberGeometry"] = json!(enabled);
     save_layout(&app)?;
     changed(&app);
     Ok(())
@@ -450,12 +488,7 @@ pub fn testing(app: &tauri::AppHandle) {
 #[tauri::command]
 pub fn tool_focus_main(window: tauri::WebviewWindow, app: tauri::AppHandle) -> Result<(), String> {
     crate::menus::require_main(&window)?;
-    if let Some(w) = app.get_webview_window("main") {
-        w.show().map_err(|e| e.to_string())?;
-        w.unminimize().map_err(|e| e.to_string())?;
-        w.set_focus().map_err(|e| e.to_string())?;
-    }
-    Ok(())
+    spectrum_visible(&app,true)
 }
 pub fn setup(app: &tauri::AppHandle) {
     let saved = read_layout();
@@ -463,14 +496,8 @@ pub fn setup(app: &tauri::AppHandle) {
     if let Some(main) = app.get_webview_window("main") {
         restore_rect(app, &main);
     }
-    if saved["restore"] == true {
-        for definition in definitions() {
-            let id = definition["id"].as_str().unwrap();
-            if saved["windows"][os_key()][tool_label(id)]["visible"] == true {
-                let _ = open(app, id);
-            }
-        }
-    }
+    if let Some(menu) = app.get_webview_window("menu") {restore_rect(app, &menu);}
+
 }
 pub fn shutdown(app: &tauri::AppHandle) {
     app.state::<ToolsState>()
@@ -485,6 +512,14 @@ pub fn shutdown(app: &tauri::AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn preferences_migrate_geometry_without_reopening_old_windows() {
+        assert_eq!(preferences(&json!({"restore":true}))["rememberGeometry"],true);
+        let p=preferences(&json!({"preferences":{"openWindows":["spectrum","layers","layers","settings","environment","../secret"],"rememberGeometry":false},"restore":true}));
+        assert_eq!(p["openWindows"],json!(["spectrum","layers"]));
+        assert_eq!(p["rememberGeometry"],false);
+        assert_eq!(preferences(&json!({"preferences":{"openWindows":[]}}))["openWindows"],json!([]));
+    }
     #[test]
     fn registry_is_extensible_and_unique() {
         let d = definitions();

@@ -13,7 +13,7 @@ def file_label(value):
     return label
 
 
-def named_export(workspace, conn, kind, key, folder, label, suffix, document):
+def named_export(workspace, conn, kind, key, folder, label, suffix, document, text=None):
     row = conn.execute('SELECT relative_path FROM file_exports WHERE kind=? AND item_key=?', (kind, key)).fetchone()
     old = row[0] if row else None
     base = f'{folder}/{file_label(label)}'
@@ -26,7 +26,17 @@ def named_export(workspace, conn, kind, key, folder, label, suffix, document):
     while relative.casefold() in used or (workspace.resolve(relative).exists() and relative != old):
         number += 1
         relative = f'{base} ({number}){suffix}'
-    atomic_json(workspace.resolve(relative), document)
+    if text is None:atomic_json(workspace.resolve(relative), document)
+    else:
+        import os,tempfile
+        destination=workspace.resolve(relative);destination.parent.mkdir(parents=True,exist_ok=True)
+        descriptor,temporary=tempfile.mkstemp(prefix='.tfc-',suffix='.tmp',dir=destination.parent)
+        try:
+            with os.fdopen(descriptor,'wb') as stream:
+                stream.write(text.encode('gb18030'));stream.flush();os.fsync(stream.fileno())
+            os.replace(temporary,destination)
+        finally:
+            if os.path.exists(temporary):os.unlink(temporary)
     conn.execute('INSERT INTO file_exports VALUES (?,?,?) ON CONFLICT(kind,item_key) DO UPDATE SET relative_path=excluded.relative_path', (kind, key, relative))
     if old and old != relative:
         # Delete only an unchanged export of this exact record, never a hand-edited file.

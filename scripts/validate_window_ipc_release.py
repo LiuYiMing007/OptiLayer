@@ -11,7 +11,7 @@ p=subprocess.run([str(host),'--window-ipc-self-test'],capture_output=True,text=T
 assert p.returncode==0,p.stdout+p.stderr
 report=json.loads(p.stdout.strip())
 expected={d['id'] for d in json.loads((root/'src/tools/windows.json').read_text(encoding='utf-8'))}
-assert report['all_pass'] and set(report['main_button_ipc'])==expected and set(report['menu_command_ipc'])==expected,report
+assert report['all_pass'] and set(report['main_button_ipc'])==expected and set(report['menu_command_ipc'])==expected-{'settings'},report
 assert report['catalogue_without_workspace'] and report['material_and_substrate_editors'],report
 assert report['environment_controls_shared_state'] and report['back_layer_controls_shared_state'] and report['interactive_controls_shared_state'],report
 assert report['warm_calculation_service'] and report['material_management_button_ipc'] and report['material_editor_close_reopen'] and report['material_editor_browse_cancel'],report
