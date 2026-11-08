@@ -32,11 +32,12 @@ TFD 引用原版外部材料库。导出核验 MATERIAL / SUBSTRAT 对应名称�
 - 75 项 Python、64 项 TypeScript、9 项打包/迁移测试通过；13 项 Rust 测试通过。
 - 25 项原有数值回归通过，Golden 最大误差约 7.84e-7 个百分点；Optical Core 公式未修改。
 - 实际冻结引擎 TFD 写出、回读和 R/T 对照通过；测试样本最大差值 0 个百分点。含组系数、未分组层和偏振；单元测试另覆盖有限基底、背膜和 Back 方向。
+- Downloads 中原始对比样本也完成写出回读：R/T 最大差值 0，未建模原记录保持，原件哈希未变；未上传样本。
 - 原生菜单路由、关闭光谱保持进程并恢复、17 个工具窗口的前端 IPC 与共享状态检查通过。旧 settings ID 仅保留内部兼容，不再有第二个“计算参数”菜单。
-- Mac 实际点击验证：原生打开 TFD → 只显示环境 → 完成后显示配置的工作窗口；从膜层窗口菜单调用另存为，在工作区之外改名生成真实 TFD；窗口配置勾选并保存后，便携配置文件含窗口尺寸记录。
+- Mac 实际点击验证：原生打开 TFD → 只显示环境 → 完成后显示配置的工作窗口；从膜层窗口菜单调用另存为，在工作区之外改名生成真实 TFD；窗口配置勾选并保存后，便携配置文件含窗口尺寸记录。另存之后普通保存确实生成 Workspace/projects 中的具名 TFD；手动关闭光谱后从菜单恢复，同一项目和光谱仍在。
 - 浏览器实际验证：具名 TFD 保存、重新打开、环境优先；取消光谱自动打开，仅显示膜层，仍可从菜单恢复光谱；分布两点数据新增成功。
 
-证据：project-flow-native-menu.json、project-flow-window-ipc.json、project-flow-project-flow.json、project-flow-optics.json；截图见下。Windows 本次交给 GitHub Actions 编译及冻结/窗口集成检查，不冒称物理 Windows 点击测试。原版 TFCalc 尚未实际打开本次新写出的文件；仍需原版软件验收，不能只凭本软件回读宣称全部兼容。
+证据：project-flow-native-menu.json、project-flow-window-ipc.json、project-flow-project-flow.json、project-flow-optics.json；截图见下。本次代码提交 a32b4fe 的双平台检查：[GitHub Actions 42498655881](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42498655881)。提交本说明时流水线仍在运行，未预先记为通过；不冒称物理 Windows 点击测试。原版 TFCalc 尚未实际打开本次新写出的文件；仍需原版软件验收，不能只凭本软件回读宣称全部兼容。
 
 ![Mac 环境窗口](project-flow-environment.png)
 
