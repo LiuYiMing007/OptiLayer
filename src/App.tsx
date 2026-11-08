@@ -73,6 +73,9 @@ type Modal =
   "projects" | "materials" | "about" | "workspace" | "shortcuts" | null;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export default function App() {
+  const [hasProject, setHasProject] = useState(false);
+  const [startupChooser, setStartupChooser] = useState(!isTauri());
+  const startupStarted = useRef(false);
   const [savePrompt, setSavePrompt] = useState<{
     initial: string;
     copy: boolean;
@@ -305,6 +308,7 @@ export default function App() {
   }
   const physicalKey = physicalSignature(project);
   useEffect(() => {
+    if (!hasProject) return;
     if (calculationScope.current !== scope) {
       queue.current!.reset();
       calculationScope.current = scope;
@@ -312,7 +316,7 @@ export default function App() {
     setCalculationError("");
     queue.current!.submit(current.current);
     return () => queue.current!.invalidate();
-  }, [physicalKey, scope]);
+  }, [physicalKey, scope, hasProject]);
   async function save(copyName?: string, forceCopy = false) {
     if (saveResolver.current || working.current) return false;
     if (forceCopy) return await saveAsFile(copyName);
@@ -524,7 +528,8 @@ export default function App() {
     await host.hide("environment");
     await host.spectrum(selected.openWindows.includes("spectrum"));
     for (const id of selected.openWindows)
-      if (id !== "spectrum") await showTool(id as ToolId);
+      if (id !== "spectrum")
+        await showTool(id as ToolId, id === "layers" ? "选择正面膜层" : "");
   }
   async function focusMain() {
     if (isTauri()) await invoke("tool_focus_main");
@@ -882,10 +887,14 @@ export default function App() {
     }
   }
   toolActionRef.current = handleToolAction;
-  const panels = { ...host.visible, spectrum: true };
+  const panels = {
+    ...host.visible,
+    spectrum: hasProject && host.visible.spectrum !== false,
+  };
   const states = commandStates({
+    projectOpen: hasProject,
     busy,
-    blocked: !!confirmation || !!modal,
+    blocked: !!confirmation || !!modal || startupChooser,
     workspace: !!workspace && !workspaceError,
     canUndo: !!past.length,
     canRedo: !!future.length,
@@ -1035,7 +1044,7 @@ export default function App() {
   commandRef.current = executeCommand;
   const platform = useDesktopMenus(
     {
-      project: project.name,
+      project: hasProject ? project.name : "未打开项目",
       workspace: workspace?.name || "未选择",
       dirty,
       busy,
@@ -1046,6 +1055,11 @@ export default function App() {
     },
     setError,
   );
+  useEffect(() => {
+    if (platform === "desktop" || startupStarted.current) return;
+    startupStarted.current = true;
+    if (isTauri()) void importNative();
+  }, [platform]);
   async function download(
     name: string,
     content: string,
@@ -1182,6 +1196,7 @@ export default function App() {
     }
   }
   function replace(p: Project, saved = false) {
+    setHasProject(true);
     queue.current!.invalidate();
     epoch.current++;
     writers.current.clear();
@@ -1252,9 +1267,11 @@ export default function App() {
 
       if (r.warning) setNotice(r.warning);
       setImportFailure(null);
+      return true;
     } catch (e) {
       setImportFailure({ name, reason: message(e) });
       // Import is transactional: existing project and its spectrum stay intact.
+      return false;
     }
   }
   async function importNative() {
@@ -1266,10 +1283,17 @@ export default function App() {
           content: string;
           encoding?: string;
         } | null>("import_file");
-        if (picked)
-          await loadImportedText(picked.name, picked.content, picked.encoding);
+        if (picked) {
+          const loaded = await loadImportedText(
+            picked.name,
+            picked.content,
+            picked.encoding,
+          );
+          if (!loaded) await focusMain();
+        }
       } catch (e) {
         setImportFailure({ name: "所选文件", reason: message(e) });
+        await focusMain();
       }
     });
   }
@@ -1310,9 +1334,46 @@ export default function App() {
           }}
         />
       )}
+      {startupChooser && (
+        <div className="startup-open-backdrop">
+          <section
+            role="dialog"
+            aria-label="打开项目"
+            className="startup-open-dialog"
+          >
+            <h2>打开项目</h2>
+            <p>选择 TFCalc 膜系（.tfd）或 TFC 项目（.tfc.json）。</p>
+            <footer>
+              <button onClick={() => setStartupChooser(false)}>取消</button>
+              <button
+                onClick={() => {
+                  setStartupChooser(false);
+                  importRef.current?.click();
+                }}
+              >
+                选择文件…
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+      {!hasProject && (importFailure || error) && (
+        <section className="startup-open-dialog" role="alert">
+          <p>{importFailure?.reason || error}</p>
+          <button
+            onClick={() => {
+              setImportFailure(null);
+              setError("");
+              if (isTauri()) void host.spectrum(false);
+            }}
+          >
+            关闭提示
+          </button>
+        </section>
+      )}
       <div
         className="spectrum-window-body"
-        hidden={host.visible.spectrum === false}
+        hidden={!hasProject || host.visible.spectrum === false}
       >
         <header className="spectrum-topbar">
           <div className="spectrum-project">

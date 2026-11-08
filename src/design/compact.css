@@ -683,3 +683,35 @@
   color: #303840;
   font-size: 12px;
 }
+
+.startup-open-backdrop {
+  position: fixed;
+  inset: 28px 0 0;
+  display: grid;
+  place-items: center;
+  background: #f3f3f3;
+  z-index: 100;
+}
+.startup-open-dialog {
+  width: min(380px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid #d8d8d8;
+  background: white;
+  font-size: 13px;
+}
+.startup-open-dialog h2 {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.startup-open-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.startup-open-dialog button {
+  min-height: 28px;
+  border: 1px solid #b8c0c9;
+  border-radius: 3px;
+  padding: 2px 12px;
+}

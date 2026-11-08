@@ -563,6 +563,7 @@ fn main() {
         context.config_mut().app.windows[0].visible = false;
     }
     if window_ipc_check {
+        context.config_mut().app.windows[0].visible = true;
         context.config_mut().app.windows[0].url =
             tauri::WebviewUrl::App("index.html?window-ipc-check=1".into());
     }

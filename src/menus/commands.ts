@@ -26,6 +26,7 @@ export function nativeOwnsShortcut(id: string | undefined): boolean {
 }
 export type CommandState = { enabled: boolean; checked?: boolean };
 export interface MenuContext {
+  projectOpen?: boolean;
   busy: boolean;
   blocked: boolean;
   workspace: boolean;
@@ -43,6 +44,18 @@ export function commandStates(c: MenuContext): Record<string, CommandState> {
   return Object.fromEntries(
     entries.map((item) => {
       let enabled = !!item.implemented && available;
+      if (c.projectOpen === false)
+        enabled &&=
+          [
+            "file.new",
+            "file.open",
+            "file.import",
+            "file.quit",
+            "file.workspace",
+            "tools.workspace",
+            "view.windowconfig",
+            "view.menu",
+          ].includes(item.id!) || item.id!.startsWith("help.");
       if (["file.save"].includes(item.id!)) enabled &&= c.workspace;
       if (item.id === "edit.undo") enabled &&= c.canUndo;
       if (item.id === "edit.redo") enabled &&= c.canRedo;

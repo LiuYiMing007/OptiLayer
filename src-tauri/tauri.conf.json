@@ -13,6 +13,7 @@
     "windows": [
       {
         "title": "TFC · 光谱",
+        "visible": false,
         "width": 1280,
         "height": 820,
         "minWidth": 960,

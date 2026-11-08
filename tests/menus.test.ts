@@ -201,3 +201,19 @@ test("native and renderer shortcuts have one owner after menu simplification", (
   assert.equal(nativeOwnsShortcut("layer.copy"), false);
   assert.equal(nativeOwnsShortcut(undefined), false);
 });
+
+test("menu-only startup exposes new/open and configuration without a phantom project", () => {
+  const states = commandStates({ ...context(), projectOpen: false });
+  for (const id of ["file.new", "file.open", "view.windowconfig", "help.about"])
+    assert.equal(states[id].enabled, true, id);
+  for (const id of [
+    "file.save",
+    "file.saveAs",
+    "file.exportSpectrum",
+    "view.layers",
+    "view.spectrum",
+    "calculate.spectrum",
+    "view.environment",
+  ])
+    assert.equal(states[id].enabled, false, id);
+});

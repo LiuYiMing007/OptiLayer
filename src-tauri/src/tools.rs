@@ -213,7 +213,8 @@ fn restore_rect(app: &tauri::AppHandle, window: &tauri::WebviewWindow) {
             origin.x + (x * scale) as i32,
             origin.y + (y * scale) as i32,
         ));
-        if r["maximized"] == true {
+        // Maximizing a hidden window can show it on Windows before project selection.
+        if r["maximized"] == true && window.is_visible().unwrap_or(false) {
             let _ = window.maximize();
         }
     }
