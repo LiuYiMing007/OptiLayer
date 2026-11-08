@@ -80,6 +80,34 @@ export default function ToolWindow() {
       const deadline = Date.now() + 10000;
       while (Date.now() < deadline) {
         if (document.querySelector('[aria-label="编辑 n/k 数据表"]')) {
+          // Test actual geometry in a small native webview, not only hidden textareas.
+          await new Promise<void>((resolve) =>
+            requestAnimationFrame(() => resolve()),
+          );
+          const panel = document.querySelector<HTMLElement>(
+            ".material-editor-panel",
+          )!;
+          const input = panel.querySelector<HTMLElement>(
+            '[aria-label="材料显示名称"]',
+          )!;
+          const cancel = [
+            ...panel.querySelectorAll<HTMLButtonElement>("header button"),
+          ].find((b) => b.textContent === "取消编辑")!;
+          if (
+            panel.getBoundingClientRect().width < innerWidth - 30 ||
+            input.getBoundingClientRect().width < 100 ||
+            input.getBoundingClientRect().right > innerWidth ||
+            [
+              ...panel.querySelectorAll<HTMLElement>(
+                ".material-property-grid label",
+              ),
+            ].some(
+              (label) => label.getBoundingClientRect().right > innerWidth,
+            ) ||
+            !cancel ||
+            cancel.getBoundingClientRect().bottom > innerHeight
+          )
+            throw Error("紧凑材料编辑器布局异常，输入框或取消按钮不可用");
           await invoke("window_check_details", {
             details: { editor: true, catalogue: true },
           });
@@ -107,6 +135,62 @@ export default function ToolWindow() {
       void invoke("window_check_details", {
         details: { editor: true, catalogue: true, editor_reopened: true },
       });
+  }, [id, snapshot]);
+  const browsingCheck = useRef(false);
+  useEffect(() => {
+    if (
+      snapshot?.focus?.token !== "material-editor-browse" ||
+      id !== "materialdata" ||
+      browsingCheck.current ||
+      !new URLSearchParams(location.search).has("window-ipc-check")
+    )
+      return;
+    browsingCheck.current = true;
+    void (async () => {
+      const waitFor = async (predicate: () => boolean) => {
+        const until = Date.now() + 10000;
+        while (Date.now() < until) {
+          if (predicate()) return;
+          await new Promise((r) => setTimeout(r, 50));
+        }
+        throw Error("材料草稿与逐波数据切换超时");
+      };
+      const button = (text: string) =>
+        [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+          (b) =>
+            b.textContent?.trim() === text &&
+            b.getBoundingClientRect().width > 0,
+        );
+      await waitFor(
+        () =>
+          !!button("继续编辑") &&
+          !!document.querySelector('[aria-label="完整材料 n/k 数据"]'),
+      );
+      button("继续编辑")!.click();
+      await waitFor(() => !!button("取消编辑"));
+      const table = document.querySelector<HTMLTextAreaElement>(
+        '[aria-label="编辑 n/k 数据表"]',
+      );
+      if (table?.value.trim().split("\n").length !== 121)
+        throw Error("查看其他材料时丢失原始编辑数据");
+      button("取消编辑")!.click();
+      await waitFor(
+        () =>
+          !document.querySelector(".material-editor-panel") &&
+          !!document.querySelector('[aria-label="完整材料 n/k 数据"]'),
+      );
+      await invoke("window_check_details", {
+        details: {
+          editor: true,
+          catalogue: true,
+          editor_reopened: true,
+          editor_browse_cancel: true,
+        },
+      });
+    })().catch(
+      (e) =>
+        void invoke("window_check_details", { details: { error: String(e) } }),
+    );
   }, [id, snapshot]);
   const latest = useRef<ToolSnapshot | null>(null);
   const waiting = useRef(

@@ -536,10 +536,11 @@ export default function App() {
       const draft: Material = {
         name: `USER/${crypto.randomUUID()}`,
         display_name: "",
+        samples: [[550, 1.5, 0]],
         n: 1.5,
         k: 0,
         role: action.substrate ? "substrate" : "film",
-        model: "constant",
+        model: "tabulated",
         color: "#6488a6",
         source: "用户输入；未经实测校准",
       };
@@ -643,7 +644,6 @@ export default function App() {
       return;
     }
     if (action.kind === "material-inspect") {
-      if (await revealMaterialEditor()) return;
       if (
         ![...current.current.materials, ...library].some(
           (m) => m.name === action.name,

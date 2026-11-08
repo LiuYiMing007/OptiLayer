@@ -20,6 +20,7 @@ interface Status {
     {
       management?: boolean;
       editor_reopened?: boolean;
+      editor_browse_cancel?: boolean;
       editor?: boolean;
       catalogue?: boolean;
       environment?: boolean;
@@ -35,6 +36,7 @@ interface Status {
 // Only mounted after the host explicitly authorizes --window-ipc-self-test.
 // Reuses production IPC hooks and child React windows, with pure catalogue reads; never mounts App or opens a Workspace.
 export default function WindowIpcCheck() {
+  const [inspectedName, setInspectedName] = useState("TFC/SOPRA/AG");
   const [focus, setFocus] = useState<ToolSnapshot["focus"]>();
   const [library, setLibrary] = useState<Material[]>([]);
   const [project, setProject] = useState(referenceProject),
@@ -47,7 +49,7 @@ export default function WindowIpcCheck() {
     started = useRef(false);
   const snapshot: ToolSnapshot = {
     focus,
-    inspectedMaterial: { name: "TFC/SOPRA/AG", substrate: false },
+    inspectedMaterial: { name: inspectedName, substrate: false },
     sequence: ++sequence.current,
     scope: "isolated-window-ipc-check",
     project,
@@ -205,6 +207,14 @@ export default function WindowIpcCheck() {
             (s) => !!s.details?.["tool-materialdata"]?.editor_reopened,
           );
           report.material_editor_close_reopen = true;
+          flushSync(() => {
+            setInspectedName("TFC/SOPRA/AU");
+            setFocus({ id, label: "", token: "material-editor-browse" });
+          });
+          await until(
+            (s) => !!s.details?.["tool-materialdata"]?.editor_browse_cancel,
+          );
+          report.material_editor_browse_cancel = true;
         }
         // Keep the input window visible until blur commits have been acknowledged.
         // WebView2 can defer hidden-renderer input work when the sweep opens the next window.

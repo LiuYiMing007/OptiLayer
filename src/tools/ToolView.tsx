@@ -94,7 +94,7 @@ export default function ToolView({
           {error || s.error}
         </p>
       )}
-      {s.notice && (id === "project" || id === "materialdata") && (
+      {s.notice && id === "project" && (
         <p className="tool-notice" role="status">
           {s.notice}
         </p>
@@ -270,15 +270,13 @@ export default function ToolView({
           onImport={(name, substrate) =>
             send({ kind: "catalogue-import", name, substrate })
           }
-          onMaterialSave={(material, replaces, expected) =>
+          onMaterialSave={(material, replaces, expected, substrate) =>
             send({
               kind: "material-save",
               material,
               replaces,
               expected,
-              substrate:
-                id === "substrate" ||
-                (id === "materialdata" && !!s.inspectedMaterial?.substrate),
+              substrate,
             })
           }
           onEditing={(active) =>

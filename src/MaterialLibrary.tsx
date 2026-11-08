@@ -1,5 +1,6 @@
 import NkSheet from "./NkSheet";
 import MaterialEditor from "./MaterialEditor";
+import { materialCollection } from "./materialCollection";
 import { editableCopy } from "./materialEditing";
 import { readCatalogue, checkMaterials } from "./api";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -116,6 +117,7 @@ export default function MaterialLibrary({
     material: Material,
     replaces: string,
     expected: Material | null,
+    substrate: boolean,
   ) => Promise<void>;
   openFolder: () => Promise<void>;
   onEditing: (active: boolean) => Promise<void>;
@@ -144,7 +146,10 @@ export default function MaterialLibrary({
     material: Material;
     replaces: string;
     expected: Material | null;
+    substrate: boolean;
   } | null>(null);
+  const [viewEditing, setViewEditing] = useState(false);
+  useEffect(() => setViewEditing(false), [inspectName]);
   const editingActive = useRef(false),
     editingCallback = useRef(onEditing);
   editingCallback.current = onEditing;
@@ -160,13 +165,19 @@ export default function MaterialLibrary({
     if (!newMaterial) void editingCallback.current(false).catch(() => {});
   }, []);
   async function edit(item: Material) {
+    if (editing) {
+      setViewEditing(true);
+      return;
+    }
     await perform(async () => {
       const full = item.catalogue_summary
         ? (await readCatalogue(item.name)).material
         : item;
       await onEditing(true);
       editingActive.current = true;
+      setViewEditing(true);
       setEditing({
+        substrate,
         material: editableCopy(full),
         replaces: item.name,
         expected: structuredClone(
@@ -180,7 +191,9 @@ export default function MaterialLibrary({
     void perform(async () => {
       await onEditing(true);
       editingActive.current = true;
+      setViewEditing(true);
       setEditing({
+        substrate,
         material: structuredClone(newMaterial),
         replaces: newMaterial.name,
         expected: null,
@@ -301,18 +314,24 @@ export default function MaterialLibrary({
     setPage(0);
     setSelected("");
   }
-  if (editing)
-    return (
+  const editor = editing ? (
+    <div className="material-editor-host" hidden={!viewEditing}>
       <MaterialEditor
         material={editing.material}
         cancel={() => {
-          void onEditing(false).then(() => {
+          void perform(async () => {
+            await onEditing(false);
             editingActive.current = false;
             setEditing(null);
           });
         }}
         save={async (m) => {
-          await onMaterialSave(m, editing.replaces, editing.expected);
+          await onMaterialSave(
+            m,
+            editing.replaces,
+            editing.expected,
+            editing.substrate,
+          );
           await onEditing(false);
           editingActive.current = false;
           setEditing(null);
@@ -325,129 +344,124 @@ export default function MaterialLibrary({
           setNotice("材料已保存；当前项目使用更新后的快照。");
         }}
       />
-    );
-  if (compactList)
-    return (
-      <section className="material-picker">
-        {management}
-        {deletionPrompt}
-        <div className="picker-toolbar">
-          <select
-            aria-label="材料目录来源"
-            value={tab}
-            onChange={(e) => {
-              setTab(e.target.value as typeof tab);
-              reset();
+    </div>
+  ) : null;
+  const content = compactList ? (
+    <section className="material-picker">
+      {management}
+      {deletionPrompt}
+      <div className="picker-toolbar">
+        <select
+          aria-label="材料目录来源"
+          value={tab}
+          onChange={(e) => {
+            setTab(e.target.value as typeof tab);
+            reset();
+          }}
+        >
+          <option value="library">全部材料</option>
+          <option value="project">当前项目</option>
+        </select>
+        <button
+          disabled={!m}
+          onClick={() => m && void perform(() => onInspect!(m.name))}
+        >
+          数据…
+        </button>
+      </div>
+      <input
+        className="picker-search"
+        aria-label="搜索材料"
+        placeholder="搜索名称 / 来源…"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          reset();
+        }}
+      />
+      <select
+        aria-label="材料集合"
+        value={collection}
+        onChange={(e) => {
+          setCollection(e.target.value);
+          reset();
+        }}
+      >
+        <option value="">全部来源</option>
+        {[
+          ...new Set(items.map((m) => materialCollection(m)).filter(Boolean)),
+        ].map((c) => (
+          <option key={c}>{c}</option>
+        ))}
+      </select>
+      <div
+        className="picker-list"
+        role="listbox"
+        aria-label={substrate ? "基底目录" : "材料目录"}
+      >
+        {rows.map((item) => (
+          <button
+            key={item.name}
+            role="option"
+            aria-selected={m?.name === item.name}
+            onClick={() => {
+              setSelected(item.name);
+              void perform(() => onInspect!(item.name));
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                e.preventDefault();
+                const index = filtered.findIndex((x) => x.name === item.name),
+                  next = Math.max(
+                    0,
+                    Math.min(
+                      filtered.length - 1,
+                      index + (e.key === "ArrowDown" ? 1 : -1),
+                    ),
+                  );
+                setSelected(filtered[next].name);
+                setPage(Math.floor(next / 50));
+                queueMicrotask(() =>
+                  document
+                    .querySelector<HTMLElement>(
+                      '.picker-list [aria-selected="true"]',
+                    )
+                    ?.focus(),
+                );
+              }
             }}
           >
-            <option value="library">全部材料</option>
-            <option value="project">当前项目</option>
-          </select>
-          <button
-            disabled={!m}
-            onClick={() => m && void perform(() => onInspect!(m.name))}
-          >
-            数据…
+            <span>{materialLabel(item)}</span>
+            <small>{materialCollection(item)}</small>
           </button>
-        </div>
-        <input
-          className="picker-search"
-          aria-label="搜索材料"
-          placeholder="搜索名称 / 来源…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            reset();
-          }}
-        />
-        <select
-          aria-label="材料集合"
-          value={collection}
-          onChange={(e) => {
-            setCollection(e.target.value);
-            reset();
-          }}
+        ))}
+      </div>
+      <footer className="picker-footer">
+        <button
+          disabled={!currentPage}
+          onClick={() => setPage(currentPage - 1)}
         >
-          <option value="">全部来源</option>
-          {[
-            ...new Set(
-              items.map((m) => m.collection).filter((c) => c && c !== "自定义"),
-            ),
-          ].map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-        <div
-          className="picker-list"
-          role="listbox"
-          aria-label={substrate ? "基底目录" : "材料目录"}
+          ‹
+        </button>
+        <span>
+          {filtered.length} 项 · {currentPage + 1}/{pages}
+        </span>
+        <button
+          disabled={currentPage + 1 >= pages}
+          onClick={() => setPage(currentPage + 1)}
         >
-          {rows.map((item) => (
-            <button
-              key={item.name}
-              role="option"
-              aria-selected={m?.name === item.name}
-              onClick={() => {
-                setSelected(item.name);
-                void perform(() => onInspect!(item.name));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-                  e.preventDefault();
-                  const index = filtered.findIndex((x) => x.name === item.name),
-                    next = Math.max(
-                      0,
-                      Math.min(
-                        filtered.length - 1,
-                        index + (e.key === "ArrowDown" ? 1 : -1),
-                      ),
-                    );
-                  setSelected(filtered[next].name);
-                  setPage(Math.floor(next / 50));
-                  queueMicrotask(() =>
-                    document
-                      .querySelector<HTMLElement>(
-                        '.picker-list [aria-selected="true"]',
-                      )
-                      ?.focus(),
-                  );
-                }
-              }}
-            >
-              <span>{materialLabel(item)}</span>
-              <small>
-                {item.collection === "自定义" ? "" : item.collection || ""}
-              </small>
-            </button>
-          ))}
-        </div>
-        <footer className="picker-footer">
-          <button
-            disabled={!currentPage}
-            onClick={() => setPage(currentPage - 1)}
-          >
-            ‹
-          </button>
-          <span>
-            {filtered.length} 项 · {currentPage + 1}/{pages}
-          </span>
-          <button
-            disabled={currentPage + 1 >= pages}
-            onClick={() => setPage(currentPage + 1)}
-          >
-            ›
-          </button>
-        </footer>
-        <div className="picker-toolbar">
-          <button disabled={!m} onClick={() => m && void apply(m)}>
-            {substrate ? "设为基底" : "加入项目"}
-          </button>
-          <button onClick={() => void perform(openFolder)}>数据文件夹</button>
-        </div>
-        {error && <p role="alert">{error}</p>}
-      </section>
-    );
-  return (
+          ›
+        </button>
+      </footer>
+      <div className="picker-toolbar">
+        <button disabled={!m} onClick={() => m && void apply(m)}>
+          {substrate ? "设为基底" : "加入项目"}
+        </button>
+        <button onClick={() => void perform(openFolder)}>数据文件夹</button>
+      </div>
+      {error && <p role="alert">{error}</p>}
+    </section>
+  ) : (
     <section
       className={`catalogue-window compact-catalogue ${inspectName ? "data-inspector" : ""} ${showMetadata ? "show-metadata" : ""}`}
     >
@@ -551,9 +565,7 @@ export default function MaterialLibrary({
         >
           <option value="">全部来源</option>
           {[
-            ...new Set(
-              items.map((x) => x.collection).filter((c) => c && c !== "自定义"),
-            ),
+            ...new Set(items.map((x) => materialCollection(x)).filter(Boolean)),
           ].map((c) => (
             <option key={c}>{c}</option>
           ))}
@@ -652,19 +664,13 @@ export default function MaterialLibrary({
                     <td title={item.name}>
                       {materialLabel(item)}
                       <small className="catalogue-list-source">
-                        {item.collection === "自定义"
-                          ? ""
-                          : item.collection || ""}
+                        {materialCollection(item)}
                       </small>
                       {project.materials.some((x) => x.name === item.name) && (
                         <span className="catalogue-used"> · 已加入</span>
                       )}
                     </td>
-                    <td>
-                      {item.collection === "自定义"
-                        ? ""
-                        : item.collection || ""}
-                    </td>
+                    <td>{materialCollection(item)}</td>
                     <td>{roles[item.role]}</td>
                     <td className="numeric">
                       {item.status === "quarantined" ? "—" : format(item.n)}
@@ -947,5 +953,29 @@ export default function MaterialLibrary({
         }}
       />
     </section>
+  );
+  return (
+    <>
+      {editor}
+      {editing && !viewEditing && (
+        <div className="material-draft-bar" role="status">
+          <span>有未保存的编辑</span>
+          <button onClick={() => setViewEditing(true)}>继续编辑</button>
+          <button
+            onClick={() =>
+              void perform(async () => {
+                await onEditing(false);
+                editingActive.current = false;
+                setEditing(null);
+              })
+            }
+          >
+            放弃编辑
+          </button>
+          {error && <span role="alert">{error}</span>}
+        </div>
+      )}
+      {(!editing || !viewEditing) && content}
+    </>
   );
 }

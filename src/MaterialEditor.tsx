@@ -67,8 +67,15 @@ export default function MaterialEditor({
       aria-label="编辑材料与基底"
     >
       <header>
-        <h2>编辑材料 / 基底</h2>
-        <span>保存后更新当前项目，并写入工作区共享材料库</span>
+        <h2>编辑{material.role === "substrate" ? "基底" : "材料"}</h2>
+        <div className="material-editor-actions">
+          <button disabled={busy} onClick={cancel}>
+            取消编辑
+          </button>
+          <button disabled={busy} onClick={() => void submit()}>
+            {busy ? "正在保存…" : "保存材料"}
+          </button>
+        </div>
       </header>
       <fieldset disabled={busy}>
         <div className="material-property-grid">

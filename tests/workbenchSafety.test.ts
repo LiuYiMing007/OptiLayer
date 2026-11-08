@@ -108,3 +108,14 @@ test("removing a project material protects front/back layers and boundary media"
     /后表面第 1 层/,
   );
 });
+
+test("legacy material source labels are merged without changing records or provenance", async () => {
+  const { materialCollection } = await import("../src/materialCollection.ts");
+  for (const collection of ["自定义", "自定义材料", "自定义基底"]) {
+    const m = { collection };
+    assert.equal(materialCollection(m), "");
+    assert.equal(m.collection, collection);
+  }
+  assert.equal(materialCollection({ collection: "SOPRA" }), "SOPRA");
+  assert.equal(materialCollection({}), "");
+});
