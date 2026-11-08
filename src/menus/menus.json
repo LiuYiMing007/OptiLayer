@@ -15,6 +15,18 @@
         "shortcut": "CmdOrCtrl+O"
       },
       {
+        "id": "file.recent",
+        "label": "重新打开上次项目",
+        "implemented": true,
+        "dynamic": "recent"
+      },
+      {
+        "id": "file.close",
+        "label": "关闭项目",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+W"
+      },
+      {
         "id": "file.save",
         "label": "保存项目",
         "implemented": true,
@@ -29,6 +41,15 @@
         "id": "file.exportSpectrum",
         "label": "导出光谱 CSV…",
         "implemented": true
+      },
+      {
+        "separator": true
+      },
+      {
+        "id": "view.windowconfig",
+        "label": "配置…",
+        "implemented": true,
+        "check": true
       }
     ]
   },
@@ -137,66 +158,25 @@
         "id": "analysis.details",
         "label": "光谱分析",
         "implemented": true
-      }
-    ]
-  },
-  {
-    "title": "窗口",
-    "items": [
-      {
-        "id": "view.windowconfig",
-        "label": "配置…",
-        "implemented": true,
-        "check": true
       },
       {
-        "id": "view.materialdata",
-        "label": "材料数据",
-        "implemented": true,
-        "check": true
-      },
-      {
-        "id": "view.project",
-        "label": "项目",
-        "implemented": true,
-        "check": true
-      },
-      {
-        "id": "view.analysis",
-        "label": "光谱分析",
-        "implemented": true,
-        "check": true
-      },
-      {
-        "id": "view.interactive",
-        "label": "交互式分析",
-        "implemented": true,
-        "check": true
+        "separator": true
       },
       {
         "id": "view.targets",
         "label": "目标曲线",
         "implemented": true,
         "check": true
-      },
-      {
-        "separator": true
-      },
+      }
+    ]
+  },
+  {
+    "title": "结果",
+    "items": [
       {
         "id": "view.spectrum",
-        "label": "主光谱窗口",
+        "label": "显示光谱曲线",
         "implemented": true
-      },
-      {
-        "id": "view.reset",
-        "label": "收起所有工具窗口",
-        "implemented": true
-      },
-      {
-        "id": "view.menu",
-        "label": "显示菜单窗口（Windows）",
-        "implemented": true,
-        "platform": "windows"
       }
     ]
   },

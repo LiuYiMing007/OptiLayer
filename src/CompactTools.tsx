@@ -1,5 +1,6 @@
+import StackMaterialInput from "./StackMaterialInput";
 import { useState } from "react";
-import type { Project } from "./types";
+import type { Project, Material } from "./types";
 import type { ToolIntent } from "./tools/useToolHost";
 import CommitNumber from "./CommitNumber";
 import MediumInput from "./MediumInput";
@@ -519,9 +520,11 @@ export function ResponseTable({
 }
 export function StackTool({
   project: p,
+  library,
   send,
 }: {
   project: Project;
+  library: Material[];
   send: (a: ToolIntent) => Promise<void>;
 }) {
   const [expression, setExpression] = useState("HLHL"),
@@ -534,12 +537,22 @@ export function StackTool({
   const [symbols, setSymbols] = useState<StackSymbol[]>(() =>
     ["H", "L"].map((s, i) => ({
       symbol: s,
-      material: films[i]?.name || films[0]?.name || "",
+      material:
+        films.find(
+          (m) => m.name === `TFC/MATERIAL/${i === 0 ? "TA2O5" : "SIO2"}`,
+        )?.name ||
+        films[i]?.name ||
+        films[0]?.name ||
+        "",
       thickness: 1,
       unit: "qw",
       group: 1,
     })),
   );
+  const [materialPending, setMaterialPending] = useState<
+    Record<number, boolean>
+  >({});
+  const materialBlocked = Object.values(materialPending).some(Boolean);
   const [preview, setPreview] = useState<{
     layers: Project["layers"];
     expected: Project["layers"];
@@ -602,17 +615,20 @@ export function StackTool({
                   />
                 </td>
                 <td>
-                  <select
-                    aria-label={`${s.symbol} 材料`}
+                  <StackMaterialInput
+                    project={p}
+                    library={library}
                     value={s.material}
-                    onChange={(e) => field(i, "material", e.target.value)}
-                  >
-                    {films.map((m) => (
-                      <option key={m.name} value={m.name}>
-                        {m.display_name || m.name}
-                      </option>
-                    ))}
-                  </select>
+                    label={`${s.symbol} 材料`}
+                    select={(name) => field(i, "material", name)}
+                    send={send}
+                    pending={(value) =>
+                      setMaterialPending((previous) => ({
+                        ...previous,
+                        [i]: value,
+                      }))
+                    }
+                  />
                 </td>
                 <td>
                   <CommitNumber
@@ -667,6 +683,7 @@ export function StackTool({
           添加符号
         </button>
         <button
+          disabled={materialBlocked}
           onClick={() => {
             try {
               setPreview({
@@ -689,7 +706,7 @@ export function StackTool({
           预览膜堆
         </button>
         <button
-          disabled={!preview || preview.key !== key}
+          disabled={materialBlocked || !preview || preview.key !== key}
           onClick={() => {
             if (preview)
               void send({

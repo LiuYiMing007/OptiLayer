@@ -715,3 +715,28 @@
   border-radius: 3px;
   padding: 2px 12px;
 }
+
+.recent-menu-parent {
+  position: relative;
+}
+.recent-menu-popup {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  min-width: 220px;
+  max-width: 360px;
+  background: #fff;
+  border: 1px solid #c9cdd2;
+  padding: 3px;
+  z-index: 220;
+}
+.recent-menu-popup button {
+  width: 100%;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Browser menus must stay above floating tools, below confirmation dialogs. */
+.browser-menu { z-index: 80; }

@@ -361,7 +361,7 @@ fn projection(mut snapshot: Value, label: &str) -> Value {
             v.remove("spectrum");
         }
     }
-    if label != "tool-materials" && label != "tool-substrate" && label != "tool-materialdata" {
+    if label != "tool-materials" && label != "tool-substrate" && label != "tool-materialdata" && label != "tool-stack" {
         if let Some(v) = snapshot.as_object_mut() {
             v.remove("library");
         }
@@ -513,6 +513,14 @@ pub fn shutdown(app: &tauri::AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn stack_receives_catalogue_without_spectrum_payload() {
+        let snapshot=json!({"library":[{"name":"film"}],"spectrum":{"large":true}});
+        let stack=projection(snapshot.clone(),"tool-stack");
+        assert_eq!(stack["library"].as_array().unwrap().len(),1);
+        assert!(stack["spectrum"].is_null());
+        assert!(projection(snapshot,"tool-layers")["library"].is_null());
+    }
     #[test]
     fn preferences_migrate_geometry_without_reopening_old_windows() {
         assert_eq!(preferences(&json!({"restore":true}))["rememberGeometry"],true);

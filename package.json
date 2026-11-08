@@ -1,6 +1,6 @@
 {
   "name": "tfc-for-mac",
-  "version": "0.2.5-dev.2",
+  "version": "0.2.5",
   "private": true,
   "type": "module",
   "scripts": {

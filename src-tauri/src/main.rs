@@ -9,6 +9,7 @@ mod calculation_worker;
 mod menu_check;
 mod menus;
 mod portable;
+mod recent_projects;
 mod tools;
 mod window_check;
 use tauri::Manager;
@@ -421,18 +422,22 @@ async fn import_file(
         let mut dialog = app.dialog().file().set_title("打开项目")
             .add_filter("TFCalc / TFC 项目", &["tfd", "json"]);
         if parent.is_visible().unwrap_or(false) {dialog=dialog.set_parent(&parent);}
-        if let Ok(project)=project_folder() { dialog=dialog.set_directory(project); }
+        if let Ok(root)=current_workspace(&app) { dialog=dialog.set_directory(root.join("projects")); } else if let Ok(project)=project_folder() { dialog=dialog.set_directory(project); }
         let picked=dialog.blocking_pick_file();
         let Some(file) = picked else { return Ok(None); };
         let path = file.into_path().map_err(|e| e.to_string())?;
+        Ok(Some(read_project_file(&app,&path)?))
+    }).await.map_err(|e| e.to_string())?
+}
+
+fn read_project_file(app: &tauri::AppHandle, path: &Path) -> Result<serde_json::Value,String> {
         if std::fs::metadata(&path).map_err(|e| e.to_string())?.len() > 2_000_000 { return Err("文件不能超过 2 MB".into()); }
         let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
         let is_tfd = path.extension().is_some_and(|e|e.to_str().is_some_and(|e| e.eq_ignore_ascii_case("tfd")));
         let decoded = if is_tfd { run_engine(&app,None,false,serde_json::json!({"action":"decode_tfd","bytes":bytes}))? } else {
             serde_json::json!({"content":String::from_utf8(bytes).map_err(|e|e.to_string())?,"encoding":"utf-8"})
         };
-        Ok(Some(serde_json::json!({"name":path.file_name().and_then(|s| s.to_str()).ok_or("文件名称无效")?,"content":decoded["content"],"encoding":decoded["encoding"]})))
-    }).await.map_err(|e| e.to_string())?
+        Ok(serde_json::json!({"name":path.file_name().and_then(|s| s.to_str()).ok_or("文件名称无效")?,"content":decoded["content"],"encoding":decoded["encoding"],"path":path}))
 }
 #[tauri::command]
 async fn export_file(
@@ -620,6 +625,9 @@ fn main() {
             export_file,
             project_save_as,
             import_file,
+            recent_projects::recent_list,
+            recent_projects::recent_remember,
+            recent_projects::recent_open,
             menus::menu_platform,
             menus::menu_sync,
             menus::menu_snapshot,

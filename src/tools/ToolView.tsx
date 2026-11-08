@@ -134,7 +134,12 @@ export default function ToolView({
         />
       )}
       {id === "stack" && (
-        <StackTool key={s.project.id} project={s.project} send={dispatch} />
+        <StackTool
+          key={s.project.id}
+          project={s.project}
+          library={s.library}
+          send={dispatch}
+        />
       )}
       {(id === "layers" || id === "rear") && (
         <div className="layer-face-workbench">

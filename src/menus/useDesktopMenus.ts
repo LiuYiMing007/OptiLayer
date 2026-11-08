@@ -9,6 +9,7 @@ export interface MenuSnapshot {
   dirty: boolean;
   busy: boolean;
   commands: Record<string, CommandState>;
+  recent?: { id: string; name: string }[];
 }
 export function useDesktopMenus(
   snapshot: MenuSnapshot,

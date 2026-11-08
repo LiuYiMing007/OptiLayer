@@ -73,6 +73,10 @@ type Modal =
   "projects" | "materials" | "about" | "workspace" | "shortcuts" | null;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export default function App() {
+  const [recent, setRecent] = useState<{ id: string; name: string }[]>([]);
+  const browserRecent = useRef(
+    new Map<string, { name: string; text: string; encoding: string }>(),
+  );
   const [hasProject, setHasProject] = useState(false);
   const [startupChooser, setStartupChooser] = useState(!isTauri());
   const startupStarted = useRef(false);
@@ -438,18 +442,83 @@ export default function App() {
       setNotice(
         `项目已另存${result.path ? "：" + result.path : "为下载文件"}；下一次“保存项目”写入 Workspace${result.warnings?.length ? "；" + result.warnings.join("；") : ""}`,
       );
+      if (isTauri() && result.path) await rememberFile(result.path);
       written = true;
     });
     return ok && written;
   }
   async function newProject() {
     if (!(await canReplace())) return;
-    const p = referenceProject();
-    p.name = "未命名膜系";
-    p.layers = [];
-    replace(p);
-    setProjectFormat("tfd");
-    await beginProjectWindows();
+    await run(async () => {
+      const names = [
+        "TFC/MATERIAL/TA2O5",
+        "TFC/MATERIAL/SIO2",
+        "TFC/SUBSTRAT/AIR",
+        "TFC/SUBSTRAT/GLASS",
+      ];
+      const materials = await Promise.all(
+        names.map(
+          async (name) =>
+            (
+              await request<{ material: Material }>({
+                action: "catalogue_get",
+                name,
+              })
+            ).material,
+        ),
+      );
+      const p = referenceProject();
+      p.name = "未命名膜系";
+      p.layers = [];
+      p.materials = materials;
+      p.settings.incident_material = names[2];
+      p.settings.substrate_material = names[3];
+      synchronizeBoundaries(p);
+      replace(p);
+      setProjectFormat("tfd");
+      await beginProjectWindows();
+    });
+  }
+  async function closeProject() {
+    if (!(await canReplace())) return;
+    replace(referenceProject());
+    setHasProject(false);
+    setEnvironmentPending(false);
+    queue.current!.reset();
+    setCalculating(false);
+    for (const tool of toolDefinitions) await host.hide(tool.id as ToolId);
+    await host.spectrum(false);
+  }
+  async function rememberFile(path: string) {
+    try {
+      setRecent(await invoke("recent_remember", { path }));
+    } catch (error) {
+      setNotice(`项目操作已完成，最近项目列表未能更新：${String(error)}`);
+    }
+  }
+  async function reopenRecent(id: string) {
+    if (!(await canReplace())) return;
+    const ok = await run(async () => {
+      const picked = isTauri()
+        ? await invoke<{
+            name: string;
+            content: string;
+            encoding: string;
+            path: string;
+          }>("recent_open", { id })
+        : browserRecent.current.get(id);
+      if (!picked) throw Error("最近项目记录已过期，请重新打开文件");
+      const text = "content" in picked ? picked.content : picked.text;
+      if (await loadImportedText(picked.name, text, picked.encoding)) {
+        if ("path" in picked) await rememberFile(picked.path);
+        else
+          setRecent((r) => [
+            ...r.filter((e) => e.id === id),
+            ...r.filter((e) => e.id !== id),
+          ]);
+      } else await focusMain();
+    });
+    if (!ok) await focusMain();
   }
   function layerCommand(id: LayerCommand, index = selected, side = layerSide) {
     if (working.current || confirmation) return;
@@ -905,6 +974,11 @@ export default function App() {
     validSpectrum: !!spectrum && !stale,
     panels,
   });
+  states["file.recent"].enabled &&= recent.length > 0;
+  for (const item of recent)
+    states[`file.recent.${item.id}`] = {
+      enabled: !busy && !confirmation && !modal && !startupChooser,
+    };
   async function executeCommand(id: string) {
     if (
       !states[id]?.enabled ||
@@ -913,6 +987,10 @@ export default function App() {
       saveResolver.current
     )
       return;
+    if (id.startsWith("file.recent.")) {
+      await reopenRecent(id.slice("file.recent.".length));
+      return;
+    }
     if (
       id.startsWith("layer.") &&
       ["add", "copy", "delete", "up", "down"].includes(id.slice(6))
@@ -937,6 +1015,9 @@ export default function App() {
         break;
       case "project.feedback":
         await switchExample(true);
+        break;
+      case "file.close":
+        await closeProject();
         break;
       case "file.new":
         await newProject();
@@ -1044,6 +1125,7 @@ export default function App() {
   commandRef.current = executeCommand;
   const platform = useDesktopMenus(
     {
+      recent,
       project: hasProject ? project.name : "未打开项目",
       workspace: workspace?.name || "未选择",
       dirty,
@@ -1055,6 +1137,12 @@ export default function App() {
     },
     setError,
   );
+  useEffect(() => {
+    if (isTauri())
+      void invoke<{ id: string; name: string }[]>("recent_list")
+        .then(setRecent)
+        .catch((e) => setError(message(e)));
+  }, []);
   useEffect(() => {
     if (platform === "desktop" || startupStarted.current) return;
     startupStarted.current = true;
@@ -1263,8 +1351,7 @@ export default function App() {
       replace(r.project);
       setProjectFormat(name.toLowerCase().endsWith(".tfd") ? "tfd" : "json");
       await beginProjectWindows();
-      setSavedKey("");
-
+      // Opening an existing file is clean until the user changes project data.
       if (r.warning) setNotice(r.warning);
       setImportFailure(null);
       return true;
@@ -1282,6 +1369,7 @@ export default function App() {
           name: string;
           content: string;
           encoding?: string;
+          path: string;
         } | null>("import_file");
         if (picked) {
           const loaded = await loadImportedText(
@@ -1290,6 +1378,7 @@ export default function App() {
             picked.encoding,
           );
           if (!loaded) await focusMain();
+          else await rememberFile(picked.path);
         }
       } catch (e) {
         setImportFailure({ name: "所选文件", reason: message(e) });
@@ -1309,7 +1398,20 @@ export default function App() {
     await run(async () => {
       try {
         const { content, encoding } = await readImportFile(file);
-        await loadImportedText(file.name, content, encoding);
+        if (await loadImportedText(file.name, content, encoding)) {
+          const id = String(Date.now());
+          browserRecent.current.set(id, {
+            name: file.name,
+            text: content,
+            encoding,
+          });
+          setRecent((r) =>
+            [
+              { id, name: file.name },
+              ...r.filter((x) => x.name !== file.name),
+            ].slice(0, 10),
+          );
+        }
       } catch (e) {
         setImportFailure({ name: file.name, reason: message(e) });
       }
@@ -1329,6 +1431,7 @@ export default function App() {
       {platform === "browser" && (
         <BrowserMenu
           states={states}
+          recent={recent}
           dispatch={(id) => {
             void executeCommand(id).catch((e) => setError(message(e)));
           }}
@@ -1397,9 +1500,13 @@ export default function App() {
                   key={d.id}
                   aria-pressed={!!host.visible[d.id]}
                   onClick={() =>
-                    void showTool(d.id as ToolId).catch((e) =>
-                      setError(message(e)),
-                    )
+                    void (
+                      d.id === "project"
+                        ? isTauri()
+                          ? importNative()
+                          : Promise.resolve(importRef.current?.click())
+                        : showTool(d.id as ToolId)
+                    ).catch((e) => setError(message(e)))
                   }
                 >
                   {d.title}

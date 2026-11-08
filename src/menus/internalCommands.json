@@ -113,5 +113,40 @@
     "id": "view.remember",
     "label": "记住窗口位置（旧入口）",
     "implemented": true
+  },
+  {
+    "id": "view.materialdata",
+    "label": "材料数据",
+    "implemented": true,
+    "check": true
+  },
+  {
+    "id": "view.project",
+    "label": "项目",
+    "implemented": true,
+    "check": true
+  },
+  {
+    "id": "view.analysis",
+    "label": "光谱分析",
+    "implemented": true,
+    "check": true
+  },
+  {
+    "id": "view.interactive",
+    "label": "交互式分析",
+    "implemented": true,
+    "check": true
+  },
+  {
+    "id": "view.reset",
+    "label": "收起所有工具窗口",
+    "implemented": true
+  },
+  {
+    "id": "view.menu",
+    "label": "显示菜单窗口（Windows）",
+    "implemented": true,
+    "platform": "windows"
   }
 ]

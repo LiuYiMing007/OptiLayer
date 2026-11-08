@@ -2,6 +2,7 @@ import definitions from "./menus.json" with { type: "json" };
 import internal from "./internalCommands.json" with { type: "json" };
 
 export interface MenuEntry {
+  dynamic?: string;
   id?: string;
   label?: string;
   shortcut?: string;
@@ -49,6 +50,7 @@ export function commandStates(c: MenuContext): Record<string, CommandState> {
           [
             "file.new",
             "file.open",
+            "file.recent",
             "file.import",
             "file.quit",
             "file.workspace",

@@ -3,12 +3,15 @@ import { menus, type CommandState } from "./commands";
 
 export default function BrowserMenu({
   states,
+  recent = [],
   dispatch,
 }: {
   states: Record<string, CommandState>;
+  recent?: { id: string; name: string }[];
   dispatch: (id: string) => void;
 }) {
   const [open, setOpen] = useState<number | null>(null);
+  const [recentOpen, setRecentOpen] = useState(false);
   const container = useRef<HTMLElement>(null);
   useEffect(() => {
     const dismiss = (e: PointerEvent) => {
@@ -82,6 +85,53 @@ export default function BrowserMenu({
                 .map((item, i) =>
                   item.separator ? (
                     <hr key={i} />
+                  ) : item.dynamic === "recent" ? (
+                    <div
+                      key={item.id}
+                      className="recent-menu-parent"
+                      onMouseEnter={() => setRecentOpen(true)}
+                      onMouseLeave={() => setRecentOpen(false)}
+                    >
+                      <button
+                        role="menuitem"
+                        aria-haspopup="menu"
+                        aria-expanded={recentOpen}
+                        disabled={!states[item.id!]?.enabled}
+                        onFocus={() => setRecentOpen(true)}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowRight") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setRecentOpen(true);
+                          }
+                        }}
+                      >
+                        {item.label}
+                        <small>▸</small>
+                      </button>
+                      {recentOpen && recent.length > 0 && (
+                        <div
+                          className="recent-menu-popup"
+                          role="menu"
+                          aria-label="最近项目"
+                        >
+                          {recent.map((r) => (
+                            <button
+                              role="menuitem"
+                              key={r.id}
+                              disabled={!states[`file.recent.${r.id}`]?.enabled}
+                              onClick={() => {
+                                setRecentOpen(false);
+                                setOpen(null);
+                                dispatch(`file.recent.${r.id}`);
+                              }}
+                            >
+                              {r.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <button
                       role="menuitem"

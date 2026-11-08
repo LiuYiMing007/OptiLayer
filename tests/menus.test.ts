@@ -28,16 +28,20 @@ const context = (): MenuContext => ({
 test("compact menu catalogue has six categories while toolbar commands remain available", () => {
   assert.deepEqual(
     menus.map((m) => m.title),
-    ["文件", "编辑", "参数", "分析", "窗口", "帮助"],
+    ["文件", "编辑", "参数", "分析", "结果", "帮助"],
   );
   assert.deepEqual(
     menus[0].items.map((e) => e.id),
     [
       "file.new",
       "file.open",
+      "file.recent",
+      "file.close",
       "file.save",
       "file.saveAs",
       "file.exportSpectrum",
+      undefined,
+      "view.windowconfig",
     ],
   );
   assert.deepEqual(
@@ -62,7 +66,13 @@ test("compact menu catalogue has six categories while toolbar commands remain av
   );
   assert.deepEqual(
     menus[3].items.map((e) => e.id),
-    ["calculate.spectrum", "analysis.interactive", "analysis.details"],
+    [
+      "calculate.spectrum",
+      "analysis.interactive",
+      "analysis.details",
+      undefined,
+      "view.targets",
+    ],
   );
   assert.equal(
     menuEntries.some((e) => e.id === "layer.add"),

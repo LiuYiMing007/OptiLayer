@@ -11,6 +11,8 @@ const CATALOGUE: &str = include_str!("../../src/menus/menus.json");
 pub struct MenuState {
     items: Mutex<HashMap<String, MenuItemKind<tauri::Wry>>>,
     snapshot: Mutex<Option<Value>>,
+    recent: Mutex<Option<Submenu<tauri::Wry>>>,
+    recent_key: Mutex<Value>,
 }
 impl MenuState {
     pub fn check_native_state(&self) -> Result<(), String> {
@@ -70,6 +72,24 @@ pub fn menu_sync(
     require_main(&window)?;
     let state = app.state::<MenuState>();
     let items = state.items.lock().map_err(|e| e.to_string())?;
+    let rows=snapshot["recent"].as_array().cloned().unwrap_or_default();
+    if let Some(menu)=state.recent.lock().map_err(|e|e.to_string())?.as_ref() {
+        let mut previous=state.recent_key.lock().map_err(|e|e.to_string())?;
+        if *previous != serde_json::json!(rows) {
+            while menu.remove_at(0).map_err(|e|e.to_string())?.is_some() {}
+            for entry in &rows {
+                if let (Some(id),Some(name))=(entry["id"].as_str(),entry["name"].as_str()) {
+                    if id.len()>64 || !id.chars().all(|c|c.is_ascii_digit()) {continue;}
+                    menu.append(&MenuItem::with_id(&app,format!("file.recent.{id}"),name,true,None::<&str>).map_err(|e|e.to_string())?).map_err(|e|e.to_string())?;
+                }
+            }
+            *previous=serde_json::json!(rows);
+        }
+        menu.set_enabled(!rows.is_empty() && snapshot["commands"]["file.recent"]["enabled"]==true).map_err(|e|e.to_string())?;
+        for item in menu.items().map_err(|e|e.to_string())? {
+            if let Some(item)=item.as_menuitem(){item.set_enabled(snapshot["commands"][item.id().as_ref()]["enabled"]==true).map_err(|e|e.to_string())?;}
+        }
+    }
     for (id, item) in items.iter() {
         let state_id = id.strip_prefix("application.").unwrap_or(id);
         let enabled = snapshot["commands"][state_id]["enabled"]
@@ -194,6 +214,12 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 entry["shortcut"].as_str()
             };
+            if entry["dynamic"] == "recent" {
+                let recent=Submenu::with_id(app,id,label,false)?;
+                submenu.append(&recent)?;
+                *app.state::<MenuState>().recent.lock().unwrap()=Some(recent);
+                continue;
+            }
             if entry["check"] == true {
                 let item = CheckMenuItem::with_id(app, id, label, false, true, accelerator)?;
                 submenu.append(&item)?;
@@ -257,7 +283,7 @@ mod tests {
         }
         assert!(
             ids.contains("file.save")
-                && ids.contains("view.menu")
+                && ids.contains("view.spectrum")
                 && ids.contains("calculate.spectrum")
         );
     }
