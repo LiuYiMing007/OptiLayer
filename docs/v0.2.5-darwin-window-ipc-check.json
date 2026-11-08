@@ -48,7 +48,7 @@
   ],
   "platform": "macos",
   "shared_project_rendered": true,
-  "warm_calculation_ms": 6.000000000003638,
+  "warm_calculation_ms": 5.999999999996362,
   "warm_calculation_service": true,
   "workspace_used": false,
   "version": "0.2.5",
