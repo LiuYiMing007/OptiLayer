@@ -1,0 +1,10 @@
+{
+  "all_pass": true,
+  "platform": "Darwin",
+  "strict_gb18030": true,
+  "role_specific_materials": true,
+  "group_factors_normalized": true,
+  "finite_exit_and_backside_import": true,
+  "missing_material_and_bad_counts_blocked": true,
+  "save_move_reload_exact": true
+}

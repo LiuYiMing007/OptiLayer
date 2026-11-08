@@ -1,0 +1,20 @@
+{
+  "all_pass": true,
+  "platform": "Windows",
+  "directories": [
+    "config",
+    "database",
+    "exports",
+    "imports",
+    "materials",
+    "projects",
+    "root",
+    "spectra"
+  ],
+  "existing_folders_after_move": true,
+  "production_file_manager_opener_called": true,
+  "explorer_window_paths_confirmed": true,
+  "saved_project_spectrum_database_catalogue_visible": true,
+  "reloaded_spectrum_exact": true,
+  "limits": "Actual directory opener launch and on-disk artifacts; does not prove physical Explorer mouse interaction, display scaling, or a physical SSD drive-letter change."
+}

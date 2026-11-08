@@ -1,0 +1,16 @@
+{
+  "all_pass": true,
+  "platform": "Windows",
+  "catalogue_total": 1211,
+  "ready": 1186,
+  "quarantined": 25,
+  "catalogue_digest": "b9b1f343224ba98809b2873691d73fa57363bd55b6d210bece7590ab5f989036",
+  "packaged_data_loaded": true,
+  "metal_absorption_and_glass_dispersion": true,
+  "move_save_exact_recalculation": true,
+  "material_edit_and_custom_file": true,
+  "visible_original_catalogue_export": true,
+  "material_substrate_create_delete_restore": true,
+  "catalogue_delete_restore": true,
+  "demo_shared_records_absent": true
+}

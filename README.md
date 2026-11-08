@@ -1,6 +1,6 @@
 # TFC · 0.2.5-dev.1 开发预览
 
-[0.2.5-dev.1 开发预览](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5-dev.1)修复材料编辑关闭后无法恢复，增加自定义纵轴，并统一膜层精度及组前/实际厚度显示。[更新报告](docs/更新报告/0.2.5-dev.1更新报告.md)。原版TFCalc所有膜厚细微差异仍需精确读数进一步对照，未宣称完全一致。下方0.2.4仍为正式版。
+[0.2.5-dev.1 开发预览](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5-dev.1)修复材料编辑关闭后无法恢复，增加自定义纵轴，并统一膜层精度及组前/实际厚度显示。[更新报告](docs/更新报告/0.2.5-dev.1更新报告.md)。该预览已通过[Mac/Windows自动验收](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42454742496)，包括材料编辑器关闭后草稿恢复。原版TFCalc所有膜厚细微差异仍需精确读数进一步对照，未宣称完全一致。下方0.2.4仍为正式版。
 
 0.2.4 补齐紧凑材料和基底窗口的新增、删除、恢复与独立文件保存，移除“自定义”分类及四条未修改演示常数的共享记录。旧项目快照保留。
 

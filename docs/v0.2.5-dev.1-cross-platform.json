@@ -1,0 +1,35 @@
+{
+  "version": "0.2.5-dev.1",
+  "source_commit": "cc3933784a0693761638867c20e83b49b03caa4f",
+  "workflow_run": "https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42454742496",
+  "platform_reports_verified": true,
+  "native_material_editor_close_reopen_both_platforms": true,
+  "optical_reference_fields": 24,
+  "mac_windows_max_difference_pp": 7.105427357601002e-14,
+  "limits": "Automatic native window and frozen runtime checks. Saved TFD physical-thickness audit does not establish equality to all original TFCalc on-screen values.",
+  "workflow_conclusion": "success",
+  "release_url": "https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5-dev.1",
+  "prerelease": true,
+  "stable_latest": "v0.2.4",
+  "all_six_server_digests_match_checksums": true,
+  "published_assets": [
+    {
+      "name": "TFC-0.2.5-dev.1-macOS-Windows-portable.zip",
+      "sha256": "9d3d52dd2bf329fe0ebd424b2551d36402549d8d5541ef977a4a69bbf71d8f54",
+      "bytes": 95789566,
+      "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5-dev.1/TFC-0.2.5-dev.1-macOS-Windows-portable.zip"
+    },
+    {
+      "name": "TFC-0.2.5-dev.1-macOS-arm64.zip",
+      "sha256": "4bf56e0d6dde8190ff8bacd72a8316ae92887092d58945fd239e17d3d264135f",
+      "bytes": 38647525,
+      "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5-dev.1/TFC-0.2.5-dev.1-macOS-arm64.zip"
+    },
+    {
+      "name": "TFC-0.2.5-dev.1-Windows-x64-portable.zip",
+      "sha256": "dce89fbc793d73445b3b6656b20fb458c16b582fa0b3a5e12e8de68466c6cb26",
+      "bytes": 57147433,
+      "url": "https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5-dev.1/TFC-0.2.5-dev.1-Windows-x64-portable.zip"
+    }
+  ]
+}
