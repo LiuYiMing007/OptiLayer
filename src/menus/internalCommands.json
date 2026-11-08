@@ -1,0 +1,112 @@
+[
+  {
+    "id": "file.import",
+    "label": "导入 TFD / 项目 JSON…",
+    "implemented": true,
+    "shortcut": "CmdOrCtrl+Shift+I"
+  },
+  {
+    "id": "file.export",
+    "label": "导出项目 JSON…",
+    "implemented": true,
+    "shortcut": "CmdOrCtrl+Shift+E"
+  },
+  {
+    "id": "file.workspace",
+    "label": "工作区…",
+    "implemented": true
+  },
+  {
+    "id": "file.quit",
+    "label": "退出 TFC",
+    "implemented": true,
+    "shortcut": "CmdOrCtrl+Q"
+  },
+  {
+    "id": "layer.copy",
+    "label": "复制选中膜层",
+    "implemented": true,
+    "shortcut": "CmdOrCtrl+D"
+  },
+  {
+    "id": "layer.delete",
+    "label": "删除选中膜层",
+    "implemented": true
+  },
+  {
+    "id": "layer.add",
+    "label": "添加膜层",
+    "implemented": true,
+    "shortcut": "CmdOrCtrl+L"
+  },
+  {
+    "id": "layer.up",
+    "label": "上移选中膜层",
+    "implemented": true
+  },
+  {
+    "id": "layer.down",
+    "label": "下移选中膜层",
+    "implemented": true
+  },
+  {
+    "id": "layer.manage",
+    "label": "膜层管理…",
+    "implemented": true
+  },
+  {
+    "id": "layer.material",
+    "label": "替换选中层材料…",
+    "implemented": true
+  },
+  {
+    "id": "settings.wavelength",
+    "label": "波长范围…",
+    "implemented": true
+  },
+  {
+    "id": "settings.angle",
+    "label": "入射角度…",
+    "implemented": true
+  },
+  {
+    "id": "settings.polarization",
+    "label": "偏振…",
+    "implemented": true
+  },
+  {
+    "id": "tools.materials",
+    "label": "材料与基底…",
+    "implemented": true
+  },
+  {
+    "id": "settings.substrate",
+    "label": "基底窗口…",
+    "implemented": true
+  },
+  {
+    "id": "analysis.spectrum",
+    "label": "查看光谱",
+    "implemented": true
+  },
+  {
+    "id": "tools.library",
+    "label": "材料库管理…",
+    "implemented": true
+  },
+  {
+    "id": "tools.workspace",
+    "label": "工作区设置…",
+    "implemented": true
+  },
+  {
+    "id": "project.reference",
+    "label": "打开参考膜系示例",
+    "implemented": true
+  },
+  {
+    "id": "project.feedback",
+    "label": "打开光谱复核示例",
+    "implemented": true
+  }
+]

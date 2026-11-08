@@ -30,7 +30,12 @@ import MaterialLibrary from "./MaterialLibrary";
 import SpectrumPanel from "./SpectrumPanel";
 import WorkspacePanel from "./WorkspacePanel";
 import BrowserMenu from "./menus/BrowserMenu";
-import { commandStates, entries, shortcutCommand } from "./menus/commands";
+import {
+  commandStates,
+  entries,
+  shortcutCommand,
+  nativeOwnsShortcut,
+} from "./menus/commands";
 import { useDesktopMenus } from "./menus/useDesktopMenus";
 import { changeLayer, type LayerCommand } from "./layerCommands";
 import { spectrumCsv } from "./spectrumExport";
@@ -775,7 +780,7 @@ export default function App() {
       const tool = id.slice(5) as ToolId;
       if (toolDefinitions.some((d) => d.id === tool)) {
         if (host.visible[tool]) await host.hide(tool);
-        else await showTool(tool);
+        else await showTool(tool, tool === "layers" ? "选择正面膜层" : "");
       }
       return;
     }
@@ -790,7 +795,8 @@ export default function App() {
         await newProject();
         break;
       case "file.open":
-        await showTool("project");
+        if (isTauri()) await importNative();
+        else importRef.current?.click();
         break;
       case "file.saveAs":
         await save(undefined, true);
@@ -992,7 +998,6 @@ export default function App() {
   }, [workspace?.id]);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (isTauri() && platform === "macos") return;
       const target = e.target as HTMLElement;
       const editing =
         target.matches("input, textarea, select") || target.isContentEditable;
@@ -1001,6 +1006,7 @@ export default function App() {
         navigator.platform.includes("Mac"),
         editing,
       );
+      if (isTauri() && platform === "macos" && nativeOwnsShortcut(id)) return;
       if (id) {
         e.preventDefault();
         void commandRef.current(id).catch((error) => setError(message(error)));

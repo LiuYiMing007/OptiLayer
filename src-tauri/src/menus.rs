@@ -20,9 +20,9 @@ impl MenuState {
             .and_then(|i| i.as_menuitem())
             .ok_or("save menu missing")?;
         let add = items
-            .get("layer.add")
+            .get("calculate.spectrum")
             .and_then(|i| i.as_menuitem())
-            .ok_or("add menu missing")?;
+            .ok_or("analysis menu missing")?;
         let layers = items
             .get("view.layers")
             .and_then(|i| i.as_check_menuitem())
@@ -151,17 +151,25 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         );
         application.append(&PredefinedMenuItem::separator(app)?)?;
         application.append(&PredefinedMenuItem::services(app, Some("服务"))?)?;
+        let text = Submenu::new(app, "文本编辑", true)?;
+        text.append(&PredefinedMenuItem::undo(app, Some("撤销文本编辑"))?)?;
+        text.append(&PredefinedMenuItem::redo(app, Some("重做文本编辑"))?)?;
+        text.append(&PredefinedMenuItem::cut(app, Some("剪切文本"))?)?;
+        text.append(&PredefinedMenuItem::copy(app, Some("复制文本"))?)?;
+        text.append(&PredefinedMenuItem::paste(app, Some("粘贴文本"))?)?;
+        text.append(&PredefinedMenuItem::select_all(app, Some("全选文本"))?)?;
+        application.append(&text)?;
         application.append(&PredefinedMenuItem::hide(app, Some("隐藏 TFC"))?)?;
         application.append(&PredefinedMenuItem::hide_others(app, Some("隐藏其他"))?)?;
         application.append(&PredefinedMenuItem::show_all(app, Some("显示全部"))?)?;
         application.append(&PredefinedMenuItem::separator(app)?)?;
-        // The configured File > Quit owns Cmd+Q, without registering it twice.
+        // File menu is limited to project operations; application owns Cmd+Q.
         let quit = MenuItem::with_id(
             app,
             "application.file.quit",
             "退出 TFC",
             false,
-            None::<&str>,
+            Some("CmdOrCtrl+Q"),
         )?;
         application.append(&quit)?;
         handles.insert("application.file.quit".into(), MenuItemKind::MenuItem(quit));
@@ -196,18 +204,6 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                 handles.insert(id.to_string(), MenuItemKind::MenuItem(item));
             }
         }
-        #[cfg(target_os = "macos")]
-        if title == "编辑" {
-            // Preserve native text editing. Project Undo uses Option+Cmd+Z on macOS
-            // to avoid stealing the text field's standard Cmd+Z responder action.
-            submenu.append(&PredefinedMenuItem::separator(app)?)?;
-            submenu.append(&PredefinedMenuItem::undo(app, Some("撤销文本编辑"))?)?;
-            submenu.append(&PredefinedMenuItem::redo(app, Some("重做文本编辑"))?)?;
-            submenu.append(&PredefinedMenuItem::cut(app, Some("剪切文本"))?)?;
-            submenu.append(&PredefinedMenuItem::copy(app, Some("复制文本"))?)?;
-            submenu.append(&PredefinedMenuItem::paste(app, Some("粘贴文本"))?)?;
-            submenu.append(&PredefinedMenuItem::select_all(app, Some("全选文本"))?)?;
-        }
         menu.append(&submenu)?;
     }
     *app.state::<MenuState>()
@@ -224,8 +220,8 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             tauri::WebviewUrl::App("index.html?window=menu".into()),
         )
         .title("TFC Workbench · 菜单")
-        .inner_size(650.0, 108.0)
-        .min_inner_size(610.0, 108.0)
+        .inner_size(460.0, 108.0)
+        .min_inner_size(460.0, 108.0)
         .resizable(false)
         .maximizable(false)
         .focused(false)
@@ -251,7 +247,7 @@ mod tests {
     #[test]
     fn shared_catalogue_has_unique_commands_and_complete_categories() {
         let groups: Vec<Value> = serde_json::from_str(CATALOGUE).unwrap();
-        assert_eq!(groups.len(), 9);
+        assert_eq!(groups.len(), 6);
         let mut ids = std::collections::HashSet::new();
         for item in groups.iter().flat_map(|g| g["items"].as_array().unwrap()) {
             if let Some(id) = item["id"].as_str() {

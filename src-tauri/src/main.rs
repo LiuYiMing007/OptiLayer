@@ -416,7 +416,7 @@ async fn import_file(
 ) -> Result<Option<serde_json::Value>, String> {
     menus::require_main(&window)?;
     tauri::async_runtime::spawn_blocking(move || {
-        let mut dialog = app.dialog().file().set_parent(&window).set_title("导入 JSON 项目 / TFD 单面膜系")
+        let mut dialog = app.dialog().file().set_parent(&window).set_title("打开项目")
             .add_filter("TFCalc / TFC 项目", &["tfd", "json"]);
         if let Ok(project)=project_folder() { dialog=dialog.set_directory(project); }
         let picked=dialog.blocking_pick_file();

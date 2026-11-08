@@ -5,7 +5,7 @@ import ToolView from "./ToolView";
 import { toolDefinitions, type ToolAction, type ToolSnapshot } from "./state";
 import type { ToolIntent } from "./useToolHost";
 import { readCatalogue } from "../api";
-import { shortcutCommand } from "../menus/commands";
+import { shortcutCommand, nativeOwnsShortcut } from "../menus/commands";
 
 export default function ToolWindow() {
   const id = getCurrentWindow().label.slice(5);
@@ -406,13 +406,14 @@ export default function ToolWindow() {
       if (!disposed) setError(String(e));
     });
     const keyboard = (e: KeyboardEvent) => {
-      if (navigator.platform.includes("Mac")) return;
+      const mac = navigator.platform.includes("Mac");
       const t = e.target as HTMLElement;
       const command = shortcutCommand(
         e,
-        false,
+        mac,
         t.matches("input,textarea,select") || t.isContentEditable,
       );
+      if (mac && nativeOwnsShortcut(command)) return;
       if (command) {
         e.preventDefault();
         void sendRef.current({ kind: "command", id: command }).catch(() => {});

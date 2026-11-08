@@ -1,4 +1,5 @@
 import definitions from "./menus.json" with { type: "json" };
+import internal from "./internalCommands.json" with { type: "json" };
 
 export interface MenuEntry {
   id?: string;
@@ -15,9 +16,14 @@ export interface MenuGroup {
   items: MenuEntry[];
 }
 export const menus: MenuGroup[] = definitions;
-export const entries = menus
+export const menuEntries = menus
   .flatMap((group) => group.items)
   .filter((item) => item.id);
+export const entries: MenuEntry[] = [...menuEntries, ...internal];
+// macOS registers visible accelerators natively; hidden toolbar shortcuts use the renderer.
+export function nativeOwnsShortcut(id: string | undefined): boolean {
+  return id === "file.quit" || menuEntries.some((item) => item.id === id);
+}
 export type CommandState = { enabled: boolean; checked?: boolean };
 export interface MenuContext {
   busy: boolean;
@@ -37,7 +43,7 @@ export function commandStates(c: MenuContext): Record<string, CommandState> {
   return Object.fromEntries(
     entries.map((item) => {
       let enabled = !!item.implemented && available;
-      if (["file.open", "file.save", "file.saveAs"].includes(item.id!))
+      if (["file.save", "file.saveAs"].includes(item.id!))
         enabled &&= c.workspace;
       if (item.id === "edit.undo") enabled &&= c.canUndo;
       if (item.id === "edit.redo") enabled &&= c.canRedo;

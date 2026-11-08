@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   menus,
   entries,
+  menuEntries,
+  nativeOwnsShortcut,
   commandStates,
   shortcutCommand,
   type MenuContext,
@@ -23,8 +25,52 @@ const context = (): MenuContext => ({
   validSpectrum: true,
   panels: { sidebar: true, layers: true, settings: false, spectrum: true },
 });
-test("shared menu catalogue covers nine categories with unique commands and accelerators", () => {
-  assert.equal(menus.length, 9);
+test("compact menu catalogue has six categories while toolbar commands remain available", () => {
+  assert.deepEqual(
+    menus.map((m) => m.title),
+    ["文件", "编辑", "参数", "分析", "窗口", "帮助"],
+  );
+  assert.deepEqual(
+    menus[0].items.map((e) => e.id),
+    [
+      "file.new",
+      "file.open",
+      "file.save",
+      "file.saveAs",
+      "file.exportSpectrum",
+    ],
+  );
+  assert.deepEqual(
+    menus[1].items.map((e) => e.id),
+    ["edit.undo", "edit.redo"],
+  );
+  assert.deepEqual(
+    menus[2].items.map((e) => (e.separator ? "separator" : e.label)),
+    [
+      "环境",
+      "膜堆表达式",
+      "前表面膜层",
+      "后表面膜层",
+      "组",
+      "separator",
+      "材料",
+      "基底",
+      "光源",
+      "探测器",
+    ],
+  );
+  assert.deepEqual(
+    menus[3].items.map((e) => e.id),
+    ["calculate.spectrum", "analysis.interactive", "analysis.details"],
+  );
+  assert.equal(
+    menuEntries.some((e) => e.id === "layer.add"),
+    false,
+  );
+  assert.equal(
+    entries.some((e) => e.id === "layer.add"),
+    true,
+  );
   assert.equal(new Set(entries.map((e) => e.id)).size, entries.length);
   for (const platform of ["windows", "macos"]) {
     const keys = entries
@@ -55,7 +101,6 @@ test("selection, stale spectra, workspace failures and layer limit gate actual d
   });
   for (const id of [
     "file.save",
-    "file.open",
     "layer.copy",
     "layer.delete",
     "layer.material",
@@ -63,10 +108,10 @@ test("selection, stale spectra, workspace failures and layer limit gate actual d
     "layer.up",
     "file.exportSpectrum",
     "edit.redo",
-    "analysis.optimize",
     "file.saveAs",
   ])
     assert.equal(state[id].enabled, false, id);
+  assert.equal(state["file.open"].enabled, true);
   assert.equal(state["file.workspace"].enabled, true);
   assert.equal(state["calculate.spectrum"].enabled, true);
   assert.equal(state["view.settings"].checked, false);
@@ -147,4 +192,12 @@ test("menu and toolbar layer operations preserve optical inputs, order and fresh
   );
   assert.equal(p.layers[2].material, "film");
   assert.equal(p.layers[2].thickness_nm, 60);
+});
+
+test("native and renderer shortcuts have one owner after menu simplification", () => {
+  assert.equal(nativeOwnsShortcut("file.open"), true);
+  assert.equal(nativeOwnsShortcut("file.quit"), true);
+  assert.equal(nativeOwnsShortcut("layer.add"), false);
+  assert.equal(nativeOwnsShortcut("layer.copy"), false);
+  assert.equal(nativeOwnsShortcut(undefined), false);
 });

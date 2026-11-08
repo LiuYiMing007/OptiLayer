@@ -42,7 +42,7 @@ pub fn start(app: tauri::AppHandle) {
                 };
                 let native = native.ok_or("native menu missing")?;
                 let categories = native.items().map_err(|e| e.to_string())?.len();
-                if categories != if cfg!(target_os = "macos") { 10 } else { 9 } {
+                if categories != if cfg!(target_os = "macos") { 7 } else { 6 } {
                     return Err("wrong category count".into());
                 }
                 if cfg!(windows) && main.menu().is_some() {
@@ -54,12 +54,12 @@ pub fn start(app: tauri::AppHandle) {
                 crate::menus::menu_sync(
                     main.clone(),
                     app.clone(),
-                    json!({"project":"菜单验收","commands":{"file.save":{"enabled":false},"layer.add":{"enabled":true},"view.layers":{"enabled":true,"checked":false}}}),
+                    json!({"project":"菜单验收","commands":{"file.save":{"enabled":false},"calculate.spectrum":{"enabled":true},"view.layers":{"enabled":true,"checked":false}}}),
                 )?;
                 let state = app.state::<crate::menus::MenuState>();
                 state.check_native_state()?;
                 crate::menus::dispatch(&app, "file.save");
-                crate::menus::dispatch(&app, "layer.add");
+                crate::menus::dispatch(&app, "calculate.spectrum");
                 if let Some(menu) = app.get_webview_window("menu") {
                     if crate::menus::menu_sync(menu.clone(), app.clone(), json!({})).is_ok() {
                         return Err("auxiliary changed authoritative state".into());

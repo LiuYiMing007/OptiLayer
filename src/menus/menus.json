@@ -26,38 +26,9 @@
         "implemented": true
       },
       {
-        "separator": true
-      },
-      {
-        "id": "file.import",
-        "label": "导入 TFD / 项目 JSON…",
-        "implemented": true,
-        "shortcut": "CmdOrCtrl+Shift+I"
-      },
-      {
-        "id": "file.export",
-        "label": "导出项目 JSON…",
-        "implemented": true,
-        "shortcut": "CmdOrCtrl+Shift+E"
-      },
-      {
         "id": "file.exportSpectrum",
         "label": "导出光谱 CSV…",
         "implemented": true
-      },
-      {
-        "separator": true
-      },
-      {
-        "id": "file.workspace",
-        "label": "工作区…",
-        "implemented": true
-      },
-      {
-        "id": "file.quit",
-        "label": "退出 TFC",
-        "implemented": true,
-        "shortcut": "CmdOrCtrl+Q"
       }
     ]
   },
@@ -77,77 +48,6 @@
         "implemented": true,
         "shortcut": "CmdOrCtrl+Shift+Z",
         "macShortcut": "CmdOrCtrl+Shift+Alt+Z"
-      },
-      {
-        "separator": true
-      },
-      {
-        "id": "layer.copy",
-        "label": "复制选中膜层",
-        "implemented": true,
-        "shortcut": "CmdOrCtrl+D"
-      },
-      {
-        "id": "layer.delete",
-        "label": "删除选中膜层",
-        "implemented": true
-      },
-      {
-        "id": "edit.batch",
-        "label": "批量编辑（待开发）",
-        "implemented": false
-      }
-    ]
-  },
-  {
-    "title": "膜系",
-    "items": [
-      {
-        "id": "layer.add",
-        "label": "添加膜层",
-        "implemented": true,
-        "shortcut": "CmdOrCtrl+L"
-      },
-      {
-        "id": "layer.up",
-        "label": "上移选中膜层",
-        "implemented": true
-      },
-      {
-        "id": "layer.down",
-        "label": "下移选中膜层",
-        "implemented": true
-      },
-      {
-        "separator": true
-      },
-      {
-        "id": "layer.manage",
-        "label": "膜层管理…",
-        "implemented": true
-      },
-      {
-        "id": "layer.material",
-        "label": "替换选中层材料…",
-        "implemented": true
-      },
-      {
-        "id": "view.groups",
-        "label": "组…",
-        "implemented": true,
-        "check": true
-      },
-      {
-        "id": "view.stack",
-        "label": "膜堆表达式…",
-        "implemented": true,
-        "check": true
-      },
-      {
-        "id": "view.rear",
-        "label": "后表面膜层…",
-        "implemented": true,
-        "check": true
       }
     ]
   },
@@ -156,101 +56,36 @@
     "items": [
       {
         "id": "view.environment",
-        "label": "环境…",
+        "label": "环境",
         "implemented": true,
         "check": true
       },
       {
-        "id": "view.illuminant",
-        "label": "光源…",
+        "id": "view.stack",
+        "label": "膜堆表达式",
         "implemented": true,
         "check": true
       },
       {
-        "id": "view.detector",
-        "label": "探测器…",
+        "id": "view.layers",
+        "label": "前表面膜层",
         "implemented": true,
         "check": true
       },
       {
-        "id": "settings.wavelength",
-        "label": "波长范围…",
-        "implemented": true
-      },
-      {
-        "id": "settings.angle",
-        "label": "入射角度…",
-        "implemented": true
-      },
-      {
-        "id": "settings.polarization",
-        "label": "偏振…",
-        "implemented": true
-      },
-      {
-        "id": "tools.materials",
-        "label": "材料与基底…",
-        "implemented": true
-      },
-      {
-        "id": "settings.substrate",
-        "label": "基底窗口…",
-        "implemented": true
-      }
-    ]
-  },
-  {
-    "title": "计算",
-    "items": [
-      {
-        "id": "calculate.spectrum",
-        "label": "单纯分析",
+        "id": "view.rear",
+        "label": "后表面膜层",
         "implemented": true,
-        "shortcut": "CmdOrCtrl+Enter"
-      }
-    ]
-  },
-  {
-    "title": "分析",
-    "items": [
-      {
-        "id": "analysis.spectrum",
-        "label": "查看光谱",
-        "implemented": true
+        "check": true
       },
       {
-        "id": "analysis.interactive",
-        "label": "交互式分析…",
-        "implemented": true
-      },
-      {
-        "id": "analysis.details",
-        "label": "波段、边缘与峰谷分析…",
-        "implemented": true
+        "id": "view.groups",
+        "label": "组",
+        "implemented": true,
+        "check": true
       },
       {
         "separator": true
-      },
-      {
-        "id": "analysis.optimize",
-        "label": "膜系优化（待开发）",
-        "implemented": false
-      },
-      {
-        "id": "analysis.tolerance",
-        "label": "公差分析（待开发）",
-        "implemented": false
-      }
-    ]
-  },
-  {
-    "title": "窗口",
-    "items": [
-      {
-        "id": "view.layers",
-        "label": "膜层结构",
-        "implemented": true,
-        "check": true
       },
       {
         "id": "view.materials",
@@ -264,6 +99,44 @@
         "implemented": true,
         "check": true
       },
+      {
+        "id": "view.illuminant",
+        "label": "光源",
+        "implemented": true,
+        "check": true
+      },
+      {
+        "id": "view.detector",
+        "label": "探测器",
+        "implemented": true,
+        "check": true
+      }
+    ]
+  },
+  {
+    "title": "分析",
+    "items": [
+      {
+        "id": "calculate.spectrum",
+        "label": "单纯分析",
+        "implemented": true,
+        "shortcut": "CmdOrCtrl+Enter"
+      },
+      {
+        "id": "analysis.interactive",
+        "label": "交互式分析",
+        "implemented": true
+      },
+      {
+        "id": "analysis.details",
+        "label": "光谱分析",
+        "implemented": true
+      }
+    ]
+  },
+  {
+    "title": "窗口",
+    "items": [
       {
         "id": "view.materialdata",
         "label": "材料数据",
@@ -325,34 +198,6 @@
         "label": "显示菜单窗口（Windows）",
         "implemented": true,
         "platform": "windows"
-      }
-    ]
-  },
-  {
-    "title": "工具",
-    "items": [
-      {
-        "id": "tools.library",
-        "label": "材料库管理…",
-        "implemented": true
-      },
-      {
-        "id": "tools.workspace",
-        "label": "工作区设置…",
-        "implemented": true
-      },
-      {
-        "separator": true
-      },
-      {
-        "id": "project.reference",
-        "label": "打开参考膜系示例",
-        "implemented": true
-      },
-      {
-        "id": "project.feedback",
-        "label": "打开光谱复核示例",
-        "implemented": true
       }
     ]
   },
