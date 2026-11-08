@@ -37,7 +37,7 @@ TFD 引用原版外部材料库。导出核验 MATERIAL / SUBSTRAT 对应名称�
 - Mac 实际点击验证：原生打开 TFD → 只显示环境 → 完成后显示配置的工作窗口；从膜层窗口菜单调用另存为，在工作区之外改名生成真实 TFD；窗口配置勾选并保存后，便携配置文件含窗口尺寸记录。另存之后普通保存确实生成 Workspace/projects 中的具名 TFD；手动关闭光谱后从菜单恢复，同一项目和光谱仍在。
 - 浏览器实际验证：具名 TFD 保存、重新打开、环境优先；取消光谱自动打开，仅显示膜层，仍可从菜单恢复光谱；分布两点数据新增成功。
 
-证据：project-flow-native-menu.json、project-flow-window-ipc.json、project-flow-project-flow.json、project-flow-optics.json；截图见下。本次代码提交 a32b4fe 的双平台检查：[GitHub Actions 42498655881](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42498655881)。提交本说明时流水线仍在运行，未预先记为通过；不冒称物理 Windows 点击测试。原版 TFCalc 尚未实际打开本次新写出的文件；仍需原版软件验收，不能只凭本软件回读宣称全部兼容。
+证据：project-flow-native-menu.json、project-flow-window-ipc.json、project-flow-project-flow.json、project-flow-optics.json；截图见下。本次代码提交 a32b4fe 的双平台检查：[GitHub Actions 42498655881](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42498655881)。Mac 作业已通过；记录时 Windows 作业仍在运行，未预先记为通过。不冒称物理 Windows 点击测试。原版 TFCalc 尚未实际打开本次新写出的文件；仍需原版软件验收，不能只凭本软件回读宣称全部兼容。
 
 ![Mac 环境窗口](project-flow-environment.png)
 
