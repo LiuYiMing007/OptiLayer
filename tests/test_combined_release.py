@@ -43,6 +43,16 @@ class CombinedPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);self.sources(root,{'TFC/tfc-project.json':'{"schema_version":2}'})
             with self.assertRaises(ValueError):module.combine_assets(root,'0.1.5')
+    def test_development_version_keeps_all_portable_safety_checks(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);self.sources(root)
+            for old in list(root.glob('*.zip')):
+                new=old.with_name(old.name.replace('0.1.5','0.2.5-dev.1'));old.rename(new)
+                new.with_suffix('.zip.sha256').write_text(hashlib.sha256(new.read_bytes()).hexdigest()+'  '+new.name)
+            self.assertTrue(module.combine_assets(root,'0.2.5-dev.1').is_file())
+            for version in ['0.2.5-dev.0','0.2.5-../../bad','0.2.5-dev.1/escape']:
+                with self.assertRaises(ValueError):module.combine_assets(root,version)
+
     def test_rejects_corrupt_source(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);self.sources(root);p=root/'TFC-0.1.5-Windows-x64-portable.zip';p.write_bytes(p.read_bytes()+b'corrupt')

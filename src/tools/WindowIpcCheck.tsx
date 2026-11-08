@@ -19,6 +19,7 @@ interface Status {
     string,
     {
       management?: boolean;
+      editor_reopened?: boolean;
       editor?: boolean;
       catalogue?: boolean;
       environment?: boolean;
@@ -34,6 +35,7 @@ interface Status {
 // Only mounted after the host explicitly authorizes --window-ipc-self-test.
 // Reuses production IPC hooks and child React windows, with pure catalogue reads; never mounts App or opens a Workspace.
 export default function WindowIpcCheck() {
+  const [focus, setFocus] = useState<ToolSnapshot["focus"]>();
   const [library, setLibrary] = useState<Material[]>([]);
   const [project, setProject] = useState(referenceProject),
     [error, setError] = useState("");
@@ -44,6 +46,7 @@ export default function WindowIpcCheck() {
   const sequence = useRef(0),
     started = useRef(false);
   const snapshot: ToolSnapshot = {
+    focus,
     inspectedMaterial: { name: "TFC/SOPRA/AG", substrate: false },
     sequence: ++sequence.current,
     scope: "isolated-window-ipc-check",
@@ -186,8 +189,23 @@ export default function WindowIpcCheck() {
         (report.main_button_ipc as string[]).push(id);
         if (id === "materials" || id === "substrate")
           await until((s) => !!s.details?.[`tool-${id}`]?.management);
-        if (id === "materialdata")
+        if (id === "materialdata") {
           await until((s) => !!s.details?.["tool-materialdata"]?.editor);
+          await invoke("window_check_close", { id });
+          await until((s) => !s.visible[id]);
+          flushSync(() =>
+            setFocus({
+              id,
+              label: "编辑 n/k 数据表",
+              token: "material-editor-reopen",
+            }),
+          );
+          await latest.current.host.show(id);
+          await until(
+            (s) => !!s.details?.["tool-materialdata"]?.editor_reopened,
+          );
+          report.material_editor_close_reopen = true;
+        }
         // Keep the input window visible until blur commits have been acknowledged.
         // WebView2 can defer hidden-renderer input work when the sweep opens the next window.
         if (id === "settings")

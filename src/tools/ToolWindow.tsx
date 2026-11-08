@@ -93,6 +93,21 @@ export default function ToolWindow() {
         void invoke("window_check_details", { details: { error: String(e) } }),
     );
   }, [id, snapshot?.library?.length]);
+  useEffect(() => {
+    if (
+      id !== "materialdata" ||
+      snapshot?.focus?.token !== "material-editor-reopen" ||
+      !new URLSearchParams(location.search).has("window-ipc-check")
+    )
+      return;
+    const table = document.querySelector<HTMLTextAreaElement>(
+      '[aria-label="编辑 n/k 数据表"]',
+    );
+    if (table?.value.trim().split("\n").length === 121)
+      void invoke("window_check_details", {
+        details: { editor: true, catalogue: true, editor_reopened: true },
+      });
+  }, [id, snapshot]);
   const latest = useRef<ToolSnapshot | null>(null);
   const waiting = useRef(
     new Map<string, { resolve: () => void; reject: (e: unknown) => void }>(),

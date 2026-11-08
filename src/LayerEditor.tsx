@@ -1,7 +1,13 @@
 import { materialAt } from "./materials";
 import { useLayoutEffect, useRef, useState } from "react";
 import type { LayerCommand } from "./layerCommands";
-import { gridValue, moveCell, pasteGrid, type GridCell } from "./layerGrid";
+import { moveCell as legacyMoveCell, type GridCell } from "./layerGrid";
+import {
+  horizontalValue,
+  formatHorizontal,
+  pasteLayerTable,
+  type ThicknessBasis,
+} from "./horizontalGrid";
 import type { Project } from "./types";
 let restoreGridFocus: GridCell | null = null;
 interface Props {
@@ -36,6 +42,17 @@ export default function LayerEditor({
       col: 1,
     },
   );
+  const [basis, setBasis] = useState<ThicknessBasis>("nominal");
+  const gridValue = (p: Project, cell: GridCell) =>
+    horizontalValue(p, cell.col, p.layers.length - 1 - cell.row, basis);
+  const pasteGrid = (p: Project, cell: GridCell, text: string) =>
+    pasteLayerTable(p, cell, text, basis);
+  const moveCell = (
+    cell: GridCell,
+    key: string,
+    rows: number,
+    backwards: boolean,
+  ) => legacyMoveCell(cell, key, rows, backwards, 4);
   const [anchor, setAnchor] = useState<GridCell>(active);
   const [editing, setEditing] = useState(false),
     [draft, setDraft] = useState(""),
@@ -124,6 +141,10 @@ export default function LayerEditor({
   }
   function begin(cell = active, initial?: string) {
     if (busy || !rows) return;
+    if (gridValue(p, cell) === "—") {
+      setError("组系数为零，请切换实际厚度模式编辑");
+      return;
+    }
     setActive(cell);
     setAnchor(cell);
     setError("");
@@ -223,6 +244,15 @@ export default function LayerEditor({
         </div>
       )}
       <div className="engineering-toolbar">
+        <select
+          aria-label="膜厚显示依据"
+          disabled={editing}
+          value={basis}
+          onChange={(e) => setBasis(e.target.value as ThicknessBasis)}
+        >
+          <option value="nominal">组前厚度（TFCalc）</option>
+          <option value="actual">实际厚度（含组系数）</option>
+        </select>
         <button
           disabled={busy || rows >= 500}
           onClick={() => command("layer.add")}
@@ -347,7 +377,7 @@ export default function LayerEditor({
           role="grid"
           aria-label="膜层结构表格"
           aria-rowcount={rows + 1}
-          aria-colcount={6}
+          aria-colcount={5}
         >
           <thead>
             <tr>
@@ -357,10 +387,7 @@ export default function LayerEditor({
                 物理厚度 d <span>nm</span>
               </th>
               <th>
-                光学厚度 n·d <span>nm</span>
-              </th>
-              <th>
-                QWOT <span>λ₀/4</span>
+                1/4 光学厚度 <span>λ₀/4</span>
               </th>
               <th title="0 为未分组，相同组号通过组系数同步调整">组</th>
             </tr>
@@ -372,7 +399,7 @@ export default function LayerEditor({
                 className={selected === rows - 1 - r ? "selected" : ""}
               >
                 <th scope="row">{rows - r}</th>
-                {[0, 1, 2, 3, 4].map((c) => {
+                {[0, 1, 2, 3].map((c) => {
                   const cell = { row: r, col: c },
                     isActive = active.row === r && active.col === c;
                   const inRange =
@@ -388,7 +415,7 @@ export default function LayerEditor({
                       data-row={r}
                       data-col={c}
                       tabIndex={isActive ? 0 : -1}
-                      aria-label={`第 ${rows - r} 层${["材料", "物理厚度", "光学厚度", "QWOT", "分组"][c]}`}
+                      aria-label={`第 ${rows - r} 层${["材料", "物理厚度", "1/4光学厚度", "分组"][c]}`}
                       aria-selected={inRange}
                       className={`${c ? "numeric" : ""} ${isActive ? "active-cell" : ""}`}
                       onClick={(e) => {
@@ -400,7 +427,7 @@ export default function LayerEditor({
                         <input
                           autoFocus
                           list={c === 0 ? "film-materials" : undefined}
-                          aria-label={`编辑第 ${rows - r} 层${["材料", "物理厚度", "光学厚度", "QWOT", "分组"][c]}`}
+                          aria-label={`编辑第 ${rows - r} 层${["材料", "物理厚度", "1/4光学厚度", "分组"][c]}`}
                           value={draft}
                           onFocus={(e) => {
                             if (selectDraft.current) e.currentTarget.select();
@@ -429,7 +456,7 @@ export default function LayerEditor({
                           }}
                         />
                       ) : c ? (
-                        String(Number(Number(raw).toFixed(6)))
+                        formatHorizontal(c, raw)
                       ) : (
                         p.materials.find((m) => m.name === raw)?.display_name ||
                         raw
@@ -474,8 +501,7 @@ export default function LayerEditor({
       </div>
       <footer className="engineering-grid-status">
         <span>
-          总厚度{" "}
-          {Number(p.layers.reduce((s, l) => s + l.thickness_nm, 0).toFixed(6))}{" "}
+          总厚度 {p.layers.reduce((s, l) => s + l.thickness_nm, 0).toFixed(2)}{" "}
           nm　·　λ₀ {p.settings.reference_nm} nm
         </span>
         <span>F2 编辑 · Enter / Tab 提交 · Shift + 方向键选区</span>

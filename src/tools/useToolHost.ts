@@ -15,6 +15,7 @@ export function useToolHost(
 ) {
   const latest = useRef({ snapshot, action, onError });
   latest.current = { snapshot, action, onError };
+  const [opened, setOpened] = useState<Record<string, boolean>>({});
   const [visible, setVisible] = useState<Record<string, boolean>>({});
   const publish = useRef<(() => Promise<void>) | null>(null);
   useEffect(() => {
@@ -95,7 +96,10 @@ export function useToolHost(
   }, [snapshot]);
   async function show(id: ToolId) {
     if (isTauri()) await invoke("tool_open", { id });
-    else setVisible((v) => ({ ...v, [id]: true }));
+    else {
+      setOpened((v) => ({ ...v, [id]: true }));
+      setVisible((v) => ({ ...v, [id]: true }));
+    }
   }
   async function hide(id: ToolId) {
     if (isTauri()) await invoke("tool_hide", { id });
@@ -105,5 +109,5 @@ export function useToolHost(
     if (isTauri()) await invoke("tool_remember", { enabled });
     else setVisible((v) => ({ ...v, remember: enabled }));
   }
-  return { visible, show, hide, remember };
+  return { visible, opened, show, hide, remember };
 }

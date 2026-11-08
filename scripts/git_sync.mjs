@@ -18,7 +18,7 @@ try {
   git("diff", "--check");
   const version = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version;
   const tag = `v${version}`;
-  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error("Expected a numeric x.y.z version");
+  if (!/^\d+\.\d+\.\d+(?:-dev\.[1-9]\d*)?$/.test(version)) throw new Error("Expected x.y.z or x.y.z-dev.N version");
   const notes = path.join(root, "docs", "更新报告", `${version}更新报告.md`);
   if (mode === "release") {
     if (!fs.existsSync(notes)) throw new Error("Write the version update report first");

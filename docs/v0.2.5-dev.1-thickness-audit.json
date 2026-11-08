@@ -1,0 +1,11 @@
+{
+  "files": 771,
+  "imported": 767,
+  "blocked": 4,
+  "layers": 18767,
+  "non_unit_group_files": 75,
+  "max_source_vs_imported_actual_nm": 5.684341886080802e-14,
+  "max_source_vs_recovered_nominal_nm": 2.842170943040401e-14,
+  "original_hashes_unchanged": true,
+  "limits": "Independent Decimal comparison of saved TFD physical thickness and group factors. This does not prove what original TFCalc recomputes under optical-priority settings or different active material data."
+}

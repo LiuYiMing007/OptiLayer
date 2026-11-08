@@ -94,7 +94,7 @@ export default function ToolView({
           {error || s.error}
         </p>
       )}
-      {s.notice && id === "project" && (
+      {s.notice && (id === "project" || id === "materialdata") && (
         <p className="tool-notice" role="status">
           {s.notice}
         </p>
@@ -342,6 +342,37 @@ export default function ToolView({
               {s.project.import_info.notes.map((note, i) => (
                 <p key={i}>{note}</p>
               ))}
+              {Array.isArray(importInfo?.source_layers) &&
+                importInfo.source_layers.every(
+                  (l) =>
+                    l &&
+                    Number.isInteger(l.index) &&
+                    Number.isFinite(l.physical_nm) &&
+                    Number.isFinite(l.factor),
+                ) && (
+                  <table aria-label="TFD 原始膜厚核对">
+                    <thead>
+                      <tr>
+                        <th>表面 / 层</th>
+                        <th>源膜厚 nm（组前）</th>
+                        <th>源组系数</th>
+                        <th>导入实际厚度 nm</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importInfo.source_layers.map((l, i) => (
+                        <tr key={i}>
+                          <td>
+                            {l.side === "back" ? "背面" : "正面"} / {l.index}
+                          </td>
+                          <td>{l.physical_nm.toFixed(2)}</td>
+                          <td>{l.factor}</td>
+                          <td>{(l.physical_nm * l.factor).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               <table>
                 <thead>
                   <tr>

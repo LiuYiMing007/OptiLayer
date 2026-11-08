@@ -4,7 +4,7 @@ import argparse, hashlib, json, re, zipfile
 
 def combine_assets(assets, version):
     assets=Path(assets)
-    if not re.fullmatch(r'\d+\.\d+\.\d+',version):raise ValueError('Invalid release version')
+    if not re.fullmatch(r'\d+\.\d+\.\d+(?:-dev\.[1-9]\d*)?',version):raise ValueError('Invalid release version')
     sources=[assets/f'TFC-{version}-macOS-arm64.zip', assets/f'TFC-{version}-Windows-x64-portable.zip']
     for source in sources:
         expected=source.with_suffix('.zip.sha256').read_text(encoding='utf-8').split()[0]

@@ -101,14 +101,14 @@ export default function BrowserTool({
           ×
         </button>
       </header>
-      {!minimized && (
+      <div style={{ display: minimized ? "none" : "contents" }}>
         <ToolView
           key={snapshot.scope}
           id={id}
           snapshot={snapshot}
           send={send}
         />
-      )}
+      </div>
     </section>
   );
 }

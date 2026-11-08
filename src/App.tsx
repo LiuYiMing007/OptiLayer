@@ -419,10 +419,28 @@ export default function App() {
     });
     setLibrary(r.materials);
   }
+  async function revealMaterialEditor() {
+    if (!materialEditors.current.size) return false;
+    setError("");
+    setNotice("已恢复未保存的材料编辑；请保存或取消编辑后再选择其它材料。");
+    await showTool("materialdata");
+    return true;
+  }
   async function handleToolAction(source: string, action: ToolAction) {
     if (action.kind === "material-editing") {
       if (action.active) materialEditors.current.set(source, action.tool);
-      else materialEditors.current.delete(source);
+      else {
+        materialEditors.current.delete(source);
+        setNotice((n) =>
+          n.startsWith("已恢复未保存的材料编辑")
+            ? "材料编辑已结束，可以选择其它材料。"
+            : n,
+        );
+        if (source.endsWith("materialdata"))
+          setInspectedMaterial((m) =>
+            m ? { name: m.name, substrate: m.substrate } : m,
+          );
+      }
       return;
     }
     if (action.scope !== scopeRef.current)
@@ -514,8 +532,7 @@ export default function App() {
       return;
     }
     if (action.kind === "material-new") {
-      if (materialEditors.current.size)
-        throw Error("请先保存或取消正在编辑的材料");
+      if (await revealMaterialEditor()) return;
       const draft: Material = {
         name: `USER/${crypto.randomUUID()}`,
         display_name: "",
@@ -535,8 +552,10 @@ export default function App() {
       return;
     }
     if (action.kind === "material-delete") {
-      if (materialEditors.current.size)
-        throw Error("请先保存或取消正在编辑的材料");
+      if (await revealMaterialEditor())
+        throw Error(
+          "已恢复材料编辑窗口；请保存或取消编辑后再删除，尚未删除任何数据",
+        );
       if (action.target === "project") {
         const next = removeProjectMaterial(
           current.current,
@@ -624,12 +643,7 @@ export default function App() {
       return;
     }
     if (action.kind === "material-inspect") {
-      if (
-        [...materialEditors.current.keys()].some((k) =>
-          k.endsWith("materialdata"),
-        )
-      )
-        throw Error("请先保存或取消材料数据窗口中的编辑");
+      if (await revealMaterialEditor()) return;
       if (
         ![...current.current.materials, ...library].some(
           (m) => m.name === action.name,
@@ -1036,8 +1050,7 @@ export default function App() {
   }, [savedKey]);
   async function canReplace() {
     if (materialEditors.current.size) {
-      const tool = materialEditors.current.values().next().value!;
-      await showTool(tool);
+      await revealMaterialEditor();
       setNotice("请先在材料窗口保存或取消当前编辑，再切换项目或退出。");
       return false;
     }
@@ -1318,19 +1331,24 @@ export default function App() {
       />
       {!isTauri() &&
         toolDefinitions
-          .filter((d) => host.visible[d.id])
+          .filter((d) => host.visible[d.id] || host.opened[d.id])
           .map((d, index) => (
-            <BrowserTool
+            <div
               key={d.id}
-              id={d.id}
-              title={d.title}
-              snapshot={toolSnapshot}
-              index={index}
-              send={browserSend(d.id)}
-              close={() => {
-                void host.hide(d.id as ToolId);
-              }}
-            />
+              style={{ display: host.visible[d.id] ? "contents" : "none" }}
+            >
+              <BrowserTool
+                key={d.id}
+                id={d.id}
+                title={d.title}
+                snapshot={toolSnapshot}
+                index={index}
+                send={browserSend(d.id)}
+                close={() => {
+                  void host.hide(d.id as ToolId);
+                }}
+              />
+            </div>
           ))}
       {modal && (
         <div

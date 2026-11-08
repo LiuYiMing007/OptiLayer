@@ -7,7 +7,7 @@ import sys
 from urllib.parse import quote
 root=Path(__file__).resolve().parents[1]
 tag=sys.argv[1]
-if not re.fullmatch(r'v\d+\.\d+\.\d+',tag):raise SystemExit('Expected version tag vX.Y.Z')
+if not re.fullmatch(r'v\d+\.\d+\.\d+(?:-dev\.[1-9]\d*)?',tag):raise SystemExit('Expected version tag vX.Y.Z')
 repository=os.environ.get('GITHUB_REPOSITORY','')
 if not re.fullmatch(r'[\w.-]+/[\w.-]+',repository):raise SystemExit('GITHUB_REPOSITORY must be owner/repo')
 report=root/'docs/更新报告'/f'{tag[1:]}更新报告.md'

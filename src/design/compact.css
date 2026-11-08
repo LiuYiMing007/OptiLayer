@@ -514,3 +514,18 @@
 .material-management button:disabled {
   opacity: 0.5;
 }
+.axis-range-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.axis-range-controls input {
+  width: 70px;
+  height: 26px;
+  padding: 0 5px;
+  border: 1px solid #cdd5de;
+  border-radius: 3px;
+  font-size: 12px;
+  text-align: right;
+  background: #fff;
+}

@@ -1,6 +1,12 @@
 import { useRef, useState } from "react";
-import { gridValue } from "./layerGrid";
-import { pasteHorizontal } from "./horizontalGrid";
+import {
+  pasteHorizontal,
+  horizontalLabels,
+  formatHorizontal,
+  horizontalValue,
+  layerGroupFactor,
+  type ThicknessBasis,
+} from "./horizontalGrid";
 import { materialLabel } from "./materials";
 import type { Project } from "./types";
 import type { LayerCommand } from "./layerCommands";
@@ -26,12 +32,13 @@ export default function HorizontalLayers({
   const root = useRef<HTMLDivElement>(null),
     editing = useRef(false),
     original = useRef("");
+  const [basis, setBasis] = useState<ThicknessBasis>("nominal");
   const count = p.layers.length;
   const value = (row: number, col: number) =>
-    gridValue(p, { row: count - 1 - col, col: row });
+    horizontalValue(p, row, col, basis);
   const select = (row: number, col: number, extend = false) => {
     const next = {
-      row: Math.max(0, Math.min(4, row)),
+      row: Math.max(0, Math.min(3, row)),
       col: Math.max(0, Math.min(count - 1, col)),
     };
     setCell(next);
@@ -49,7 +56,7 @@ export default function HorizontalLayers({
     if (!editing.current) return true;
     if (commit && draft !== null && draft !== original.current) {
       try {
-        const next = pasteHorizontal(p, cell.row, cell.col, draft);
+        const next = pasteHorizontal(p, cell.row, cell.col, draft, basis);
         update((p) => {
           p.layers = next.layers;
         });
@@ -64,6 +71,10 @@ export default function HorizontalLayers({
     return true;
   };
   const start = (row: number, col: number, initial?: string) => {
+    if ((row === 1 || row === 2) && value(row, col) === "—") {
+      setError("组系数为零，无法还原组前膜厚；请切换实际厚度模式");
+      return;
+    }
     setCell({ row, col });
     onSelect(col);
     setAnchor({ row, col });
@@ -106,6 +117,16 @@ export default function HorizontalLayers({
             {["添加", "复制", "删除", "向外移", "向基底移"][i]}
           </button>
         ))}
+        <select
+          aria-label="膜厚显示依据"
+          value={basis}
+          onChange={(e) => {
+            if (finish()) setBasis(e.target.value as ThicknessBasis);
+          }}
+        >
+          <option value="nominal">组前厚度（TFCalc）</option>
+          <option value="actual">实际厚度（含组系数）</option>
+        </select>
         <span>λ₀ {p.settings.reference_nm} nm · 基底 → 外侧</span>
       </div>
       {error && <p role="alert">{error}</p>}
@@ -138,6 +159,7 @@ export default function HorizontalLayers({
               cell.row,
               cell.col,
               e.clipboardData.getData("text/plain"),
+              basis,
             );
             update((p) => {
               p.layers = next.layers;
@@ -162,13 +184,7 @@ export default function HorizontalLayers({
             </tr>
           </thead>
           <tbody>
-            {[
-              "材料",
-              "物理厚度 (nm)",
-              "光学厚度 (nm)",
-              "1/4 光学厚度",
-              "组",
-            ].map((label, r) => (
+            {horizontalLabels.map((label, r) => (
               <tr key={r}>
                 <th>{label}</th>
                 {p.layers.map((l, c) => {
@@ -185,7 +201,11 @@ export default function HorizontalLayers({
                       data-sheet-col={c}
                       tabIndex={active ? 0 : -1}
                       aria-selected={selected}
-                      title={r === 0 ? l.material : undefined}
+                      title={
+                        r === 0
+                          ? l.material
+                          : `实际膜厚 ${l.thickness_nm} nm；组系数 ${layerGroupFactor(p, c)}；实际膜厚 = 组前膜厚 × 组系数`
+                      }
                       onClick={(e) => {
                         if (editing.current && !finish()) return;
                         select(r, c, e.shiftKey);
@@ -258,10 +278,8 @@ export default function HorizontalLayers({
                         materialLabel(
                           p.materials.find((m) => m.name === l.material)!,
                         )
-                      ) : r === 4 ? (
-                        value(r, c)
                       ) : (
-                        Number(value(r, c)).toFixed(r === 3 ? 7 : 4)
+                        formatHorizontal(r, value(r, c))
                       )}
                     </td>
                   );

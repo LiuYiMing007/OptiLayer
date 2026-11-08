@@ -155,6 +155,10 @@ export default function MaterialLibrary({
     },
     [],
   );
+  useEffect(() => {
+    // Reconcile a new renderer after an interrupted/closed browser tool.
+    if (!newMaterial) void editingCallback.current(false).catch(() => {});
+  }, []);
   async function edit(item: Material) {
     await perform(async () => {
       const full = item.catalogue_summary

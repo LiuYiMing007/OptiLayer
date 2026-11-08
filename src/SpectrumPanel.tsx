@@ -1,3 +1,4 @@
+import { parseChartRange } from "./chartRange";
 import { useRef, useState } from "react";
 import { Download, Upload, X } from "lucide-react";
 import { curveStyle } from "./design/chartTheme";
@@ -50,6 +51,9 @@ export default function SpectrumPanel({
     sp: false,
     yMode: "auto",
   });
+  const [axisMin, setAxisMin] = useState("0"),
+    [axisMax, setAxisMax] = useState("100"),
+    [axisError, setAxisError] = useState("");
   const targetRef = useRef<HTMLInputElement>(null);
   const result = !stale ? spectrum : null;
   const analysis = result?.analysis;
@@ -112,7 +116,44 @@ export default function SpectrumPanel({
               >
                 <option value="auto">自动纵轴</option>
                 <option value="full">0–100%</option>
+                <option value="custom">自定义纵轴</option>
               </select>
+              {options.yMode === "custom" && (
+                <form
+                  className="axis-range-controls"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    try {
+                      const yRange = parseChartRange(axisMin, axisMax);
+                      setOptions((o) => ({ ...o, yRange }));
+                      setAxisError("");
+                    } catch (err) {
+                      setAxisError(String(err));
+                    }
+                  }}
+                >
+                  <input
+                    aria-label="纵轴下限"
+                    inputMode="decimal"
+                    value={axisMin}
+                    onChange={(e) => setAxisMin(e.target.value)}
+                  />
+                  <span>—</span>
+                  <input
+                    aria-label="纵轴上限"
+                    inputMode="decimal"
+                    value={axisMax}
+                    onChange={(e) => setAxisMax(e.target.value)}
+                  />
+                  <span>%</span>
+                  <button type="submit">应用范围</button>
+                  {axisError && (
+                    <span className="inline-error" role="alert">
+                      {axisError}
+                    </span>
+                  )}
+                </form>
+              )}
               <button
                 className={!options.sp ? "muted" : ""}
                 disabled={!!options.weighted && !!spectrum?.response_weight}

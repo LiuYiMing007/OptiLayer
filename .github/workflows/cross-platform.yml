@@ -120,7 +120,9 @@ jobs:
             echo "Release already exists; preserving its verified assets."
           else
             python scripts/release_notes.py "$TAG" > "$RUNNER_TEMP/release-notes.md"
-            gh release create "$TAG" release-assets/* --verify-tag --title "TFC $TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
+            FLAGS=()
+            if [[ "$TAG" == *-dev.* ]]; then FLAGS+=(--prerelease --latest=false); fi
+            gh release create "$TAG" release-assets/* --verify-tag --title "TFC $TAG" --notes-file "$RUNNER_TEMP/release-notes.md" "${FLAGS[@]}"
           fi
       - uses: actions/upload-artifact@v4
         with:

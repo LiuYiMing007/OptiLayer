@@ -8,7 +8,8 @@ export interface ChartOptions {
   A: boolean;
   sp: boolean;
   weighted?: boolean;
-  yMode: "auto" | "full";
+  yMode: "auto" | "full" | "custom";
+  yRange?: [number, number];
 }
 export default function SpectrumChart({
   spectrum,
@@ -118,7 +119,8 @@ export default function SpectrumChart({
           curveStyle("R", "target"),
         );
     }
-    let range = [0, 100];
+    let range =
+      options.yMode === "custom" && options.yRange ? options.yRange : [0, 100];
     if (options.yMode === "auto" && values.length) {
       let low = Infinity,
         high = -Infinity;
@@ -149,6 +151,11 @@ export default function SpectrumChart({
           size: 12,
         },
         xaxis: {
+          uirevision: JSON.stringify([
+            spectrum?.input_snapshot.id,
+            spectrum?.wavelength_nm[0],
+            spectrum?.wavelength_nm.at(-1),
+          ]),
           title: { text: "波长 / nm", font: { size: 12 } },
           gridcolor: chartTheme.grid,
           zeroline: false,
@@ -162,6 +169,13 @@ export default function SpectrumChart({
             : [400, 700],
         },
         yaxis: {
+          uirevision: JSON.stringify([
+            options.yMode,
+            options.yRange,
+            options.T,
+            options.R,
+            options.A,
+          ]),
           title: {
             text: weighted ? "响应 / %" : "光谱 / %",
             font: { size: 12 },
@@ -190,6 +204,7 @@ export default function SpectrumChart({
           spectrum?.wavelength_nm[0],
           spectrum?.wavelength_nm.at(-1),
           options.yMode,
+          options.yRange,
           options.T,
           options.R,
           options.A,
