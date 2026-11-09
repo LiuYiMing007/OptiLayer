@@ -15,7 +15,7 @@
 ```text
 OpticalWorkspace/
 ├── workspace.json
-├── projects/     # 可读项目名称的 *.tfc.json；内部仍使用稳定 ID
+├── projects/     # 默认可读名称 *.tfd；JSON 格式保存为 *.tfc.json；内部仍使用稳定 ID
 ├── materials/
 │   ├── catalogue/  # TFCalc-0.2.0.original.json 原始目录快照
 │   ├── films/      # 新增/编辑的膜层材料，每种一个可读名称文件
@@ -29,7 +29,7 @@ OpticalWorkspace/
 └── config/       # 预留的非秘密工作区设置目录
 ```
 
-SQLite 是项目与共享材料的主存储；JSON 是可阅读、可手动导入的恢复副本，不在读取时自动与数据库合并。光谱目录保存结果与其输入快照，数据库只记录稳定 ID 和 POSIX 相对路径；目前没有光谱历史管理界面。
+SQLite 是项目与共享材料的主存储；projects 下按当前保存格式写出 .tfd 或 .tfc.json 恢复副本，材料/基底另有逐项 .material.json。TFD 只写原版记录可表达的字段；完整内部快照仍在 SQLite，选择 JSON 时另写完整 .tfc.json。恢复副本不在读取时自动与数据库合并。光谱目录保存结果与其输入快照，数据库只记录稳定 ID 和 POSIX 相对路径；目前没有光谱历史管理界面。
 
 imports 和 config 已建立目录，但没有自动归档导入文件或完整配置编辑功能。不把目录存在误认为相应业务已经完成。程序置于便携项目的 macOS、Windows 子目录，位于 Workspace 外，不参与工作区数据解释。
 

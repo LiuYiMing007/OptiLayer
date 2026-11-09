@@ -51,14 +51,14 @@ Optical Core 不依赖数据库、文件系统、UI、TFCalc 解析器或 AI。P
 
 ```text
 workspace.json       格式、版本、标识和相对目录
-projects/            项目 JSON 恢复副本
-materials/           共享材料 JSON 恢复副本
+projects/            项目文件：默认 *.tfd，可选 *.tfc.json 完整快照
+materials/           材料/基底逐项文件与恢复副本
 spectra/             带输入快照和单位的计算结果
 database/           workspace.sqlite3（项目和共享材料权威存储）
 imports/ exports/ config/    数据目录；部分用途预留
 ```
 
-项目保存时写入 SQLite 和 JSON 副本；若有对应当前输入的有效光谱，同时归档结果。重新打开项目重新计算。Workspace 内不保存电脑绝对路径；最近选择以相对路径保存在项目 `.tfc/workspace-selection.json` 中。关闭应用后复制整个便携项目到 SSD，另一台电脑按相对位置继续打开。当前不支持多台电脑同时写入或同步冲突合并。格式、迁移和恢复规则见 [Workspace 数据规范](docs/Workspace数据规范.md)。
+项目保存时以 SQLite 为权威，并按界面所选格式写出 TFD 或 JSON 恢复副本；若有对应当前输入的有效光谱，同时归档结果。重新打开项目重新计算。Workspace 内不保存电脑绝对路径；最近选择以相对路径保存在项目 `.tfc/workspace-selection.json` 中。关闭应用后复制整个便携项目到 SSD，另一台电脑按相对位置继续打开。当前不支持多台电脑同时写入或同步冲突合并。格式、迁移和恢复规则见 [Workspace 数据规范](docs/Workspace数据规范.md)。
 
 ## 第一条业务链路
 

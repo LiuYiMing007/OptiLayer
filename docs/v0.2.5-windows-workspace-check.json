@@ -1,0 +1,6 @@
+{
+  "packaged_engine": "release\\Windows\\TFC\\engine\\tfc-engine.exe",
+  "workspace_relocation": true,
+  "spectrum_exact_reproduction": true,
+  "samples": 121
+}

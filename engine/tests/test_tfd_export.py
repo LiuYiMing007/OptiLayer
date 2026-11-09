@@ -60,7 +60,7 @@ class TFDExportTests(unittest.TestCase):
             p['response_data']={'distributions':[{'name':'ANGULAR','samples':[[0,100],[30,50]]}]}
             with self.assertRaisesRegex(ValueError,'完整项目 JSON'):export_tfd(p)
             r=dispatch({'action':'save','project':p,'format':'json'},workspace=w)
-            self.assertEqual(json.loads(w.resolve(r['relative_path']).read_text())['response_data'],p['response_data'])
+            self.assertEqual(json.loads(w.resolve(r['relative_path']).read_text(encoding='utf-8'))['response_data'],p['response_data'])
     def test_unknown_original_records_survive_while_known_fields_update(self):
         p=project();text=export_tfd(p)['content'].replace('COMMENTS*0*','CUSTOM-RECORD*UNCHANGED*\r\nCOMMENTS*0*')
         q=parse_tfd(text,{'materials':BUILTIN_MATERIALS});q['layers'][0]['thickness_nm']+=1
