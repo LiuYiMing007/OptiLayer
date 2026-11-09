@@ -2,7 +2,9 @@
 
 0.3.0 仅新增两个雏形，均位于“分析”菜单：**膜系自动优化**和 **AI Agent**。优化器按目标 R/T 曲线在给定范围内调整所选膜层厚度，提供误差/候选光谱预览；Agent 支持配置 Responses API 服务、真实光谱工具调用和膜厚候选。两者均先预览再应用，支持撤销和停止，不改动已验证的 Optical Core。
 
-[0.3.0 更新报告与使用边界](docs/更新报告/0.3.0更新报告.md)。AI 需要用户填写模型与 API Key；密钥不保存到项目。真实模型服务连通及 Windows 0.3.0 仍需单独验收，不能沿用旧版结果。下方 0.2.5 下载保留为上一正式版本。
+[0.3.0 更新报告与使用边界](docs/更新报告/0.3.0更新报告.md)。AI 需要用户填写模型与 API Key；密钥不保存到项目。真实模型服务连通及 Windows 0.3.0 仍需单独验收，不能沿用旧版结果。本次发布本机已验收的 Mac 包；下方 0.2.5 双平台下载保留。GitHub 云构建因账号付款/消费额度限制未启动，Windows 0.3.0 包尚待构建。
+
+[下载 0.3.0 Mac 便携包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.3.0/TFC-0.3.0-macOS-arm64.zip) · [0.3.0 发布页与校验文件](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.3.0)
 
 ## 上一版本 0.2.5
 
@@ -110,7 +112,7 @@ node scripts/run_python.mjs scripts/package_release.py
 node scripts/run_python.mjs scripts/validate_portable_release.py
 ```
 
-当前开发版本自动测试含 64 项引擎 Python、50 项 TypeScript、8 项打包/迁移 Python 与 Mac 12 项 Rust 测试（Windows 为 11 项）；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
+0.3.0 本机自动测试含 85 项引擎 Python、70 项 TypeScript、9 项打包/迁移 Python 与 Mac 14 项 Rust 测试；Windows 0.3.0 尚待原生验收；数值验收另有 25 项检查及原始 Golden 301 点比对。`tmm==0.2.0` 仅为独立验证依赖，生产计算不调用它。
 
 各平台在对应系统打包 Python 目录环境；不能在 Mac 上声称生成已验证的 Windows 包。Windows 默认只构建便携目录，要求目标电脑已有 WebView2；离线安装器配置另行保留，尚未验收。Windows 实测与未完成项见本版验收记录。GitHub Actions 已接入，在线构建结果以 Actions 页面为准。
 
