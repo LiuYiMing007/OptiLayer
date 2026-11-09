@@ -1,0 +1,18 @@
+{
+  "auxiliary_cannot_mutate_workspace": false,
+  "command_routed_once_to_main": true,
+  "disabled_command_blocked": true,
+  "native_enabled_and_checked_sync": true,
+  "native_menu": true,
+  "native_tool_windows": true,
+  "platform": "macos",
+  "spectrum_close_hide_restore": true,
+  "tool_cannot_mutate_workspace": true,
+  "tool_close_hide_restore": true,
+  "tool_command_routed_once": true,
+  "tool_projection_ordered": true,
+  "windows_auxiliary_close_hide_restore": false,
+  "workspace_untouched": true,
+  "version": "0.3.0",
+  "limits": "Native window lifecycle/state/routing checks; visual placement and interactive clicks on Windows need a real-device review."
+}

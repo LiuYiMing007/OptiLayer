@@ -138,6 +138,15 @@ function engineDevBridge(): Plugin {
               },
             },
           );
+          // Stop isolated analysis when the user cancels the request.
+          const analysis = action === "optimize" || action === "agent";
+          const timer = analysis
+            ? setTimeout(() => child.kill(), 150000)
+            : undefined;
+          if (analysis)
+            res.on("close", () => {
+              if (!res.writableEnded) child.kill();
+            });
           let output = "",
             error = "";
           child.stdout.on("data", (chunk) => (output += chunk.toString()));
@@ -149,6 +158,7 @@ function engineDevBridge(): Plugin {
             }
           });
           child.on("close", (code) => {
+            if (timer) clearTimeout(timer);
             if (!res.writableEnded) {
               res.statusCode = code === 0 ? 200 : 500;
               res.end(

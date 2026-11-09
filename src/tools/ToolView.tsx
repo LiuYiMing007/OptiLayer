@@ -1,3 +1,4 @@
+import { OptimizationTool, AgentTool } from "../DesignTools";
 import DistributionWindow from "../DistributionWindow";
 import WindowConfiguration from "../WindowConfiguration";
 import { defaultWindowPreferences } from "../windowPreferences";
@@ -102,6 +103,10 @@ export default function ToolView({
           {s.notice}
         </p>
       )}
+      {id === "optimization" && (
+        <OptimizationTool snapshot={s} send={dispatch} />
+      )}
+      {id === "agent" && <AgentTool snapshot={s} send={dispatch} />}
       {id === "distribution" && (
         <DistributionWindow project={s.project} update={update} />
       )}

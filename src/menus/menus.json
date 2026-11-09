@@ -160,6 +160,16 @@
         "implemented": true
       },
       {
+        "id": "analysis.optimization",
+        "label": "膜系自动优化…",
+        "implemented": true
+      },
+      {
+        "id": "analysis.agent",
+        "label": "AI Agent…",
+        "implemented": true
+      },
+      {
         "separator": true
       },
       {

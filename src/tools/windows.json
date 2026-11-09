@@ -134,5 +134,21 @@
     "height": 280,
     "minWidth": 340,
     "minHeight": 220
+  },
+  {
+    "id": "optimization",
+    "title": "膜系自动优化",
+    "width": 820,
+    "height": 720,
+    "minWidth": 620,
+    "minHeight": 460
+  },
+  {
+    "id": "agent",
+    "title": "AI Agent",
+    "width": 720,
+    "height": 740,
+    "minWidth": 500,
+    "minHeight": 480
   }
 ]

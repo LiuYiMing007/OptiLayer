@@ -2,6 +2,7 @@ import { changeLayer } from "../layerCommands";
 import { interactiveProject } from "../interactiveModel";
 import { flushSync } from "react-dom";
 import { request } from "../api";
+import type { Spectrum } from "../types";
 import type { Material } from "../types";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -35,6 +36,8 @@ interface Status {
 }
 // Only mounted after the host explicitly authorizes --window-ipc-self-test.
 // Reuses production IPC hooks and child React windows, with pure catalogue reads; never mounts App or opens a Workspace.
+const toolMenuCommand = (id: string) =>
+  `${["optimization", "agent"].includes(id) ? "analysis" : "view"}.${id}`;
 export default function WindowIpcCheck() {
   const [inspectedName, setInspectedName] = useState("TFC/SOPRA/AG");
   const [focus, setFocus] = useState<ToolSnapshot["focus"]>();
@@ -109,7 +112,7 @@ export default function WindowIpcCheck() {
   );
   const commands = Object.fromEntries(
     toolDefinitions.map((d) => [
-      `view.${d.id}`,
+      toolMenuCommand(d.id),
       { enabled: true, checked: !!host.visible[d.id] },
     ]),
   );
@@ -122,7 +125,7 @@ export default function WindowIpcCheck() {
       commands,
     },
     (id) => {
-      const tool = id.slice(5) as ToolId;
+      const tool = id.split(".")[1] as ToolId;
       if (toolDefinitions.some((d) => d.id === tool))
         void host.show(tool).catch((e) => setError(String(e)));
     },
@@ -162,6 +165,69 @@ export default function WindowIpcCheck() {
       );
     }
     void (async () => {
+      // Exercise the actual frozen analysis process, cancellation and API validation.
+      const desired = structuredClone(project);
+      desired.layers[0].thickness_nm *= 1.1;
+      const target = await request<Spectrum>({
+        action: "calculate",
+        project: desired,
+      });
+      const fitProject = structuredClone(project);
+      fitProject.target_points = target.wavelength_nm
+        .filter((_, i) => i % 30 === 0)
+        .map((wavelength_nm) => ({
+          wavelength_nm,
+          T_percent:
+            target.T_percent[target.wavelength_nm.indexOf(wavelength_nm)],
+        }));
+      const fitRequest = {
+        action: "optimize",
+        project: fitProject,
+        variables: [
+          {
+            side: "front",
+            id: fitProject.layers[0].id,
+            min_nm: 30,
+            max_nm: 120,
+          },
+        ],
+        max_evaluations: 80,
+      };
+      const fit = await invoke<{ initial_rmse: number; final_rmse: number }>(
+        "design_request",
+        { id: "native-fit", request: fitRequest },
+      );
+      if (!(fit.final_rmse < fit.initial_rmse * 0.01))
+        throw new Error("原生优化未改善目标误差");
+      report.native_optimization = {
+        initial_rmse: fit.initial_rmse,
+        final_rmse: fit.final_rmse,
+      };
+      const cancelled = invoke("design_request", {
+        id: "native-cancel",
+        request: fitRequest,
+      }).then(
+        () => false,
+        (error) => String(error).includes("停止"),
+      );
+      await new Promise((r) => setTimeout(r, 100));
+      await invoke("design_cancel", { id: "native-cancel" });
+      if (!(await cancelled)) throw new Error("分析进程停止未生效");
+      report.native_analysis_cancel = true;
+      const missingKeyRejected = await invoke("design_request", {
+        id: "native-agent",
+        request: {
+          action: "agent",
+          project,
+          prompt: "分析",
+          config: { api_key: "", model: "test" },
+        },
+      }).then(
+        () => false,
+        (error) => String(error).includes("API Key"),
+      );
+      if (!missingKeyRejected) throw new Error("AI 连接校验未生效");
+      report.agent_configuration_validation = true;
       const catalogue = await request<{ materials: Material[] }>({
         action: "catalogue_list",
       });
@@ -226,7 +292,7 @@ export default function WindowIpcCheck() {
         if (id === "settings") continue;
         await latest.current.host.hide(id);
         await until((s) => !s.visible[id]);
-        await invoke("window_check_dispatch", { id: `view.${id}` });
+        await invoke("window_check_dispatch", { id: toolMenuCommand(id) });
         await until(
           (s) => s.visible[id] && s.ready[`tool-${id}`] === project.id,
         );
@@ -282,7 +348,10 @@ export default function WindowIpcCheck() {
       report.shared_project_rendered = true;
       report.close_hide_reopen = true;
       await latest.current.host.hideAll();
-      await until((s) => toolDefinitions.every((d) => !s.visible[d.id]) && !s.visible.spectrum);
+      await until(
+        (s) =>
+          toolDefinitions.every((d) => !s.visible[d.id]) && !s.visible.spectrum,
+      );
       report.all_work_windows_hidden = true;
       await latest.current.host.show("layers");
       await until((s) => s.visible.layers);

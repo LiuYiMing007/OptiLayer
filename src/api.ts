@@ -54,3 +54,36 @@ export async function checkMaterials(materials: import("./types").Material[]) {
     materials,
   });
 }
+
+// Analysis runs separately from the shared calculation queue and can be stopped.
+export async function designRequest<T>(
+  body: Record<string, unknown>,
+  signal: AbortSignal,
+): Promise<T> {
+  if (signal.aborted) throw new Error("分析已停止");
+  if (!isTauri()) {
+    if (!import.meta.env.DEV) throw new Error("请在桌面版中使用分析功能");
+    const response = await fetch("/__engine", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal,
+    });
+    const result = await response.json();
+    if (!response.ok || result.error)
+      throw new Error(result.error || "分析失败");
+    return result;
+  }
+  const id = crypto.randomUUID();
+  const cancel = () => {
+    void invoke("design_cancel", { id }).catch(() => {});
+  };
+  signal.addEventListener("abort", cancel, { once: true });
+  try {
+    const result = await invoke<T>("design_request", { id, request: body });
+    if (signal.aborted) throw new Error("分析已停止");
+    return result;
+  } finally {
+    signal.removeEventListener("abort", cancel);
+  }
+}

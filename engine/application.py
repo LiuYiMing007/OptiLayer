@@ -37,6 +37,12 @@ def dispatch(request, workspace=None):
     if action=='material_validate':return {'material':prepare_material(request['material'])}
     if action=='catalogue_list':return {'materials':catalogue_summaries()}
     if action=='catalogue_get':return {'material':catalogue_material(request['name'])}
+    if action=='optimize':
+        from optimization import optimize
+        return optimize(request['project'],request['variables'],request.get('max_evaluations',120))
+    if action=='agent':
+        from agent import run_agent
+        return run_agent(request['project'],request['prompt'],request['config'],request.get('history'))
     if action=='calculate':return calculate(request['project'])
     if action=='calculate_rt':return calculate_rt(request['project'],request['wavelength_nm'],request.get('polarization'))
     if action=='analyze':return analyze_spectrum(request['spectrum'],request.get('bands'))

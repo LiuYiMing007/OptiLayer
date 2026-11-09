@@ -70,6 +70,8 @@ test("compact menu catalogue has six categories while toolbar commands remain av
       "calculate.spectrum",
       "analysis.interactive",
       "analysis.details",
+      "analysis.optimization",
+      "analysis.agent",
       undefined,
       "view.targets",
     ],

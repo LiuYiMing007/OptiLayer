@@ -27,7 +27,9 @@ export type ToolId =
   | "groups"
   | "stack"
   | "windowconfig"
-  | "distribution";
+  | "distribution"
+  | "optimization"
+  | "agent";
 export interface ToolSnapshot {
   windowPreferences?: WindowPreferences;
   environmentPending?: boolean;
@@ -95,6 +97,7 @@ export type ToolAction = { scope: string; requestId: string } & (
   | { kind: "material-restore"; name: string }
   | { kind: "material-inspect"; name: string; substrate: boolean }
   | { kind: "patch"; patches: Patch[] }
+  | { kind: "design-apply"; expected: Project; proposal: Project }
   | {
       kind: "interactive";
       session: string;

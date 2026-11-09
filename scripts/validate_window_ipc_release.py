@@ -18,6 +18,8 @@ assert report['warm_calculation_service'] and report['material_management_button
 assert report['shared_project_rendered'] and report['close_hide_reopen'] and not report['workspace_used'],report
 assert before==hashes(),'window IPC check touched Workspace/layout'
 assert report['all_work_windows_hidden'] and report['reopen_after_hide_all'], report
+assert report['native_optimization']['final_rmse'] < report['native_optimization']['initial_rmse'] * .01
+assert report['native_analysis_cancel'] and report['agent_configuration_validation'], report
 report.update(version=json.loads((root/'package.json').read_text())['version'],limits='Real frontend IPC and React tool rendering; does not simulate physical mouse clicks on native OS menus or validate display scaling.')
 checks=root/'release/checks';checks.mkdir(parents=True,exist_ok=True)
 (checks/'window-ipc.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')

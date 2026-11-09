@@ -6,6 +6,7 @@ use std::{
     sync::Mutex,
 };
 mod calculation_worker;
+mod design_jobs;
 mod menu_check;
 mod menus;
 mod portable;
@@ -574,6 +575,7 @@ fn main() {
     }
     tauri::Builder::default()
         .manage(WorkspaceSelection::default())
+        .manage(design_jobs::DesignJobs::default())
         .manage(calculation_worker::CalculationWorker::default())
         .manage(menus::MenuState::default())
         .manage(tools::ToolsState::default())
@@ -615,6 +617,8 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             engine_request,
+            design_jobs::design_request,
+            design_jobs::design_cancel,
             catalogue_read,
             material_check,
             project_pick,

@@ -1,3 +1,4 @@
+import { applyDesignProposal } from "./designProposal";
 import {
   defaultWindowPreferences,
   normalizeWindowPreferences,
@@ -740,6 +741,20 @@ export default function App() {
       interaction.current = { ...session!, last: projectKey(next) };
       return;
     }
+    if (action.kind === "design-apply") {
+      const next = applyDesignProposal(
+        current.current,
+        action.expected,
+        action.proposal,
+      );
+      await request({ action: "validate", project: next });
+      if (action.scope !== scopeRef.current)
+        throw new Error("项目已切换，请重新运行分析");
+      applyDesignProposal(current.current, action.expected, action.proposal);
+      commit(next, false);
+      setNotice("已应用候选膜厚，可通过编辑菜单撤销；请按需保存项目。");
+      return;
+    }
     if (action.kind === "patch") {
       const next = applyPatches(
         current.current,
@@ -984,7 +999,8 @@ export default function App() {
   states["file.recent"].enabled &&= recent.length > 0;
   for (const item of recent)
     states[`file.recent.${item.id}`] = {
-      enabled: !busy && !confirmation && !modal && !savePrompt && !startupChooser,
+      enabled:
+        !busy && !confirmation && !modal && !savePrompt && !startupChooser,
     };
   async function executeCommand(id: string) {
     if (
@@ -1098,6 +1114,12 @@ export default function App() {
         break;
       case "analysis.spectrum":
         await focusPanel("spectrum");
+        break;
+      case "analysis.optimization":
+        await showTool("optimization");
+        break;
+      case "analysis.agent":
+        await showTool("agent");
         break;
       case "analysis.interactive":
         await showTool("interactive");

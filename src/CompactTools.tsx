@@ -346,7 +346,7 @@ export function GroupTable({
         <summary>说明</summary>
         <p className="engineering-help">
           修改系数同步缩放该组前后表面膜厚，可撤销；0
-          为未分组。优化与约束尚未实现。
+          为未分组。自动优化在分析菜单中按实际物理厚度逐层调整，暂不支持组约束。
         </p>
       </details>
     </section>

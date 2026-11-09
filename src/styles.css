@@ -2273,3 +2273,27 @@ body,
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+/* 0.3.0 analysis prototypes */
+.design-tool { padding: 12px; display: grid; gap: 10px; }
+.design-tool h2, .design-tool h3, .design-tool p { margin: 0; }
+.design-tool p { line-height: 1.6; }
+.design-tool fieldset { border: 0; padding: 0; min-width: 0; display: grid; gap: 8px; }
+.design-tool label { display: flex; gap: 8px; align-items: center; }
+.design-tool label input { flex: 1; min-width: 80px; }
+.design-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.design-layer-list { overflow: auto; max-height: 240px; }
+.design-layer-list input[type=number] { width: 90px; }
+.design-proposal { display: grid; gap: 10px; border-top: 1px solid #aaa6; padding-top: 10px; }
+.design-proposal table { width: 100%; }
+.design-preview { height: 260px; min-height: 260px; }
+.design-preview > div { height: 100%; }
+.agent-tool textarea { width: 100%; min-width: 0; resize: vertical; }
+.agent-chat { max-height: 280px; overflow: auto; display: grid; gap: 10px; }
+.agent-chat article { padding: 10px; background: #8a9daa12; border-radius: 6px; }
+.agent-chat article.user { background: #4c9fbf18; }
+.agent-chat p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.agent-tool pre { max-height: 220px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.agent-tool details fieldset { margin: 10px 0; }
+
+.agent-tool label:has(textarea) { display: grid; }
