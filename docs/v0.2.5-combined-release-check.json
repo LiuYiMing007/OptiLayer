@@ -1,0 +1,16 @@
+{
+  "all_pass": true,
+  "version": "0.2.5",
+  "source_code_commit": "7967206",
+  "windows_package_matches_local_acceptance": true,
+  "all_original_archive_payloads_unchanged": true,
+  "no_private_workspace_in_package": true,
+  "combined_mac_codesign_verified": true,
+  "combined_mac_actual_host_and_move_exact_recalculation": true,
+  "sha256": {
+    "TFC-0.2.5-macOS-arm64.zip": "3c0581b40190c42ff1f23350ce856b73c1f40b78edbc93f3219af0e6ceecfd1c",
+    "TFC-0.2.5-Windows-x64-portable.zip": "f86b9913baa8eaa6be59691512a6f2cc2a4a1a8829eede9e68b9b09f1a771483",
+    "TFC-0.2.5-macOS-Windows-portable.zip": "3b58a74e11f7370c8d6b8c2ac1beedbb7137aa855722436d3a78e23884f2a5c4"
+  },
+  "limits": "Windows execution verified on Windows according to committed local acceptance; no physical drive-letter, disconnect, TFCalc or display-scaling claim."
+}

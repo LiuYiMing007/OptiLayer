@@ -1,10 +1,12 @@
-# TFC · 0.2.5 发布候选
+# TFC · 0.2.5
 
-当前 main 已完成 0.2.5 菜单、H/L 材料选择及项目关闭/最近项目调整。Mac 本地检查通过，Windows 云端验收重试仍被 GitHub 付款／支出限额阻止（[任务](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42532431092)），尚未创建正式标签或替换下载包。详见 [0.2.5 更新报告](docs/更新报告/0.2.5更新报告.md)。
+0.2.5 汇总工程桌面菜单、环境先行、真实 TFD 保存、H/L 原库换料、材料/基底管理和关闭流程修复。Mac 与 Windows 已分别完成本地构建及验收；Windows 保存卡住、工具窗残留的缺陷已复验通过。两端程序源码为 `7967206`，后续提交只更新验收和发布文档。
 
-此前 main 另有未编号的 [启动打开文件流程预览](docs/启动打开文件流程预览.md)与 [TFD 保存与窗口流程预览](docs/TFD保存与窗口流程预览.md)：真实 TFD 写出、原生另存为、统一环境与可配置窗口。它尚未替换下方已发布包；原版 TFCalc 实机读取和锥角积分的边界见预览说明。
+[下载双系统便携包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5/TFC-0.2.5-macOS-Windows-portable.zip) · [全部下载及校验文件](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5) · [更新报告](docs/更新报告/0.2.5更新报告.md) · [Windows 实机记录](docs/Windows-0.2.5-验收记录.md)
 
-[0.2.5-dev.2 开发预览](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5-dev.2)修复材料/基底窗口排版回归，恢复默认完整逐波长数据查看，支持保留草稿时浏览其他材料，统一隐藏旧自定义集合标签。[更新报告](docs/更新报告/0.2.5-dev.2更新报告.md)。保留 dev.1 的纵轴范围和膜厚显示改进。[Mac 与 Windows 标签验收](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42460247761)均已通过；下方 0.2.4 仍为正式版。
+GitHub 云端构建仍受账号额度限制，本版使用两台本地电脑已验证的原生程序包发布，未将失败云任务标为通过。合并包已核对逐文件内容、Mac 签名、实际入口定位及目录搬迁精确复算。物理断网/换盘符、显示缩放和原版 TFCalc 实机复算的未覆盖范围见验收记录。
+
+此前的 [启动打开文件流程](docs/启动打开文件流程预览.md)、[TFD 保存与窗口流程](docs/TFD保存与窗口流程预览.md)及 dev.1/dev.2 修复已纳入本版。旧版本标签和下载保留。
 
 0.2.4 补齐紧凑材料和基底窗口的新增、删除、恢复与独立文件保存，移除“自定义”分类及四条未修改演示常数的共享记录。旧项目快照保留。
 
@@ -16,7 +18,7 @@
 
 材料与基底使用窄搜索目录，支持来源筛选、50 行分页，点击打开独立完整 n/k 数据表；内置记录编辑时建立用户副本。新增原创光学图标。旧项目、便携工作区、单一 Project State 和 0.1.5 的多窗口能力继续保留。
 
-[下载双系统合并包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.4/TFC-0.2.4-macOS-Windows-portable.zip) · [全部下载](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.4) · [0.2.4 更新报告](docs/更新报告/0.2.4更新报告.md) · [材料验收及异常清单](docs/0.2.0-材料与基底导入验收.md)
+[下载双系统合并包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5/TFC-0.2.5-macOS-Windows-portable.zip) · [全部下载](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5) · [0.2.4 更新报告](docs/更新报告/0.2.4更新报告.md) · [材料验收及异常清单](docs/0.2.0-材料与基底导入验收.md)
 
 Mac 为 Apple Silicon / macOS 14+，Windows 为 x64 / WebView2。两个客户端使用同一套 Workspace 数据。升级只替换 `macOS` 和 `Windows` 程序子目录，保留 `Workspace`、`Workspaces`、`.tfc`，不要用空目录覆盖数据。材料目录已打入两端程序，无需原 TFCalc 文件夹或联网。
 
