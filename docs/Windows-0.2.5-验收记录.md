@@ -1,14 +1,14 @@
 # Windows 0.2.5 本地验收记录
 
-日期：2026-11-09。源码基线：`12994e8`，加同分支后续提交中的 Windows 测试读取修正、包内 README 修正、验收记录与截图说明修正。此文件记录实际执行结果，不是正式发布证明。
+日期：2026-11-09。源码：`7967206`（含保存/关闭流程修复）。此文件记录实际执行结果，不是正式发布证明。
 
 ## 结论
 
-- Windows x64 本地编译、自动检查和便携打包已完成；ZIP 与 SHA-256 已生成并校验。
-- 真实窗口验收主要项已完成，包括膜堆 AL2O3、材料增删恢复、命名保存、TFD 重开复算、整包移动和最近项目失效提示。
-- 确认一个关闭流程缺陷：修改已打开项目后选“保存并继续”，会叠加保存命名对话框；保存写出 `(n).tfd` 后界面一直停在“正在保存…”，项目不关闭。复验时已回退临时前端改动，未把未验证修复带入候选包。
-- 另一个疑点：选“不保存”后主光谱隐藏，但 3 个工具窗口仍报告可见，需复验。
-- 未创建 `v0.2.5` 正式标签，未发布 GitHub Release。Mac 不应仅凭本记录发布正式版。
+- Windows x64 本地编译、自动检查、九类发布校验和便携打包已完成；ZIP 与 SHA-256 已生成并校验。
+- 关闭流程修复已在 Windows 实机复验：保存确认先结束，只保留命名窗口；保存后全部工作窗口隐藏，不再转圈或叠加。
+- 已保存项目修改后直接保存关闭、取消命名、取消关闭、保存失败均保持正确状态；同时打开 materialdata/distribution/rear 后选“不保存”也能一次隐藏全部工作窗。
+- 基底新增/删除/恢复、组系数联动、外部位置另存为已补验；基底“编辑”入口在本次自动化中未成功打开编辑器，未判通过。
+- 未创建 `v0.2.5` 正式标签，未发布 GitHub Release。
 
 ## 环境
 
@@ -30,84 +30,68 @@
 |---|---|
 | `npm test` | 75 Python + 67 TypeScript + 9 打包/迁移通过 |
 | `npm run validate:optics` | 25 项通过；Golden 最大误差 `7.838345368327282e-07` 百分点 |
-| `cargo test --locked` | 13 项通过（交接文档写的 14 项与当前源码实际数量不符，以实际 13 项为准） |
+| `cargo test --locked` | 13 项通过 |
 | `npm run build` | 通过 |
 | `npm run mobile:build` + `check_mobile_build.mjs` | 通过，1211 条材料/基底，离线资源完整 |
 | `npm run engine:bundle` | PyInstaller Windows x64 冻结成功 |
-| `npm run tauri -- build ... --no-bundle` | 通过，生成 `tfc-for-mac.exe` |
+| `npm run tauri -- build ... --no-bundle` | 通过 |
 | `stage_release.py` | 生成 `release/Windows/TFC`，含 `TFC.exe` 与 `engine/_internal` |
 
-发布校验九类报告全部为 `all_pass: true`：
+九类发布校验全部 `all_pass: true`。新窗口 IPC 检查同时确认：
 
-- `native-menu.json`
-- `window-ipc.json`（17 个工具入口/共享状态）
-- `catalogue.json`（1211 条，1186 ready，25 quarantined）
-- `project-flow.json`（TFD 记录保真，R/T 误差 0）
-- `tfd-import.json`（GB18030、组系数、有限环境）
-- `environment.json`（独立实现最大误差 `6.39e-13` 百分点）
-- `packaged-workspace.json`（121 点光谱精确复算）
-- `workspace-folders.json`（8 个实际目录窗口确认）
-- `portable-location.json`（整体搬迁、相对路径、缺失工作区不重建）
+- `all_work_windows_hidden: true`
+- `reopen_after_hide_all: true`
+- 17 个工具入口及共享状态通过
 
-`workspace-folders` 首次运行在 Explorer COM 枚举处超时；重启桌面后原命令复跑通过，报告已生成。该超时未复现为产品错误。
+`workspace-folders` 的 Explorer COM 枚举在上一轮曾超时，本轮直接通过。
 
 ## 便携包
 
 - 文件：`release/assets/TFC-0.2.5-Windows-x64-portable.zip`
-- 大小：56,200,716 字节
-- SHA-256：`95e38707dd2bea04a12f66e5e300b91b0974d070556c5e1269cbcb7785263ccb`
-- 内容：158 个条目；含 `TFC/Windows/TFC.exe`、`TFC/Windows/engine/tfc-engine.exe`、`engine/_internal`；不含 `Workspace`、`.tfc`、数据库或用户材料。
-- 包内 `README.txt` 已改为默认 `.tfd`、内部完整快照和可选 `.tfc.json` 的当前关系；旧“项目 JSON”描述已移除。
+- 大小：56,212,824 字节
+- SHA-256：`f86b9913baa8eaa6be59691512a6f2cc2a4a1a8829eede9e68b9b09f1a771483`
+- 含 `TFC/Windows/TFC.exe`、`TFC/Windows/engine/tfc-engine.exe`、`engine/_internal`
+- 不含 `Workspace`、`.tfc`、SQLite 或用户材料
+- 包内 README 为默认 `.tfd`、内部完整快照和可选 `.tfc.json` 的当前关系
 
 ## 真实窗口验收
 
-通过实际启动解压后的 `TFC/Windows/TFC.exe`、独立测试 Workspace 和真实菜单/窗口操作完成：
+通过实际启动从新 ZIP 解压的 `TFC/Windows/TFC.exe`、独立测试 Workspace 和真实渲染界面完成：
 
 | 项目 | 结果 | 说明 |
 |---|---|---|
-| 启动只出现打开文件 | 通过 | 打开对话框默认定位 `Workspace/projects`；取消后仅剩菜单窗口，主窗未强制出现 |
-| 菜单可用 | 通过 | 文件菜单可展开，新建/打开/最近/关闭/保存等项可见；主窗未因打开菜单被强制显示 |
-| 打开有效 TFD | 通过 | 先出现环境窗口；完成后主光谱与前表面 4 层，材料为 `TA2O5_REF/SIO2_REF` |
-| 工具窗口打开/移动/关闭/再开 | 通过，但有启动延迟 | 配置全部窗口后实际出现光谱 + 13 个工具窗；逐窗移动坐标已记录；13 个工具窗关闭后仅主窗+菜单保留；关闭项目再重开可恢复。窗口约 20 秒才全部出现 |
-| 关闭项目（未修改） | 通过 | 不弹保存提示，工作窗口全部隐藏，仅菜单保留 |
-| 关闭项目（已修改） | 失败 | 出现“保存项目更改？”；“取消”通过。“保存并继续”会再叠加保存命名对话框，保存写出 `(n).tfd` 后界面持续停在“正在保存…”，项目不关闭。“不保存”后主光谱隐藏，但 `materialdata/distribution/rear` 三个工具窗仍报告可见 |
-| 最近项目子菜单 | 通过 | 可直接重开文件并先进入环境；整包移动后最近项失效，界面明确报“系统找不到指定的文件 (os error 2)”，没有误开其它项目 |
-| 交互式分析联动 | 通过 | 前表面 QWOT 1→2，物理厚度 65.48→130.95 nm，曲线同步变化；撤销恢复 65.48/1.0000，重做恢复 130.95/2.0000；组系数联动未单独操作 |
-| 结果显示光谱曲线 | 通过 | 关闭光谱后主窗隐藏；调用“结果显示光谱曲线”命令后同一项目、同一光谱重新显示 |
-| 工具栏“项目”原生对话框 | 通过 | 原生对话框默认定位 `Workspace/projects`；取消后当前项目名和光谱指标不变 |
-| 膜堆表达式 H→AL2O3 | 通过 | 新项目 H=TA2O5、L=SIO2；H 手工输入 AL2O3 后先预览再生成，得到 AL2O3/SIO2 四层（84.36/94.50 nm，1.0000 QWOT），T@550=99.9683%；无效名被拒绝且“预览/替换”禁用 |
-| 材料/基底逐项编辑 | 材料通过，基底部分 | 新增 `WIN验收材料`（n=2.05）并写入 `materials/films/WIN验收材料.material.json`；搜索、删除、恢复均成功，未出现“自定义”分类；基底窗口可列出 814 条并打开数据文件夹，但未做基底新增/编辑 |
-| 纵轴范围、两位物理厚度、QWOT 四位 | 通过 | 自定义纵轴 90–100% 已应用；膜层表显示 `84.36`/`94.50` nm 和 `1.0000` QWOT |
-| 命名保存、另存为、重新打开复算 | 通过，另存为只验证对话框 | 已命名保存 `.tfc.json` 和 `.tfd` 到 `Workspace/projects`；重新打开保存的 TFD 后仍为 4 层 AL2O3/SIO2，T@550=99.9683%、最小值 91.9146%；另存为原生窗口默认 `Workspace/projects`，取消未写文件 |
-| 整包移动后重启 | 通过（目录移动） | 整个 `TFC 便携验收` 目录移到新路径后重启，环境先行、项目重开和光谱复算一致；Workspace 下 projects/materials/spectra/database/imports/exports/config 均存在。未做物理换盘符或断电 |
-| 包内 README 修正 | 通过 | 已重打包并检查 ZIP 内文本 |
+| 启动只出现打开文件 | 通过 | 取消后仅剩菜单，主窗未强制出现 |
+| 打开有效 TFD | 通过 | 先环境、完成后主光谱与前表面 4 层 |
+| 保存并继续（未保存到 Workspace） | 通过 | 保存确认立即结束，只出现一个命名窗，无叠加；命名保存后 TFD 实际写出（QWOT 2、层厚 168.71），全部工作窗隐藏，仅菜单保留 |
+| 已保存项目修改后保存关闭 | 通过 | 项目首次保存后再次修改 QWOT 1.8，关闭选保存，直接写回 `持久化保存验收.tfd`，无命名窗，全部工作窗隐藏 |
+| 取消命名 | 通过 | 命名窗关闭，项目保持打开且未保存修改仍在 |
+| 取消关闭 | 通过 | 保存确认关闭，项目保持打开且未保存修改仍在 |
+| 保存失败 | 通过 | 含自定义分布的 TFD 保存被拒绝，提示改用完整 JSON；项目保留、工作窗未隐藏 |
+| 不保存时隐藏全部工作窗 | 通过 | 同时打开 materialdata/distribution/rear 后选不保存；可见窗口只剩菜单，`tool_visibility` 全部 false |
+| 隐藏后重新打开 | 通过 | 再次打开项目，环境先行和主光谱恢复正常 |
+| 组系数联动 | 通过 | 组 1 系数 2；实际厚度显示 337.42/189.00 nm、QWOT 4.0000/2.0000 |
+| 基底新增/删除/恢复 | 通过 | 新增 `WIN基底验收`（n=1.52），写入 `materials/substrates/WIN基底验收.material.json`；删除后文件移除，撤销删除后文件恢复。基底“编辑”入口未成功打开编辑器，未判通过 |
+| 外部位置另存为 | 通过 | 原生另存为写到 `E:\localsend\0.2.5-Windows验收回传\外部另存验收-7967206.tfd`；TFD 为 4 层，层 1 为 AL2O3/QWOT 2/168.71 |
+| 工具窗口 IPC | 通过 | 新增 `all_work_windows_hidden`、`reopen_after_hide_all` 均为 true |
+| 整包移动后重启 | 通过（目录移动） | 上一轮在独立目录移动和重开后复算一致；本轮未重复物理换盘 |
 
-实际界面操作通过 WebView2 调试端口完成，以避免全屏游戏遮挡前台；读取的是真实渲染 DOM 并调用真实 Tauri 命令/原生对话框，截图由页面直接捕获。
+实际界面操作通过 WebView2 调试端口完成，读取真实渲染 DOM 并调用真实 Tauri 命令及原生对话框；截图由页面或原生窗口捕获。不能证明显示缩放、物理鼠标手感或 GPU 合成效果。
 
-截图随 SSD 回传目录交付，未提交进仓库。建议查看：`02-menu-only.png`、`05-environment-first.png`、`06-main-spectrum.png`、`07-layers-window.png`、`08e-config-all.png`、`16-stack-window.png`、`17-materials-window.png`、`29-interactive-before.png`、`31-interactive-after-keyup.png`、`32b-main-after-qwot2.png`、`33b-layers-after-qwot2.png`、`34-layers-after-undo.png`、`35-layers-after-redo.png`、`36-unsaved-dialog.png`，以及 `21-main-cdp.png` 至 `40-moved-reopened.png` 的新截图。
+## 仍未覆盖
 
-## 发现的跨平台问题与修正
-
-1. `engine/tests/test_tfd_export.py` 用 `Path.read_text()` 读取含中文的 UTF-8 JSON；中文 Windows 默认 GBK，导致 `UnicodeDecodeError`。已显式指定 `encoding='utf-8'`，修复后 75 项 Python 测试通过。这是测试代码可移植性问题，不改变产品计算。
-2. `scripts/package_release.py` 的包内 README 仍写“保存的膜系 JSON”和“.tfc.json”。已改为默认 `.tfd`、内部完整快照、可选 JSON，并重新打包。
-3. 全部工具窗口恢复约需 20 秒，慢于 Mac 记录；本次未判为功能失败，但建议 Mac/Windows 后续观察启动恢复耗时。
-4. 关闭已修改项目时，“保存并继续”会在未保存确认对话框后叠加保存命名对话框；在命名对话框点保存后，TFD 确实写出为新的 `(n).tfd`，但外层一直显示“正在保存…”，项目不关闭。该问题用真实 QWOT 1→2 修改复现，不是测试数据未变化。临时前端修复未解决根因，已回退。
-5. 选“不保存”关闭后，主光谱窗口隐藏，但 `materialdata`、`distribution`、`rear` 仍报告可见；与“关闭后所有工作窗口隐藏”的预期不一致，需复验。
-
-## 验收方法说明
-
-全屏游戏会抢占普通鼠标前台，因此大部分交互通过 WebView2 调试端口读取真实渲染 DOM 并触发真实 Tauri 命令/原生对话框；原生文件对话框用 Win32 子控件完成。该方式绕过了前台遮挡，但不能证明显示缩放、物理鼠标手感或 GPU 合成效果。关闭项目的两个疑点应在无游戏的全屏前台复验。
-
-## 尚未覆盖
-
-- 组系数实时联动未单独操作；交互式 QWOT 联动已通过。
-- 基底只验证了目录列表和数据文件夹，未做基底新增/编辑/删除。
-- 另存为只验证了原生窗口默认位置和取消，未写外部路径文件。
+- 基底“编辑”入口：本次自动点击未打开编辑器，只确认新增、删除、恢复。
 - 物理换盘符、真实断网、原版 TFCalc 实机读取未做。
-- 显示缩放（125%/150%）和物理鼠标操作未验证。
+- 显示缩放 125%/150% 与纯物理鼠标操作未验证。
+- 组系数只验证了系数 2 的厚度联动，未逐项操作组筛选/重排。
+
+## 保留问题与观察
+
+1. 全部工具窗口恢复仍比 Mac 记录慢；上一轮约 20 秒，本轮未精确计时，未判为失败。
+2. `engine/tests/test_tfd_export.py` 的 UTF-8 读取修正和包内 README 修正已包含在源码/包中。
+3. 关闭流程旧缺陷（命名叠加、停在“正在保存…”、三个工具窗残留）在 `7967206` 上未复现，保留旧记录作为历史证据。
 
 ## Mac 整合建议
 
-- 从同一源码提交重新构建 Mac 包：`scripts/package_release.py` 已改动包内 README，Mac 包也应使用新文本；测试读取修正不影响 Mac 产物。
-- 不要把本记录当作 Windows 全验收通过。正式 `v0.2.5` 前必须修复并复验“保存并继续”关闭流程；再检查“不保存”后工具窗隐藏，补组联动、基底编辑和物理 SSD 搬迁。
-- 保留本次 ZIP、SHA-256、`release/checks/` 和回传截图供 Mac 对照；不要覆盖旧标签或发布未验证的平台包。
+- 从 `7967206` 重新构建 Mac 包并保留本次 ZIP/SHA-256、`release/checks/`、截图和记录。
+- 正式发布前仍需物理 SSD 换盘/断电、显示缩放和基底编辑入口复核。
+- 不覆盖旧标签，不把本记录当作物理 SSD 或原版 TFCalc 兼容证明。
