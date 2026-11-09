@@ -105,6 +105,18 @@ export function useToolHost(
     if (isTauri()) await invoke("tool_hide", { id });
     else setVisible((v) => ({ ...v, [id]: false }));
   }
+  async function hideAll() {
+    if (isTauri()) await invoke("tool_hide_all");
+    else
+      setVisible((v) =>
+        Object.fromEntries(
+          Object.entries(v).map(([id, value]) => [
+            id,
+            id === "remember" ? value : false,
+          ]),
+        ),
+      );
+  }
   async function spectrum(visible: boolean) {
     if (isTauri()) await invoke("tool_spectrum", { visible });
     else setVisible((v) => ({ ...v, spectrum: visible }));
@@ -113,5 +125,5 @@ export function useToolHost(
     if (isTauri()) await invoke("tool_remember", { enabled });
     else setVisible((v) => ({ ...v, remember: enabled }));
   }
-  return { visible, opened, show, hide, remember, spectrum };
+  return { visible, opened, show, hide, hideAll, remember, spectrum };
 }

@@ -69,6 +69,7 @@ import type {
 
 const appVersion =
   tfcRevision > 1 ? `${version} · 修订${tfcRevision}` : version;
+type LeaveChoice = "cancel" | "discard" | "save";
 type Modal =
   "projects" | "materials" | "about" | "workspace" | "shortcuts" | null;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -80,6 +81,7 @@ export default function App() {
   const [hasProject, setHasProject] = useState(false);
   const [startupChooser, setStartupChooser] = useState(!isTauri());
   const startupStarted = useRef(false);
+  const windowTransition = useRef(0);
   const [savePrompt, setSavePrompt] = useState<{
     initial: string;
     copy: boolean;
@@ -113,7 +115,7 @@ export default function App() {
   const [modal, setModal] = useState<Modal>(null),
     [projects, setProjects] = useState<SavedProject[]>([]);
   const [confirmation, setConfirmation] = useState<
-    ((answer: boolean) => void) | null
+    ((answer: LeaveChoice) => void) | null
   >(null);
   const [inspectedMaterial, setInspectedMaterial] = useState<{
     name: string;
@@ -481,13 +483,13 @@ export default function App() {
   }
   async function closeProject() {
     if (!(await canReplace())) return;
+    windowTransition.current++;
     replace(referenceProject());
     setHasProject(false);
     setEnvironmentPending(false);
     queue.current!.reset();
     setCalculating(false);
-    for (const tool of toolDefinitions) await host.hide(tool.id as ToolId);
-    await host.spectrum(false);
+    await host.hideAll();
   }
   async function rememberFile(path: string) {
     try {
@@ -549,7 +551,7 @@ export default function App() {
     project,
     selected,
     layerSide,
-    busy: busy || !!confirmation || !!modal,
+    busy: busy || !!confirmation || !!modal || !!savePrompt,
     calculating,
     dirty,
     persisted,
@@ -580,25 +582,30 @@ export default function App() {
       await refreshLibrary();
   }
   async function beginProjectWindows() {
+    const transition = ++windowTransition.current;
     setEnvironmentPending(true);
-    for (const tool of toolDefinitions) await host.hide(tool.id as ToolId);
-    await host.spectrum(false);
-    await showTool("environment");
+    await host.hideAll();
+    if (transition === windowTransition.current) await showTool("environment");
   }
   async function completeEnvironment() {
+    const transition = windowTransition.current;
     setError("");
     // Validate the whole environment before leaving the first step.
     await request({ action: "validate", project: current.current });
     const selected = isTauri()
       ? normalizeWindowPreferences(await invoke("tool_preferences"))
       : windowPreferences;
+    if (transition !== windowTransition.current) return;
     setWindowPreferences(selected);
     setEnvironmentPending(false);
     await host.hide("environment");
+    if (transition !== windowTransition.current) return;
     await host.spectrum(selected.openWindows.includes("spectrum"));
-    for (const id of selected.openWindows)
+    for (const id of selected.openWindows) {
+      if (transition !== windowTransition.current) return;
       if (id !== "spectrum")
         await showTool(id as ToolId, id === "layers" ? "选择正面膜层" : "");
+    }
   }
   async function focusMain() {
     if (isTauri()) await invoke("tool_focus_main");
@@ -963,7 +970,7 @@ export default function App() {
   const states = commandStates({
     projectOpen: hasProject,
     busy,
-    blocked: !!confirmation || !!modal || startupChooser,
+    blocked: !!confirmation || !!modal || !!savePrompt || startupChooser,
     workspace: !!workspace && !workspaceError,
     canUndo: !!past.length,
     canRedo: !!future.length,
@@ -977,7 +984,7 @@ export default function App() {
   states["file.recent"].enabled &&= recent.length > 0;
   for (const item of recent)
     states[`file.recent.${item.id}`] = {
-      enabled: !busy && !confirmation && !modal && !startupChooser,
+      enabled: !busy && !confirmation && !modal && !savePrompt && !startupChooser,
     };
   async function executeCommand(id: string) {
     if (
@@ -1276,9 +1283,14 @@ export default function App() {
     await focusMain();
     asking.current = true;
     try {
-      return await new Promise<boolean>((resolve) =>
+      const choice = await new Promise<LeaveChoice>((resolve) =>
         setConfirmation(() => resolve),
       );
+      // Finish the confirmation before opening the naming dialog or saving.
+      // No hidden confirmation component owns the pending save continuation.
+      if (choice === "cancel") return false;
+      if (choice === "discard") return true;
+      return await save();
     } finally {
       asking.current = false;
     }
@@ -1905,20 +1917,16 @@ export default function App() {
         <UnsavedDialog
           name={project.name}
           cancel={() => {
-            confirmation(false);
+            confirmation("cancel");
             setConfirmation(null);
           }}
           discard={() => {
-            confirmation(true);
+            confirmation("discard");
             setConfirmation(null);
           }}
-          save={async () => {
-            const ok = await save();
-            if (ok) {
-              confirmation(true);
-              setConfirmation(null);
-            }
-            return !!ok;
+          save={() => {
+            confirmation("save");
+            setConfirmation(null);
           }}
         />
       )}

@@ -336,6 +336,23 @@ pub fn tool_hide(
     persist_later(app);
     Ok(())
 }
+// Hide every work window inside the host, including dynamically opened editors.
+// Serialize against WebView creation; keep the auxiliary Windows menu untouched.
+#[tauri::command]
+pub async fn tool_hide_all(window: tauri::WebviewWindow, app: tauri::AppHandle) -> Result<(), String> {
+    crate::menus::require_main(&window)?;
+    let state = app.state::<ToolsState>();
+    let _opening = state.opening.lock().await;
+    let mut errors = Vec::new();
+    for (label, work) in app.webview_windows() {
+        if label == "main" || label.strip_prefix("tool-").map(valid).unwrap_or(false) {
+            if let Err(error) = work.hide() { errors.push(format!("{label}: {error}")); }
+        }
+    }
+    changed(&app);
+    persist_later(app.clone());
+    if errors.is_empty() { Ok(()) } else { Err(errors.join("；")) }
+}
 #[tauri::command]
 pub fn tool_visibility(app: tauri::AppHandle) -> Value {
     visibility(&app)

@@ -281,6 +281,12 @@ export default function WindowIpcCheck() {
       report.material_and_substrate_editors = true;
       report.shared_project_rendered = true;
       report.close_hide_reopen = true;
+      await latest.current.host.hideAll();
+      await until((s) => toolDefinitions.every((d) => !s.visible[d.id]) && !s.visible.spectrum);
+      report.all_work_windows_hidden = true;
+      await latest.current.host.show("layers");
+      await until((s) => s.visible.layers);
+      report.reopen_after_hide_all = true;
       report.all_pass = true;
     })()
       .catch((e) => {

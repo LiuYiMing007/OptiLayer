@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 export default function UnsavedDialog({
   name,
   save,
@@ -6,13 +6,11 @@ export default function UnsavedDialog({
   discard,
 }: {
   name: string;
-  save: () => Promise<boolean>;
+  save: () => void;
   cancel: () => void;
   discard: () => void;
 }) {
   const ref = useRef<HTMLElement>(null);
-  const [saving, setSaving] = useState(false),
-    [error, setError] = useState("");
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     ref.current?.querySelector<HTMLButtonElement>("[data-cancel]")?.focus();
@@ -28,7 +26,7 @@ export default function UnsavedDialog({
         aria-labelledby="unsaved-title"
         aria-describedby="unsaved-description"
         onKeyDown={(e) => {
-          if (e.key === "Escape" && !saving) {
+          if (e.key === "Escape") {
             e.preventDefault();
             cancel();
           }
@@ -55,39 +53,23 @@ export default function UnsavedDialog({
         <p className="unsaved-help">
           保存后继续，或选择不保存。取消将留在当前项目。
         </p>
-        {error && (
-          <p className="inline-error" role="alert">
-            {error}
-          </p>
-        )}
         <footer>
-          <button data-cancel disabled={saving} onClick={cancel}>
+          <button data-cancel onClick={cancel}>
             取消
           </button>
           <button
             className="discard-button"
-            disabled={saving}
+
             onClick={discard}
           >
             不保存
           </button>
           <button
             className="save-button"
-            disabled={saving}
-            onClick={async () => {
-              setSaving(true);
-              setError("");
-              try {
-                if (!(await save()))
-                  setError("保存未完成，项目仍保留。请检查工作区后重试。");
-              } catch (e) {
-                setError(String(e));
-              } finally {
-                setSaving(false);
-              }
-            }}
+
+            onClick={save}
           >
-            {saving ? "正在保存…" : "保存并继续"}
+            保存并继续
           </button>
         </footer>
       </section>

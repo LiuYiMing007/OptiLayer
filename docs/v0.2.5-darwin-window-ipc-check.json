@@ -1,5 +1,6 @@
 {
   "all_pass": true,
+  "all_work_windows_hidden": true,
   "back_layer_controls_shared_state": true,
   "catalogue_without_workspace": true,
   "close_hide_reopen": true,
@@ -47,8 +48,9 @@
     "distribution"
   ],
   "platform": "macos",
+  "reopen_after_hide_all": true,
   "shared_project_rendered": true,
-  "warm_calculation_ms": 5.999999999996362,
+  "warm_calculation_ms": 5,
   "warm_calculation_service": true,
   "workspace_used": false,
   "version": "0.2.5",

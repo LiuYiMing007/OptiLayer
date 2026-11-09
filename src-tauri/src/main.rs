@@ -634,6 +634,7 @@ fn main() {
             menus::menu_show,
             tools::tool_open,
             tools::tool_hide,
+            tools::tool_hide_all,
             tools::tool_visibility,
             tools::tool_remember,
             tools::tool_preferences,
