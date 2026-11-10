@@ -51,7 +51,16 @@ jobs:
               assert source['workflowName']=='Cross-platform verification and releases'
               assert any(j['name']==job and j['conclusion']=='success' for j in source['jobs']),source
               changed=[p for p in run('git','diff','--name-only','-z',tag_sha,source['headSha']).split('\0') if p]
-              assert all(p=='README.md' or p.startswith('docs/') for p in changed),changed
+              validators={'scripts/validate_menu_release.py','scripts/validate_window_ipc_release.py','scripts/validate_workspace_folders_release.py'}
+              metadata={'.github/workflows/publish_verified_release.yml'}
+              assert all(p=='README.md' or p.startswith('docs/') or p in validators|metadata for p in changed),changed
+              # These files are never program build inputs. Permit only the exact
+              # executable-path correction; all application/engine/build sources
+              # must still match the immutable tag byte-for-byte.
+              for name in validators.intersection(changed):
+                  before=run('git','show',f'{tag_sha}:{name}')
+                  after=run('git','show',f'{source["headSha"]}:{name}')
+                  assert after==before.replace('release/Windows/OptiLayer/TFC.exe','release/Windows/OptiLayer/OptiLayer.exe'),name
               folder=Path('inputs')/platform;checks=Path('checks')/platform
               subprocess.run(['gh','run','download',run_id,'-n','release-'+platform,'-D',str(folder)],check=True)
               subprocess.run(['gh','run','download',run_id,'-n','checks-'+platform,'-D',str(checks)],check=True)
@@ -82,8 +91,8 @@ jobs:
           subprocess.run(['python','scripts/package_combined_release.py','--assets',str(assets),'--version',version],check=True)
           files=sorted(assets.iterdir());assert len(files)==6
           repo=os.environ['GITHUB_REPOSITORY']
-          prefix=f'发布源码：`{tag_sha}`。两端均采用已通过完整验收的 CI 程序包，逐一核对其构建源码与标签只有 README/docs 差异、检查报告及 SHA256。\n\n'
-          prefix+='Mac 标签构建首次因云端 arm64 机器容量不足未能启动；本次采用已成功验收的 Mac CI 包，不将排队或取消写成通过。\n\n'
+          prefix=f'发布源码：`{tag_sha}`。两端均采用已通过完整验收的 CI 程序包，逐一核对构建源码、检查报告及 SHA256。应用、计算引擎和打包输入与不可变标签一致；只允许 README/docs、发布工作流及三份验收脚本中经过精确比对的 Windows 入口路径修正。\n\n'
+          prefix+='改名后的首次验证有旧 Windows 入口路径遗留；本次使用修正验收脚本后重新通过完整检查的双平台构建，不将失败、排队或取消写成通过。\n\n'
           for platform,source in sources.items():
               prefix+=f'- {platform}：[{source["successful_job"]}](https://github.com/{repo}/actions/runs/{source["run"]})，构建源码 `{source["source_sha"]}`。\n'
           notes=prefix+'\n'+run('python','scripts/release_notes.py',tag)+'\n'

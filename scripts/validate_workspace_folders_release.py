@@ -3,7 +3,7 @@ from pathlib import Path
 import json,os,platform,subprocess,tempfile,shutil,base64
 root=Path(__file__).resolve().parents[1]
 system=platform.system()
-host=root/('release/OptiLayer.app/Contents/MacOS/tfc-for-mac' if system=='Darwin' else 'release/Windows/OptiLayer/TFC.exe')
+host=root/('release/OptiLayer.app/Contents/MacOS/tfc-for-mac' if system=='Darwin' else 'release/Windows/OptiLayer/OptiLayer.exe')
 engine=root/('release/OptiLayer.app/Contents/Resources/engine/tfc-engine' if system=='Darwin' else 'release/Windows/OptiLayer/engine/tfc-engine.exe')
 with tempfile.TemporaryDirectory(prefix='tfc-folder-check-') as temp:
     workspace=Path(temp)/'中文 固态盘'/'Workspace'
