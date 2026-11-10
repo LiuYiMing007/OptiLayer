@@ -4,7 +4,9 @@
 
 [0.3.1 更新报告与使用边界](docs/更新报告/0.3.1更新报告.md)。单条光谱反推层厚可能不唯一，补偿候选须工艺复核；原 Optical Core 和旧工作区格式保持。用户实验原件与派生报告不进入 GitHub。
 
-GitHub Actions 已恢复并通过一次Mac/Windows基线验证；0.3.1版本包以本次标签构建及Release实际结果为准。
+[下载 0.3.1 双平台便携包](https://github.com/LiuYiMing007/OptiLayer/releases/download/v0.3.1/OptiLayer-0.3.1-macOS-Windows-portable.zip) · [全部下载与校验文件](https://github.com/LiuYiMing007/OptiLayer/releases/tag/v0.3.1)
+
+GitHub Actions 已恢复：[0.3.1 Mac/Windows 构建与原生验收](https://github.com/LiuYiMing007/OptiLayer/actions/runs/42841234542)及[发布和下载包校验](https://github.com/LiuYiMing007/OptiLayer/actions/runs/42844844354)均成功。不可变版本标签保留；改名后的 Windows 验收入口路径修正与来源核对见更新报告。升级保留原便携目录中的 Workspace、Workspaces、.tfc 和 tfc-project.json，只替换程序子目录；原根目录仍叫 TFC 也可继续使用，必要时从“文件 → 工作区”重新选择。
 
 ## 上一版本 0.3.0
 
