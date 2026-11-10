@@ -339,7 +339,7 @@ function App() {
     <div className="pocket">
       <header>
         <span className="brand">
-          TFC <b>随行</b>
+          OptiLayer <b>随行</b>
         </span>
         <span className="edition">iPhone 预览框架</span>
       </header>
@@ -560,7 +560,7 @@ function App() {
               </p>
             </section>
             <p className="muted">
-              TFC 随行 · 框架预览 0.1 · 材料库 {catalogue.catalogue_version}
+              OptiLayer 随行 · 框架预览 0.1 · 材料库 {catalogue.catalogue_version}
             </p>
           </>
         )}

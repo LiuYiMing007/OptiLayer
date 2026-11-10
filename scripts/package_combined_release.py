@@ -5,28 +5,29 @@ import argparse, hashlib, json, re, zipfile
 def combine_assets(assets, version):
     assets=Path(assets)
     if not re.fullmatch(r'\d+\.\d+\.\d+(?:-dev\.[1-9]\d*)?',version):raise ValueError('Invalid release version')
-    sources=[assets/f'TFC-{version}-macOS-arm64.zip', assets/f'TFC-{version}-Windows-x64-portable.zip']
+    brand = 'OptiLayer' if (assets/f'OptiLayer-{version}-macOS-arm64.zip').exists() else 'TFC'
+    sources=[assets/f'{brand}-{version}-macOS-arm64.zip', assets/f'{brand}-{version}-Windows-x64-portable.zip']
     for source in sources:
         expected=source.with_suffix('.zip.sha256').read_text(encoding='utf-8').split()[0]
         if hashlib.sha256(source.read_bytes()).hexdigest()!=expected:raise ValueError(f'Checksum mismatch: {source.name}')
-    target=assets/f'TFC-{version}-macOS-Windows-portable.zip'
+    target=assets/f'{brand}-{version}-macOS-Windows-portable.zip'
     temporary=target.with_suffix('.zip.tmp')
     seen={}
-    required={'TFC/tfc-project.json','TFC/macOS/TFC.app/Contents/Info.plist','TFC/Windows/TFC.exe','TFC/Windows/engine/tfc-engine.exe'}
+    required={f'{brand}/tfc-project.json',f'{brand}/macOS/{brand}.app/Contents/Info.plist',f'{brand}/Windows/{brand}.exe',f'{brand}/Windows/engine/tfc-engine.exe'}
     try:
         with zipfile.ZipFile(temporary,'w',compression=zipfile.ZIP_DEFLATED) as output:
             for source in sources:
                 with zipfile.ZipFile(source) as original:
                     for member in original.infolist():
                         name=PurePosixPath(member.filename)
-                        if name.is_absolute() or '..' in name.parts or '\\' in member.filename or not name.parts or name.parts[0] not in {'TFC','__MACOSX'}:raise ValueError('Unsafe archive path')
+                        if name.is_absolute() or '..' in name.parts or '\\' in member.filename or not name.parts or name.parts[0] not in {brand,'__MACOSX'}:raise ValueError('Unsafe archive path')
                         if any(p.lower() in {'workspace','workspaces','.tfc','.env'} for p in name.parts):raise ValueError('Private workspace/config in archive')
                         data=original.read(member)
                         if member.filename in seen:
                             previous=seen[member.filename]
                             equivalent=previous==data
-                            if member.filename=='TFC/tfc-project.json':equivalent=json.loads(previous)==json.loads(data)
-                            if member.filename in {'TFC/使用说明.txt','TFC/README.txt'}:equivalent=previous.replace(b'\r\n',b'\n')==data.replace(b'\r\n',b'\n')
+                            if member.filename==f'{brand}/tfc-project.json':equivalent=json.loads(previous)==json.loads(data)
+                            if member.filename in {f'{brand}/使用说明.txt',f'{brand}/README.txt'}:equivalent=previous.replace(b'\r\n',b'\n')==data.replace(b'\r\n',b'\n')
                             if not equivalent:raise ValueError(f'Conflicting archive entry: {member.filename}')
                             continue
                         seen[member.filename]=data

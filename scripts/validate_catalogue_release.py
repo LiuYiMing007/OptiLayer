@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import tempfile
 root=Path(__file__).resolve().parents[1]
-exe=root/('release/TFC.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin' else 'release/Windows/TFC/engine/tfc-engine.exe')
+exe=root/('release/OptiLayer.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin' else 'release/Windows/OptiLayer/engine/tfc-engine.exe')
 with tempfile.TemporaryDirectory(prefix='tfc-catalogue-') as folder:
     workspace=Path(folder)/'中文工作区'
     def call(body,create=False):

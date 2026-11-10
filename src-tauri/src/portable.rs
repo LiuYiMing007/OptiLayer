@@ -33,7 +33,7 @@ pub fn project_root(executable: &Path, development: Option<&Path>) -> Result<Pat
         .components()
         .any(|p| p.as_os_str() == "AppTranslocation")
     {
-        return Err("macOS 正在隔离位置运行应用，无法确定固态盘项目位置。请在工作区设置中选择 TFC 项目文件夹。".into());
+        return Err("macOS 正在隔离位置运行应用，无法确定固态盘项目位置。请在工作区设置中选择 OptiLayer 项目文件夹。".into());
     }
     // Use the .app's parent on macOS; never store data inside its signed bundle.
     let anchor = executable
@@ -50,7 +50,7 @@ pub fn project_root(executable: &Path, development: Option<&Path>) -> Result<Pat
     }
     if anchor.file_name().is_some_and(|n| n == "Applications") {
         return Err(
-            "应用位于 Applications，尚未关联便携项目。请在工作区设置中选择 TFC 项目文件夹。".into(),
+            "应用位于 Applications，尚未关联便携项目。请在工作区设置中选择 OptiLayer 项目文件夹。".into(),
         );
     }
     // A standalone client uses its enclosing folder, never AppData or cwd.

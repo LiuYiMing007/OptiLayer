@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "TFC 随行 · 光学薄膜资料",
-  "short_name": "TFC 随行",
+  "name": "OptiLayer 随行 · 光学薄膜资料",
+  "short_name": "OptiLayer 随行",
   "lang": "zh-CN",
   "start_url": "./mobile.html",
   "scope": "./",

@@ -6,13 +6,7 @@ import type { ToolSnapshot } from "./tools/state";
 import type { ToolIntent } from "./tools/useToolHost";
 import SpectrumChart from "./SpectrumChart";
 
-type Variable = {
-  side: "front" | "back";
-  id: string;
-  min_nm: number;
-  max_nm: number;
-};
-type Candidate = {
+export type Candidate = {
   before: Project;
   project: Project;
   scope: string;
@@ -28,7 +22,7 @@ const rows = (p: Project) =>
   );
 const rowKey = (r: { side: string; id: string }) => `${r.side}:${r.id}`;
 
-function useAnalysis(scope: string) {
+export function useAnalysis(scope: string) {
   const controller = useRef<AbortController | null>(null);
   const [running, setRunning] = useState(false),
     [error, setError] = useState("");
@@ -66,16 +60,22 @@ function useAnalysis(scope: string) {
   return { running, error, setError, run, stop };
 }
 
-function Proposal({
+export function Proposal({
   candidate,
   snapshot,
   send,
   applied,
+  compact = false,
+  title = "候选膜系 · 尚未应用",
+  label = "应用候选（可撤销）",
 }: {
   candidate: Candidate;
   snapshot: ToolSnapshot;
   send: (a: ToolIntent) => Promise<void>;
   applied: () => void;
+  compact?: boolean;
+  title?: string;
+  label?: string;
 }) {
   const [error, setError] = useState(""),
     [applying, setApplying] = useState(false);
@@ -90,36 +90,38 @@ function Proposal({
     projectKey(candidate.before) !== projectKey(snapshot.project);
   return (
     <section className="design-proposal">
-      <h3>候选膜系 · 尚未应用</h3>
+      <h3>{title}</h3>
       {stale && <p role="alert">项目已变化，此候选已过期，请重新运行。</p>}
-      <table className="engineering-sheet">
-        <thead>
-          <tr>
-            <th>膜层</th>
-            <th>材料</th>
-            <th>原厚度 nm</th>
-            <th>候选厚度 nm</th>
-          </tr>
-        </thead>
-        <tbody>
-          {changes.map((r) => (
-            <tr key={rowKey(r)}>
-              <td>
-                {r.side === "front" ? "正面" : "背面"} {r.index + 1}
-              </td>
-              <td>{r.material}</td>
-              <td>
-                {before
-                  .find((b) => rowKey(b) === rowKey(r))
-                  ?.thickness_nm.toFixed(4)}
-              </td>
-              <td>{r.thickness_nm.toFixed(4)}</td>
+      {!compact && (
+        <table className="engineering-sheet">
+          <thead>
+            <tr>
+              <th>膜层</th>
+              <th>材料</th>
+              <th>原厚度 nm</th>
+              <th>候选厚度 nm</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {changes.map((r) => (
+              <tr key={rowKey(r)}>
+                <td>
+                  {r.side === "front" ? "正面" : "背面"} {r.index + 1}
+                </td>
+                <td>{r.material}</td>
+                <td>
+                  {before
+                    .find((b) => rowKey(b) === rowKey(r))
+                    ?.thickness_nm.toFixed(4)}
+                </td>
+                <td>{r.thickness_nm.toFixed(4)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       {!changes.length && <p>候选未改变膜厚。</p>}
-      {candidate.spectrum && (
+      {!compact && candidate.spectrum && (
         <div className="design-preview">
           <SpectrumChart
             spectrum={candidate.spectrum}
@@ -148,193 +150,9 @@ function Proposal({
           }
         }}
       >
-        应用候选（可撤销）
+        {label}
       </button>
       {error && <p role="alert">{error}</p>}
-    </section>
-  );
-}
-
-export function OptimizationTool({
-  snapshot: s,
-  send,
-}: {
-  snapshot: ToolSnapshot;
-  send: (a: ToolIntent) => Promise<void>;
-}) {
-  const all = rows(s.project);
-  const [variables, setVariables] = useState<Record<string, Variable>>({});
-  const [budget, setBudget] = useState(120);
-  const [result, setResult] = useState<
-    | (Candidate & {
-        initial_rmse: number;
-        final_rmse: number;
-        evaluations: number;
-        status: string;
-        note: string;
-      })
-    | null
-  >(null);
-  const task = useAnalysis(s.scope);
-  const variable = (r: (typeof all)[number]): Variable => ({
-    side: r.side,
-    id: r.id,
-    min_nm: r.thickness_nm * 0.8,
-    max_nm: Math.max(r.thickness_nm * 1.2, r.thickness_nm + 10),
-  });
-  return (
-    <section className="design-tool">
-      <h2>膜系自动优化 · 雏形</h2>
-      <p>
-        固定材料和层序，调整所选层的实际物理厚度；以目标曲线 R/T
-        的等权均方根误差寻优。未勾选的层保持不变，组系数不作为联动约束。
-      </p>
-      <div className="design-toolbar">
-        <button
-          disabled={task.running}
-          onClick={() =>
-            setVariables(
-              Object.fromEntries(
-                all.slice(0, 30).map((r) => [rowKey(r), variable(r)]),
-              ),
-            )
-          }
-        >
-          选择全部（最多30层）
-        </button>
-        <button disabled={task.running} onClick={() => setVariables({})}>
-          清空选择
-        </button>
-        <button
-          onClick={() => void send({ kind: "command", id: "view.targets" })}
-        >
-          目标曲线…
-        </button>
-        <span>{s.project.target_points?.length || 0} 个目标点</span>
-      </div>
-      <fieldset disabled={task.running}>
-        <div className="design-layer-list">
-          <table className="engineering-sheet">
-            <thead>
-              <tr>
-                <th>优化</th>
-                <th>膜层</th>
-                <th>材料</th>
-                <th>当前 nm</th>
-                <th>下限 nm</th>
-                <th>上限 nm</th>
-              </tr>
-            </thead>
-            <tbody>
-              {all.map((r) => {
-                const key = rowKey(r),
-                  v = variables[key];
-                return (
-                  <tr key={key}>
-                    <td>
-                      <input
-                        aria-label={`优化${r.side}第${r.index + 1}层`}
-                        type="checkbox"
-                        checked={!!v}
-                        onChange={(e) =>
-                          setVariables((old) => {
-                            const next = { ...old };
-                            if (e.target.checked) next[key] = variable(r);
-                            else delete next[key];
-                            return next;
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      {r.side === "front" ? "正面" : "背面"} {r.index + 1}
-                    </td>
-                    <td>{r.material}</td>
-                    <td>{r.thickness_nm.toFixed(2)}</td>
-                    {(["min_nm", "max_nm"] as const).map((field) => (
-                      <td key={field}>
-                        <input
-                          type="number"
-                          aria-label={`${key}-${field}`}
-                          min={0}
-                          max={1000000}
-                          step="any"
-                          disabled={!v}
-                          value={v?.[field] ?? ""}
-                          onChange={(e) =>
-                            setVariables((old) => ({
-                              ...old,
-                              [key]: {
-                                ...old[key],
-                                [field]: Number(e.target.value),
-                              },
-                            }))
-                          }
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <label>
-          最大光谱评估次数{" "}
-          <input
-            type="number"
-            min={10}
-            max={500}
-            value={budget}
-            onChange={(e) => setBudget(Number(e.target.value))}
-          />
-        </label>
-      </fieldset>
-      <div className="design-toolbar">
-        <button
-          disabled={
-            task.running ||
-            !Object.keys(variables).length ||
-            !s.project.target_points?.length
-          }
-          onClick={() => {
-            const before = structuredClone(s.project);
-            setResult(null);
-            void task.run<Omit<NonNullable<typeof result>, "before" | "scope">>(
-              {
-                action: "optimize",
-                project: before,
-                variables: Object.values(variables),
-                max_evaluations: budget,
-              },
-              (r) => setResult({ ...r, before, scope: s.scope }),
-            );
-          }}
-        >
-          {task.running ? "正在优化…" : "开始优化"}
-        </button>
-        {task.running && <button onClick={task.stop}>停止</button>}
-      </div>
-      <p>
-        每次最多运行约 15
-        秒，或达到评估次数后返回目前最优候选；局部优化不保证全局最优。
-      </p>
-      {task.error && <p role="alert">{task.error}</p>}
-      {result && (
-        <>
-          <p>
-            目标 RMSE：{result.initial_rmse.toFixed(6)} →{" "}
-            {result.final_rmse.toFixed(6)} 个百分点 · {result.evaluations}{" "}
-            次评估 · {result.status === "converged" ? "局部收敛" : "达到预算"}
-          </p>
-          <Proposal
-            candidate={result}
-            snapshot={s}
-            send={send}
-            applied={() => setResult(null)}
-          />
-        </>
-      )}
     </section>
   );
 }

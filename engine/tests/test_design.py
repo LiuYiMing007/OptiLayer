@@ -45,8 +45,8 @@ class OptimizationTests(unittest.TestCase):
             with self.subTest(variables=variables), self.assertRaises((ValueError, KeyError)):
                 optimize(p, variables)
         p['target_points'][0]['wavelength_nm'] = 399
-        with self.assertRaisesRegex(ValueError, '范围'):
-            optimize(p, [v])
+        cropped = optimize(p, [v], max_evaluations=10)
+        self.assertEqual(cropped['ignored_points'], 1)
         p.pop('target_points')
         with self.assertRaisesRegex(ValueError, '目标'):
             optimize(p, [v])
@@ -143,3 +143,44 @@ class AgentTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 run_agent(p, '分析', self.config(), transport=lambda *args: response)
             self.assertEqual(p, before)
+
+class InverseFittingTests(unittest.TestCase):
+    def multilayer(self):
+        p = validate(fixture())
+        p['layers'] = [{**copy.deepcopy(p['layers'][i % 4]), 'id': f'layer-{i}', 'group': i % 2 + 1} for i in range(49)]
+        p['settings'].update(start_nm=400, end_nm=900, step_nm=1)
+        desired = copy.deepcopy(p)
+        for layer in desired['layers']: layer['thickness_nm'] *= 1.02
+        spectrum = calculate_spectrum(desired)
+        p['target_points'] = [{'wavelength_nm': w, 'T_percent': spectrum['T_percent'][i]} for i, w in enumerate(spectrum['wavelength_nm'])]
+        variables = [{'side':'front','id':l['id'],'min_nm':l['thickness_nm']*.9,'max_nm':l['thickness_nm']*1.1} for l in p['layers']]
+        return p, variables
+
+    def test_49_layers_501_points_fit_and_inverse_compensation(self):
+        p, variables = self.multilayer(); before = copy.deepcopy(p)
+        r = optimize(p, variables, 1000, options={'parameterization':'global','starts':1,'regularization':0,'seconds':20})
+        self.assertEqual(r['used_points'],501)
+        self.assertEqual(len(r['diagnostics']),49)
+        self.assertLess(r['final_rmse'], r['initial_rmse'] * 1e-5)
+        for nominal, fitted, compensation in zip(p['layers'],r['project']['layers'],r['compensation_project']['layers']):
+            self.assertAlmostEqual(fitted['thickness_nm']/nominal['thickness_nm'], 1.02, places=5)
+            self.assertAlmostEqual(compensation['thickness_nm']/nominal['thickness_nm'], 1/1.02, places=5)
+        self.assertEqual(p,before)
+        self.assertTrue(any('不能唯一' in w for w in r['warnings']))
+
+    def test_roi_preserves_all_data_and_design_mode_has_no_compensation(self):
+        p, variables = self.multilayer()
+        r = optimize(p, variables[:2], 100, options={'mode':'target','parameterization':'material','starts':1,'range_nm':[450,650],'regularization':0,'seconds':5})
+        self.assertEqual(r['used_points'],201)
+        self.assertEqual(r['ignored_points'],300)
+        self.assertIsNone(r['compensation_project'])
+        self.assertEqual(r['project']['target_points'], p['target_points'])
+        self.assertEqual(r['project']['layers'][2:],p['layers'][2:])
+
+    def test_group_parameterization_keeps_equal_relative_drift(self):
+        p = target_project()
+        p['layers'][0]['group']=1;p['layers'][1]['group']=1
+        variables=[{'side':'front','id':l['id'],'min_nm':l['thickness_nm']*.8,'max_nm':l['thickness_nm']*1.2} for l in p['layers'][:2]]
+        r=optimize(p,variables,100,options={'parameterization':'group','starts':1,'regularization':.1,'seconds':5})
+        ratios=[r['project']['layers'][i]['thickness_nm']/p['layers'][i]['thickness_nm'] for i in (0,1)]
+        self.assertAlmostEqual(*ratios,places=10)

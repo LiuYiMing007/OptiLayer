@@ -1,0 +1,6 @@
+{
+  "packaged_engine": "release/OptiLayer.app/Contents/Resources/engine/tfc-engine",
+  "workspace_relocation": true,
+  "spectrum_exact_reproduction": true,
+  "samples": 121
+}

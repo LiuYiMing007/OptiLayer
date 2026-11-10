@@ -1,4 +1,5 @@
-import { OptimizationTool, AgentTool } from "../DesignTools";
+import { AgentTool } from "../DesignTools";
+import OptimizationTool from "../OptimizationTool";
 import DistributionWindow from "../DistributionWindow";
 import WindowConfiguration from "../WindowConfiguration";
 import { defaultWindowPreferences } from "../windowPreferences";

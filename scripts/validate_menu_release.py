@@ -12,7 +12,7 @@ system = platform.system()
 parser = argparse.ArgumentParser()
 parser.add_argument('--host', type=Path)
 args = parser.parse_args()
-host = args.host or root / ('release/TFC.app/Contents/MacOS/tfc-for-mac' if system == 'Darwin' else 'release/Windows/TFC/TFC.exe')
+host = args.host or root / ('release/OptiLayer.app/Contents/MacOS/tfc-for-mac' if system == 'Darwin' else 'release/Windows/OptiLayer/TFC.exe')
 
 def workspace_hashes():
     return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()

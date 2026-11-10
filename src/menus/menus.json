@@ -50,6 +50,11 @@
         "label": "配置…",
         "implemented": true,
         "check": true
+      },
+      {
+        "id": "file.workspace",
+        "label": "工作区…",
+        "implemented": true
       }
     ]
   },
@@ -205,7 +210,7 @@
       },
       {
         "id": "help.about",
-        "label": "关于 TFC Workbench…",
+        "label": "关于 OptiLayer…",
         "implemented": true
       },
       {
@@ -214,7 +219,7 @@
       },
       {
         "id": "file.quit",
-        "label": "退出 TFC",
+        "label": "退出 OptiLayer",
         "implemented": true,
         "shortcut": "CmdOrCtrl+Q",
         "platform": "windows"

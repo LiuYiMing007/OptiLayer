@@ -5,7 +5,7 @@ import numpy as np
 root=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(root/'engine/tests'));sys.path.insert(0,str(root/'engine'))
 from test_tfd_export import project
-exe=root/('release/TFC.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin' else 'release/Windows/TFC/engine/tfc-engine.exe')
+exe=root/('release/OptiLayer.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin' else 'release/Windows/OptiLayer/engine/tfc-engine.exe')
 with tempfile.TemporaryDirectory(prefix='tfc-project-flow-')as folder:
     workspace=Path(folder)/'Workspace'
     def call(body,create=False):

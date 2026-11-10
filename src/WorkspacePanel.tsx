@@ -130,7 +130,7 @@ export default function WorkspacePanel({
         </button>
       </div>
       <p className="workspace-recovery-help">
-        若从 Mac“应用程序”、下载隔离位置或只读目录启动，请选择固态盘上的 TFC
+        若从 Mac“应用程序”、下载隔离位置或只读目录启动，请选择固态盘上的 OptiLayer
         项目文件夹，也可以直接选择已有
         Workspace。数据仍保存在所选项目内，不会转移到系统磁盘。隔离启动无法可靠辨认原程序位置时，每次启动需明确选择；不会自动连接其它安装或测试目录。
       </p>

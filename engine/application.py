@@ -39,7 +39,7 @@ def dispatch(request, workspace=None):
     if action=='catalogue_get':return {'material':catalogue_material(request['name'])}
     if action=='optimize':
         from optimization import optimize
-        return optimize(request['project'],request['variables'],request.get('max_evaluations',120))
+        return optimize(request['project'],request['variables'],request.get('max_evaluations',12000),options=request.get('options'))
     if action=='agent':
         from agent import run_agent
         return run_agent(request['project'],request['prompt'],request['config'],request.get('history'))

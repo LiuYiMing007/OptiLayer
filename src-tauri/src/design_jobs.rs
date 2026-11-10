@@ -37,7 +37,7 @@ pub async fn design_request(window: tauri::WebviewWindow, app: tauri::AppHandle,
             if let Err(error) = write { let _ = child.kill(); let _ = child.wait(); let _ = reader.join(); return Err(error.into()); }
             let started = Instant::now();
             loop {
-                if flag.load(Ordering::SeqCst) || started.elapsed() > Duration::from_secs(150) {
+                if flag.load(Ordering::SeqCst) || started.elapsed() > Duration::from_secs(300) {
                     let _ = child.kill(); let _ = child.wait(); let _ = reader.join();
                     return Err("分析已停止或超时，项目未修改".into());
                 }

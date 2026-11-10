@@ -240,7 +240,7 @@ async fn project_pick(
 ) -> Result<Option<serde_json::Value>, String> {
     menus::require_main(&window)?;
     tauri::async_runtime::spawn_blocking(move|| {
-        let Some(folder)=app.dialog().file().set_parent(&window).set_title("选择 TFC 便携项目文件夹或已有 Workspace").blocking_pick_folder() else {return Ok(None);};
+        let Some(folder)=app.dialog().file().set_parent(&window).set_title("选择 OptiLayer 便携项目文件夹或已有 Workspace").blocking_pick_folder() else {return Ok(None);};
         let picked=folder.into_path().map_err(|e|e.to_string())?.canonicalize().map_err(|e|e.to_string())?;
         let (project,workspace,create)=if picked.join("workspace.json").is_file() {
             let parent=picked.parent().ok_or("工作区缺少项目父目录")?;
@@ -421,7 +421,7 @@ async fn import_file(
     tauri::async_runtime::spawn_blocking(move || {
         let parent=app.webview_windows().into_values().find(|w|w.is_visible().unwrap_or(false) && w.is_focused().unwrap_or(false)).unwrap_or(window.clone());
         let mut dialog = app.dialog().file().set_title("打开项目")
-            .add_filter("TFCalc / TFC 项目", &["tfd", "json"]);
+            .add_filter("TFCalc / OptiLayer 项目", &["tfd", "json"]);
         if parent.is_visible().unwrap_or(false) {dialog=dialog.set_parent(&parent);}
         if let Ok(root)=current_workspace(&app) { dialog=dialog.set_directory(root.join("projects")); } else if let Ok(project)=project_folder() { dialog=dialog.set_directory(project); }
         let picked=dialog.blocking_pick_file();
@@ -482,7 +482,7 @@ async fn project_save_as(window: tauri::WebviewWindow, app: tauri::AppHandle, mu
         let parent=app.webview_windows().into_values().find(|w|w.is_visible().unwrap_or(false) && w.is_focused().unwrap_or(false)).unwrap_or(window.clone());
         let mut dialog=app.dialog().file().set_title("另存项目")
             .add_filter("TFCalc 膜系 (*.tfd)", &["tfd"])
-            .add_filter("TFC 完整项目 (*.tfc.json)", &["json"])
+            .add_filter("OptiLayer 完整项目 (*.tfc.json)", &["json"])
             .set_can_create_directories(true).set_file_name(&file_name);
         if parent.is_visible().unwrap_or(false) {dialog=dialog.set_parent(&parent);}
         if let Ok(root)=current_workspace(&app) {dialog=dialog.set_directory(root.join("projects"));}
@@ -658,7 +658,7 @@ fn main() {
             window_check::window_check_finish
         ])
         .build(context)
-        .expect("无法启动 TFC")
+        .expect("无法启动 OptiLayer")
         .run(|app, event| {
             if let tauri::RunEvent::ExitRequested { api, code, .. } = event {
                 if code.is_none() && app.get_webview_window("main").is_some() {

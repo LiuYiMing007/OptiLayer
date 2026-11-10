@@ -138,10 +138,10 @@
   {
     "id": "optimization",
     "title": "膜系自动优化",
-    "width": 820,
-    "height": 720,
-    "minWidth": 620,
-    "minHeight": 460
+    "width": 1060,
+    "height": 850,
+    "minWidth": 720,
+    "minHeight": 540
   },
   {
     "id": "agent",

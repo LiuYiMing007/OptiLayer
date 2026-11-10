@@ -266,7 +266,7 @@ pub fn open(app: &tauri::AppHandle, id: &str) -> Result<(), String> {
             ),
         )
         .title(format!(
-            "{} · TFC Workbench",
+            "{} · OptiLayer",
             definition["title"].as_str().unwrap()
         ))
         .inner_size(

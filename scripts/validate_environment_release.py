@@ -10,7 +10,7 @@ import numpy as np
 import tmm
 
 root=Path(__file__).resolve().parents[1]
-exe=root/('release/TFC.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin' else 'release/Windows/TFC/engine/tfc-engine.exe')
+exe=root/('release/OptiLayer.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin' else 'release/Windows/OptiLayer/engine/tfc-engine.exe')
 report={'all_pass':False,'platform':platform.system(),'version':json.loads((root/'package.json').read_text())['version']}
 with tempfile.TemporaryDirectory(prefix='tfc-environment-') as folder:
     workspace=Path(folder)/'中文环境工作区'

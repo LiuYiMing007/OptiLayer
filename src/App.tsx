@@ -1479,7 +1479,7 @@ export default function App() {
             className="startup-open-dialog"
           >
             <h2>打开项目</h2>
-            <p>选择 TFCalc 膜系（.tfd）或 TFC 项目（.tfc.json）。</p>
+            <p>选择 TFCalc 膜系（.tfd）或 OptiLayer 项目（.tfc.json）。</p>
             <footer>
               <button onClick={() => setStartupChooser(false)}>取消</button>
               <button
@@ -1714,7 +1714,7 @@ export default function App() {
                       ? "快捷键"
                       : modal === "workspace"
                         ? "工作区"
-                        : "关于 TFC 工作台"}
+                        : "关于 OptiLayer"}
               </h2>
               <button aria-label="关闭" onClick={() => setModal(null)}>
                 <X size={20} />
@@ -1882,7 +1882,7 @@ export default function App() {
                   <Waves size={32} />
                 </div>
                 <h3>
-                  TFC <span>{appVersion}</span>
+                  OptiLayer <span>{appVersion}</span>
                 </h3>
                 <p>
                   物理厚度 d、光学厚度 n·d 和 QWOT

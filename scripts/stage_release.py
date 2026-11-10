@@ -20,11 +20,11 @@ def staging_directory(parent):
 root=Path(__file__).resolve().parents[1]
 platform_name=platform.system()
 if platform_name=='Darwin':
-    source=root/'src-tauri/target/release/bundle/macos/TFC.app'
-    target=root/'release/TFC.app'
+    source=root/'src-tauri/target/release/bundle/macos/OptiLayer.app'
+    target=root/'release/OptiLayer.app'
 elif platform_name=='Windows':
     source=root/'src-tauri/target/release'
-    target=root/'release/Windows/TFC'
+    target=root/'release/Windows/OptiLayer'
 else:raise SystemExit('Desktop release staging is currently supported on macOS and Windows')
 target.parent.mkdir(parents=True,exist_ok=True)
 previous=target.parent/'.previous'/target.name
@@ -36,7 +36,7 @@ with staging_directory(target.parent) as folder:
         shutil.copytree(source,staged,symlinks=True)
     else:
         staged.mkdir()
-        shutil.copy2(source/'tfc-for-mac.exe',staged/'TFC.exe')
+        shutil.copy2(source/'tfc-for-mac.exe',staged/'OptiLayer.exe')
         shutil.copytree(root/'engine/dist/tfc-engine',staged/'engine')
     if previous.exists():shutil.rmtree(previous)
     if target.exists():target.rename(previous)

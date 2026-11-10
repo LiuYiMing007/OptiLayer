@@ -12,11 +12,6 @@
     "shortcut": "CmdOrCtrl+Shift+E"
   },
   {
-    "id": "file.workspace",
-    "label": "工作区…",
-    "implemented": true
-  },
-  {
     "id": "layer.copy",
     "label": "复制选中膜层",
     "implemented": true,

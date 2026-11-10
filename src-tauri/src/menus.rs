@@ -155,12 +155,12 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let mut handles = HashMap::new();
     #[cfg(target_os = "macos")]
     {
-        let application = Submenu::new(app, "TFC Workbench", true)?;
+        let application = Submenu::new(app, "OptiLayer", true)?;
         // Quit is a custom command so it goes through the same unsaved-project guard.
         let about = MenuItem::with_id(
             app,
             "application.help.about",
-            "关于 TFC Workbench…",
+            "关于 OptiLayer…",
             false,
             None::<&str>,
         )?;
@@ -179,7 +179,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         text.append(&PredefinedMenuItem::paste(app, Some("粘贴文本"))?)?;
         text.append(&PredefinedMenuItem::select_all(app, Some("全选文本"))?)?;
         application.append(&text)?;
-        application.append(&PredefinedMenuItem::hide(app, Some("隐藏 TFC"))?)?;
+        application.append(&PredefinedMenuItem::hide(app, Some("隐藏 OptiLayer"))?)?;
         application.append(&PredefinedMenuItem::hide_others(app, Some("隐藏其他"))?)?;
         application.append(&PredefinedMenuItem::show_all(app, Some("显示全部"))?)?;
         application.append(&PredefinedMenuItem::separator(app)?)?;
@@ -187,7 +187,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         let quit = MenuItem::with_id(
             app,
             "application.file.quit",
-            "退出 TFC",
+            "退出 OptiLayer",
             false,
             Some("CmdOrCtrl+Q"),
         )?;
@@ -245,7 +245,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             "menu",
             tauri::WebviewUrl::App("index.html?window=menu".into()),
         )
-        .title("TFC Workbench · 菜单")
+        .title("OptiLayer · 菜单")
         .inner_size(460.0, 108.0)
         .min_inner_size(460.0, 108.0)
         .resizable(false)

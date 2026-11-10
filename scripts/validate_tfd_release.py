@@ -2,7 +2,7 @@
 from pathlib import Path
 import json,platform,subprocess,tempfile,shutil
 root=Path(__file__).resolve().parents[1]
-exe=root/('release/TFC.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin' else 'release/Windows/TFC/engine/tfc-engine.exe')
+exe=root/('release/OptiLayer.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin' else 'release/Windows/OptiLayer/engine/tfc-engine.exe')
 source='''VERSION*1*\nCONFIG*0*4*0*0*0*Y*Y*N*\nENVIRON*400*700*1*550*15*AIR*K9*\nENVIRON3*1*K9*WHITE*IDEAL*1*N*0*N*\nGROUPS*1*\nGROUP*1*1.25*N*N*0*0*\nLAYERS*1*\nLAYER*1*SIO2*0.5*100*0*1*Y*N*0*N*N*Y*\nLAYERS2*0*\nVARMATS*0*\nMIXMATS*0*\nTRDATA6*0*T*A*400*700*10*15*\nCOMMENTS*光谱基底*\nEOF*'''
 with tempfile.TemporaryDirectory(prefix='tfc-tfd-') as folder:
  workspace=Path(folder)/'旧膜系迁入'

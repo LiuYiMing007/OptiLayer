@@ -10,7 +10,7 @@ import zipfile
 root=Path(__file__).resolve().parents[1]
 version=json.loads((root/'package.json').read_text(encoding='utf-8'))['version']
 os_name=platform.system()
-pattern=f'TFC-{version}-macOS-*.zip' if os_name=='Darwin' else f'TFC-{version}-Windows-*.zip'
+pattern=f'OptiLayer-{version}-macOS-*.zip' if os_name=='Darwin' else f'OptiLayer-{version}-Windows-*.zip'
 archives=list((root/'release/assets').glob(pattern))
 if len(archives)!=1:raise SystemExit(f'Expected exactly one current portable archive: {pattern}')
 with zipfile.ZipFile(archives[0]) as inspect:
@@ -24,9 +24,9 @@ with tempfile.TemporaryDirectory(prefix='tfc-portable-package-') as temporary:
     if os_name=='Darwin':subprocess.run(['ditto','-x','-k',str(archives[0]),str(unpacked)],check=True)
     else:
         with zipfile.ZipFile(archives[0]) as archive:archive.extractall(unpacked)
-    project=unpacked/'TFC'
-    def host():return project/('macOS/TFC.app/Contents/MacOS/tfc-for-mac' if os_name=='Darwin' else 'Windows/TFC.exe')
-    def engine():return project/('macOS/TFC.app/Contents/Resources/engine/tfc-engine' if os_name=='Darwin' else 'Windows/engine/tfc-engine.exe')
+    project=unpacked/'OptiLayer'
+    def host():return project/('macOS/OptiLayer.app/Contents/MacOS/tfc-for-mac' if os_name=='Darwin' else 'Windows/OptiLayer.exe')
+    def engine():return project/('macOS/OptiLayer.app/Contents/Resources/engine/tfc-engine' if os_name=='Darwin' else 'Windows/engine/tfc-engine.exe')
     def location():
         response=subprocess.run([str(host()),'--workspace-location'],cwd=base,env=env,capture_output=True,encoding='utf-8',check=True)
         return json.loads(response.stdout)
@@ -47,7 +47,7 @@ with tempfile.TemporaryDirectory(prefix='tfc-portable-package-') as temporary:
     call({'action':'spectrum_save','project_id':p['id'],'project':p,'spectrum':result})
     (project/'.tfc').mkdir()
     (project/'.tfc/workspace-selection.json').write_text(json.dumps({'schema_version':1,'workspace_relative':'Workspace'}),encoding='utf-8')
-    moved=base/'新磁盘位置 中文 空格'/'TFC';moved.parent.mkdir();shutil.move(project,moved);project=moved
+    moved=base/'新磁盘位置 中文 空格'/'OptiLayer';moved.parent.mkdir();shutil.move(project,moved);project=moved
     reopened=location()
     assert Path(reopened['project_root']).samefile(project)
     assert Path(reopened['workspace_root']).samefile(project/'Workspace')

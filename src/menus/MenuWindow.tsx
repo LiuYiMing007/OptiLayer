@@ -37,7 +37,7 @@ export default function MenuWindow() {
   return (
     <div className="menu-window-content">
       <strong>
-        {snapshot?.project || "TFC Workbench"}
+        {snapshot?.project || "OptiLayer"}
         {snapshot?.dirty ? " · 未保存" : ""}
       </strong>
       <span>

@@ -9,8 +9,8 @@ import sqlite3
 import subprocess
 import tempfile
 root=Path(__file__).resolve().parents[1]
-exe=(root/'release/TFC.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin'
-     else root/'release/Windows/TFC/engine/tfc-engine.exe')
+exe=(root/'release/OptiLayer.app/Contents/Resources/engine/tfc-engine' if platform.system()=='Darwin'
+     else root/'release/Windows/OptiLayer/engine/tfc-engine.exe')
 project=json.loads((root/'docs/user-380nm-recovery.tfc.json').read_text(encoding='utf-8'))
 with tempfile.TemporaryDirectory(prefix='tfc-portable-') as temporary:
     base=Path(temporary);workspace=base/'中文原工作区'

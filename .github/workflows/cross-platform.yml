@@ -70,8 +70,8 @@ jobs:
       - name: Seal and verify macOS application
         if: runner.os == 'macOS'
         run: |
-          codesign --force --deep --sign - release/TFC.app
-          codesign --verify --deep --strict release/TFC.app
+          codesign --force --deep --sign - release/OptiLayer.app
+          codesign --verify --deep --strict release/OptiLayer.app
       - run: node scripts/run_python.mjs scripts/validate_menu_release.py
       - run: node scripts/run_python.mjs scripts/validate_window_ipc_release.py
       - run: node scripts/run_python.mjs scripts/validate_catalogue_release.py
@@ -123,7 +123,7 @@ jobs:
             python scripts/release_notes.py "$TAG" > "$RUNNER_TEMP/release-notes.md"
             FLAGS=()
             if [[ "$TAG" == *-dev.* ]]; then FLAGS+=(--prerelease --latest=false); fi
-            gh release create "$TAG" release-assets/* --verify-tag --title "TFC $TAG" --notes-file "$RUNNER_TEMP/release-notes.md" "${FLAGS[@]}"
+            gh release create "$TAG" release-assets/* --verify-tag --title "OptiLayer $TAG" --notes-file "$RUNNER_TEMP/release-notes.md" "${FLAGS[@]}"
           fi
       - uses: actions/upload-artifact@v4
         with:

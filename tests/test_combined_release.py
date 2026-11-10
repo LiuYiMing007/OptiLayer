@@ -57,3 +57,16 @@ class CombinedPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);self.sources(root);p=root/'TFC-0.1.5-Windows-x64-portable.zip';p.write_bytes(p.read_bytes()+b'corrupt')
             with self.assertRaises(ValueError):module.combine_assets(root,'0.1.5')
+
+    def test_new_product_packages_keep_workspace_isolation(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);self.sources(root)
+            for old in list(root.glob('*.zip')):
+                with zipfile.ZipFile(old) as z: entries={n.replace('TFC/','OptiLayer/').replace('TFC.app','OptiLayer.app').replace('TFC.exe','OptiLayer.exe'):z.read(n) for n in z.namelist()}
+                new=root/old.name.replace('TFC-0.1.5','OptiLayer-0.3.1')
+                with zipfile.ZipFile(new,'w') as z:
+                    for n,data in entries.items():z.writestr(n,data)
+                new.with_suffix('.zip.sha256').write_text(hashlib.sha256(new.read_bytes()).hexdigest()+'  '+new.name)
+            output=module.combine_assets(root,'0.3.1')
+            self.assertEqual(output.name,'OptiLayer-0.3.1-macOS-Windows-portable.zip')
+            with zipfile.ZipFile(output) as z:self.assertIn('OptiLayer/Windows/OptiLayer.exe',z.namelist())

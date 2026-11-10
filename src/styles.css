@@ -2297,3 +2297,38 @@ body,
 .agent-tool details fieldset { margin: 10px 0; }
 
 .agent-tool label:has(textarea) { display: grid; }
+/* OptiLayer inverse fitting workbench */
+.fit-workbench { gap: 14px; padding: 18px; color: #344353; }
+.fit-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.fit-eyebrow { color:#748595; font-size:10px; letter-spacing:1.5px; }
+.fit-heading h2 { font-size:22px; font-weight:600; margin-top:5px; }
+.fit-badge { padding:6px 10px; border:1px solid #d6e1e7; border-radius:20px; color:#536b7a; font-size:12px; }
+.fit-modes { display:flex; padding:4px; gap:4px; background:#e9eef2; border-radius:7px; }
+.fit-modes button { flex:1; padding:8px 12px; border-radius:5px; }
+.fit-modes button[aria-pressed=true] { background:white; box-shadow:0 1px 4px #25374715; color:#007e70; }
+.fit-data-bar { display:flex; align-items:center; gap:12px; padding:10px; border:1px dashed #bdcfd8; border-radius:6px; }
+.fit-data-bar span { font-size:12px; overflow-wrap:anywhere; }
+.fit-settings { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px !important; }
+.fit-settings label { display:grid; gap:5px; font-size:12px; }
+.fit-settings input,.fit-settings select { width:100%; min-width:0; padding:6px 8px; background:white; }
+.fit-variable-details summary { cursor:pointer; font-weight:500; padding:8px 0; }
+.fit-variable-details .design-toolbar { margin:6px 0 10px; }
+.fit-variable-details input { max-width:100px; }
+.fit-help { font-size:11px; color:#73808c; }
+.fit-run { display:flex; gap:10px; align-items:center; }
+.fit-run span { color:#73808c; font-size:11px; }
+.fit-run .primary { padding:9px 16px; background:#137e71; color:white; border-radius:5px; }
+.fit-metrics { display:grid; grid-template-columns:2fr 1fr 1.5fr; gap:10px; }
+.fit-metrics>div { padding:12px; background:#eef5f5; border:1px solid #d8e7e6; border-radius:6px; }
+.fit-metrics small { display:block; font-size:11px; color:#617d82; }
+.fit-metrics strong { display:block; font-weight:500; font-size:20px; margin-top:5px; font-variant-numeric:tabular-nums; }
+.fit-chart { width:100%; height:350px; min-height:350px; }
+.fit-notes { padding:10px 12px; border-left:3px solid #c59b54; background:#f8f5ec; font-size:11px; }
+.fit-diagnostics { overflow:auto; max-height:300px; }
+.fit-diagnostics table { width:100%; white-space:nowrap; }
+.fit-diagnostics th { position:sticky; top:0; background:#eaf0f3; z-index:1; }
+.fit-diagnostics td { font-variant-numeric:tabular-nums; }
+.fit-diagnostics .delta-positive { color:#a55b28; }.fit-diagnostics .delta-negative { color:#226c9b; }
+.fit-apply { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.fit-apply h3 { font-size:13px; }
+@media(max-width:760px){.fit-settings{grid-template-columns:repeat(2,minmax(0,1fr));}.fit-metrics,.fit-apply{grid-template-columns:1fr;}}

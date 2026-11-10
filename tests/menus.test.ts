@@ -42,6 +42,7 @@ test("compact menu catalogue has six categories while toolbar commands remain av
       "file.exportSpectrum",
       undefined,
       "view.windowconfig",
+      "file.workspace",
     ],
   );
   assert.deepEqual(
@@ -228,4 +229,11 @@ test("menu-only startup exposes new/open and configuration without a phantom pro
     "view.environment",
   ])
     assert.equal(states[id].enabled, false, id);
+});
+
+test("workspace is directly below configuration and available before opening a project", () => {
+  const items = menus[0].items;
+  const i = items.findIndex(e => e.id === "view.windowconfig");
+  assert.equal(items[i + 1].id, "file.workspace");
+  assert.equal(commandStates({ ...context(), projectOpen: false, workspace: false })["file.workspace"].enabled, true);
 });

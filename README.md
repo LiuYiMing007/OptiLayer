@@ -1,16 +1,24 @@
-# TFC · 0.3.0
+# OptiLayer · 0.3.1
+
+0.3.1 更名为 **OptiLayer**，文件菜单在“配置”下新增“工作区”，可直接调整数据位置。膜系自动优化升级为实测反推/补偿与目标优化两种模式，支持完整49层/501点及更大数据，提供多起点分阶段拟合、偏差约束、理论/实测/拟合与残差图、膜厚偏差/灵敏度/补偿表和报告导出。
+
+[0.3.1 更新报告与使用边界](docs/更新报告/0.3.1更新报告.md)。单条光谱反推层厚可能不唯一，补偿候选须工艺复核；原 Optical Core 和旧工作区格式保持。用户实验原件与派生报告不进入 GitHub。
+
+GitHub Actions 已恢复并通过一次Mac/Windows基线验证；0.3.1版本包以本次标签构建及Release实际结果为准。
+
+## 上一版本 0.3.0
 
 0.3.0 仅新增两个雏形，均位于“分析”菜单：**膜系自动优化**和 **AI Agent**。优化器按目标 R/T 曲线在给定范围内调整所选膜层厚度，提供误差/候选光谱预览；Agent 支持配置 Responses API 服务、真实光谱工具调用和膜厚候选。两者均先预览再应用，支持撤销和停止，不改动已验证的 Optical Core。
 
 [0.3.0 更新报告与使用边界](docs/更新报告/0.3.0更新报告.md)。AI 需要用户填写模型与 API Key；密钥不保存到项目。真实模型服务连通及 Windows 0.3.0 仍需单独验收，不能沿用旧版结果。本次发布本机已验收的 Mac 包；下方 0.2.5 双平台下载保留。GitHub 云构建因账号付款/消费额度限制未启动，Windows 0.3.0 包尚待构建。
 
-[下载 0.3.0 Mac 便携包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.3.0/TFC-0.3.0-macOS-arm64.zip) · [0.3.0 发布页与校验文件](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.3.0)
+[下载 0.3.0 Mac 便携包](https://github.com/LiuYiMing007/OptiLayer/releases/download/v0.3.0/TFC-0.3.0-macOS-arm64.zip) · [0.3.0 发布页与校验文件](https://github.com/LiuYiMing007/OptiLayer/releases/tag/v0.3.0)
 
 ## 上一版本 0.2.5
 
 0.2.5 汇总工程桌面菜单、环境先行、真实 TFD 保存、H/L 原库换料、材料/基底管理和关闭流程修复。Mac 与 Windows 已分别完成本地构建及验收；Windows 保存卡住、工具窗残留的缺陷已复验通过。两端程序源码为 `7967206`，后续提交只更新验收和发布文档。
 
-[下载双系统便携包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5/TFC-0.2.5-macOS-Windows-portable.zip) · [全部下载及校验文件](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5) · [更新报告](docs/更新报告/0.2.5更新报告.md) · [Windows 实机记录](docs/Windows-0.2.5-验收记录.md)
+[下载双系统便携包](https://github.com/LiuYiMing007/OptiLayer/releases/download/v0.2.5/TFC-0.2.5-macOS-Windows-portable.zip) · [全部下载及校验文件](https://github.com/LiuYiMing007/OptiLayer/releases/tag/v0.2.5) · [更新报告](docs/更新报告/0.2.5更新报告.md) · [Windows 实机记录](docs/Windows-0.2.5-验收记录.md)
 
 GitHub 云端构建仍受账号额度限制，本版使用两台本地电脑已验证的原生程序包发布，未将失败云任务标为通过。合并包已核对逐文件内容、Mac 签名、实际入口定位及目录搬迁精确复算。物理断网/换盘符、显示缩放和原版 TFCalc 实机复算的未覆盖范围见验收记录。
 
@@ -26,11 +34,11 @@ GitHub 云端构建仍受账号额度限制，本版使用两台本地电脑已�
 
 材料与基底使用窄搜索目录，支持来源筛选、50 行分页，点击打开独立完整 n/k 数据表；内置记录编辑时建立用户副本。新增原创光学图标。旧项目、便携工作区、单一 Project State 和 0.1.5 的多窗口能力继续保留。
 
-[下载双系统合并包](https://github.com/LiuYiMing007/tfc-workbench/releases/download/v0.2.5/TFC-0.2.5-macOS-Windows-portable.zip) · [全部下载](https://github.com/LiuYiMing007/tfc-workbench/releases/tag/v0.2.5) · [0.2.4 更新报告](docs/更新报告/0.2.4更新报告.md) · [材料验收及异常清单](docs/0.2.0-材料与基底导入验收.md)
+[下载双系统合并包](https://github.com/LiuYiMing007/OptiLayer/releases/download/v0.2.5/TFC-0.2.5-macOS-Windows-portable.zip) · [全部下载](https://github.com/LiuYiMing007/OptiLayer/releases/tag/v0.2.5) · [0.2.4 更新报告](docs/更新报告/0.2.4更新报告.md) · [材料验收及异常清单](docs/0.2.0-材料与基底导入验收.md)
 
 Mac 为 Apple Silicon / macOS 14+，Windows 为 x64 / WebView2。两个客户端使用同一套 Workspace 数据。升级只替换 `macOS` 和 `Windows` 程序子目录，保留 `Workspace`、`Workspaces`、`.tfc`，不要用空目录覆盖数据。材料目录已打入两端程序，无需原 TFCalc 文件夹或联网。
 
-0.2.4 已通过 [双平台正式构建与验收](https://github.com/LiuYiMing007/tfc-workbench/actions/runs/42417104330)：包括新增/删除/恢复按钮 IPC、冻结运行时材料与基底管理、独立文件、目录可见性和搬迁复算。正式包及校验文件已发布。数据库升级为版本4，请退出旧版并同步升级 Mac/Windows 两端。
+0.2.4 已通过 [双平台正式构建与验收](https://github.com/LiuYiMing007/OptiLayer/actions/runs/42417104330)：包括新增/删除/恢复按钮 IPC、冻结运行时材料与基底管理、独立文件、目录可见性和搬迁复算。正式包及校验文件已发布。数据库升级为版本4，请退出旧版并同步升级 Mac/Windows 两端。
 
 0.2.3 正式标签已通过两端原生菜单、15个实际工具窗口、材料编辑、冻结环境计算、保存、搬迁复算、目录可见性及便携定位验证。三个程序包分别附 SHA-256 文件；合并包不包含个人工作区。原版 TFCalc 逐点数值一致性、物理 SSD 换盘符、物理断网及所有显示缩放不由这些自动检查替代。
 

@@ -141,7 +141,7 @@ function engineDevBridge(): Plugin {
           // Stop isolated analysis when the user cancels the request.
           const analysis = action === "optimize" || action === "agent";
           const timer = analysis
-            ? setTimeout(() => child.kill(), 150000)
+            ? setTimeout(() => child.kill(), 300000)
             : undefined;
           if (analysis)
             res.on("close", () => {

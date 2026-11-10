@@ -3,7 +3,7 @@ from pathlib import Path
 import json, platform, subprocess, hashlib
 root=Path(__file__).resolve().parents[1]
 system=platform.system()
-host=root/('release/TFC.app/Contents/MacOS/tfc-for-mac' if system=='Darwin' else 'release/Windows/TFC/TFC.exe')
+host=root/('release/OptiLayer.app/Contents/MacOS/tfc-for-mac' if system=='Darwin' else 'release/Windows/OptiLayer/TFC.exe')
 def hashes():
     return {str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for d in ('Workspace','.tfc') for p in (root/d).rglob('*') if p.is_file()}
 before=hashes()

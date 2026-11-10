@@ -69,7 +69,7 @@ jobs:
               assert reports['portable-location']['actual_host_location_check']
               assert reports['workspace-folders']['saved_project_spectrum_database_catalogue_visible']
               if platform=='Windows':assert reports['workspace-folders']['explorer_window_paths_confirmed']
-              expected=f'TFC-{version}-macOS-arm64.zip' if platform=='macOS' else f'TFC-{version}-Windows-x64-portable.zip'
+              expected=f'OptiLayer-{version}-macOS-arm64.zip' if platform=='macOS' else f'OptiLayer-{version}-Windows-x64-portable.zip'
               assert {p.name for p in folder.iterdir()}=={expected,expected+'.sha256'}
               archive=folder/expected
               digest,name=(folder/(expected+'.sha256')).read_text().strip().split(maxsplit=1)
@@ -90,7 +90,7 @@ jobs:
           Path('release-notes.md').write_text(notes,encoding='utf-8')
           exists=subprocess.run(['gh','release','view',tag],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
           assert not exists,'Release already exists; preserving all existing assets without replacement'
-          subprocess.run(['gh','release','create',tag,*map(str,files),'--verify-tag',*(['--prerelease','--latest=false'] if '-dev.' in version else ['--latest']),'--title','TFC '+tag,'--notes-file','release-notes.md'],check=True)
+          subprocess.run(['gh','release','create',tag,*map(str,files),'--verify-tag',*(['--prerelease','--latest=false'] if '-dev.' in version else ['--latest']),'--title','OptiLayer '+tag,'--notes-file','release-notes.md'],check=True)
           published=json.loads(run('gh','api',f'repos/{repo}/releases/tags/{tag}'))
           remote={a['name']:a for a in published['assets']}
           assert set(remote)=={p.name for p in files}
