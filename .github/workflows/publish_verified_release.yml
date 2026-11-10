@@ -92,7 +92,7 @@ jobs:
           files=sorted(assets.iterdir());assert len(files)==6
           repo=os.environ['GITHUB_REPOSITORY']
           prefix=f'发布源码：`{tag_sha}`。两端均采用已通过完整验收的 CI 程序包，逐一核对构建源码、检查报告及 SHA256。应用、计算引擎和打包输入与不可变标签一致；只允许 README/docs、发布工作流及三份验收脚本中经过精确比对的 Windows 入口路径修正。\n\n'
-          prefix+='改名后的首次验证有旧 Windows 入口路径遗留；本次使用修正验收脚本后重新通过完整检查的双平台构建，不将失败、排队或取消写成通过。\n\n'
+          prefix+='改名后的首次 Windows 验证有旧入口路径遗留；本次分别采用下列成功的平台任务。Windows 使用路径修正后的验收记录，Mac 使用程序输入与标签一致的成功记录；不将同一轮其它平台的失败、排队或取消写成通过。\n\n'
           for platform,source in sources.items():
               prefix+=f'- {platform}：[{source["successful_job"]}](https://github.com/{repo}/actions/runs/{source["run"]})，构建源码 `{source["source_sha"]}`。\n'
           notes=prefix+'\n'+run('python','scripts/release_notes.py',tag)+'\n'
